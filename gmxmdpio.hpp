@@ -11,6 +11,7 @@ using namespace std;
 //! read gromacs mdp file and construct the restraint potential functor from the pull group potential
 class mdp2pullpot {
   public:
+    mdp2pullpot() {};
     linecounter operator() (fstream& fs, map<uint,umbrella>& funct) const;
     linecounter operator() (fstream& fs, map<uint,umbrella_fb>& funct) const;
   private:
