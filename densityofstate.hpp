@@ -53,7 +53,8 @@ class DensityOfState {
                      const vector<histogram>& hists,  
 		     const vector<Hamiltonian<ensemble>* >& V, 
 		     const vector<uint>& N, 
-		     const vector<valtype>& f 
+		     const vector<valtype>& f,
+		     vector<valtype>& newf
 		    );
     //! read only accessor operator 
     valtype operator[](const coordtype& coord) const { return DOS[coord]; };
@@ -150,9 +151,12 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
                               const vector<histogram>& hists,  
          		      const vector<Hamiltonian<ensemble>* >& V, 
          		      const vector<uint>& N, 
-         		      const vector<valtype>& f 
+         		      const vector<valtype>& f,
+			      vector<valtype>& newf
          		                   ) 
 {
+  //First empty newf array
+  newf = vector<valtype>(f.size(),0.0);
   //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
   //printf("#RC k hist_k N_k f_k exparg exp(exparg)\n");
   for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
@@ -167,6 +171,7 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     /*cout << "# ";
     copy(coord.begin(),coord.end(),ostream_iterator<uint>(cout," "));
     cout << num << endl;*/
+    vector<valtype> expenergy(hists.size(),0.0);
     for(uint k = 0; k < hists.size(); ++k) {
       /*cout <<"#DOS: state ensemble_params vals ener" << endl;
       cout << k << " ";
@@ -175,17 +180,22 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
       copy(vals.begin(),vals.end(),ostream_iterator<valtype>(cout," "));
       cout << V[k]->ener(vals) << endl;*/
       valtype denum_part = 0.0;
-      const valtype exparg = f[k]-V[k]->ener(vals);
+      const valtype exparg = -V[k]->ener(vals);
       //if(exparg > MAXEXPARG ) { cerr << "In DensityOfState::operator(): exp("<<exparg<<") will overflow!\n"; exit(-1); }
       //else if(exparg < MINEXPARG) { continue; }
-      denum_part += N[k]*exp(exparg); //There should be a bin-size term here but it cancels out with the same term in f[k] 
+      expenergy[k] = exp(exparg);
+      denum_part += N[k]*expenergy[k]/f[k]; //There should be a bin-size term here but it cancels out with the same term in f[k] 
                                       //since we assume all bin-sizes are the same across different histograms
       denum += denum_part;
 
       /*const ulong hist_k = hists[k].find(coord) == hists[k].end() ? 0 : hists[k][coord];
       printf("#%30.15lf%5u%10lu%10u%30.15lf%30.15lf%30.15lf\n",vals[0],k,hist_k,N[k],f[k],exparg,exp(exparg));*/
     }
-    DOS[coord] = num/denum;
+    const valtype dos = num/denum;
+    DOS[coord] = dos;
     //printf("#num = %30.15lf denum = %30.15lf DOS = %30.15lf\n",num,denum,DOS[coord]);
+    for(uint k = 0; k < hists.size(); ++k) {
+      newf[k] += dos*expenergy[k]; 
+    }
   }
 }

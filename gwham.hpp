@@ -146,7 +146,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     lv(hists[0].getlv()),
 				     dim(binsize.size()),
 				     record(_record),
-				     f(vector<valtype>(V.size(),0.0)),
+				     f(vector<valtype>(V.size(),1.0)),
 				     DOS(DOStype(hists[0]))
 {
   //perform the WHAM iteration
@@ -154,8 +154,9 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   vector<double> newf(f);
   do {
     ++count;
-    DOS(record,hists,V,N,f);
-    calnewf(newf,V);
+    DOS(record,hists,V,N,f,newf);
+    //calnewf(newf,V);
+    shiftf(newf);
   } while(!endit(newf,count));
 }
 
@@ -228,7 +229,7 @@ void WHAM<ensemble,histogram,narray>::shiftf(vector<valtype>& newf) const {
     newf[i] -= favg;
   }*/
   for(int i = newf.size()-1; i >= 0; --i) {
-    newf[i] -= newf[0];
+    newf[i] /= newf[0];
   }
 }
 
