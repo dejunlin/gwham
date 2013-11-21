@@ -26,7 +26,7 @@ class xxvg2hist {
     const bitset<MAXNRST>& getcol_rst() const;
     uint getnelm() const;
   private:
-    //!restraint potential functors for each pullgroup (pullgroup id starts with 0)
+    //!pullgroup id => restraint potential functors (pullgroup id starts with 0)
     const map<uint, rstfunct> funct;
     //!bitmask what columns we want to histogram
     const bitset<MAXNRST> col_rc;
@@ -88,7 +88,7 @@ linecounter xxvg2hist<histogram, rstfunct>::operator() (fstream& fs, histogram& 
     parser<valtype>(tmp,line);
     vector<valtype> data(0,0.0);
     for(uint i = 0; i < tmp.size(); ++i) {
-      if( ((bitunit << i) & col_pot).any() ) { data.push_back((funct.find(i)->second(tmp[i]))); }
+      if( ((bitunit << i) & col_pot).any() ) { data.push_back((funct.find(i-2)->second(tmp[i]))); } //2 means the 1st column is time and the 2nd column is reference group position; TODO
       else if( ((bitunit << i) & col_rc).any() ) { data.push_back(tmp[i]); }
     }
     if(hist.bin(data)) {++nsamples;}
@@ -96,5 +96,4 @@ linecounter xxvg2hist<histogram, rstfunct>::operator() (fstream& fs, histogram& 
   if(!nsamples) { cerr << "All data is excluded. Please check the histogram bounds\n"; exit(-1);}
   return nsamples;
 }
-
 #endif
