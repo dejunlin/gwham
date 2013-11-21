@@ -145,4 +145,7 @@ int main(int argc, char* argv[]) {
     dpmf_hist.bin(vector<valtype>(1,dpmf[i]));
   }
   dpmf_hist.print();
+  for(uint i = 0; i < wincentrs.size(); ++i) {
+    delete V[i];
+  }
 }
