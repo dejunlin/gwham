@@ -103,9 +103,10 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   ulong count = 0;
   vector<double> newf(f);
   do {
-    DOS(record,hists,g,V,N,f);
-    calnewf(newf,V);
     ++count;
+    DOS(record,hists,g,V,N,f,newf);
+    //calnewf(newf,V);
+    shiftf(newf);
   } while(!endit(newf,count)); 
 }
 
@@ -128,9 +129,10 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   ulong count = 0;
   vector<double> newf(f);
   do {
-    DOS(record,hists,V,N,f);
-    calnewf(newf,V);
     ++count;
+    DOS(record,hists,V,N,f,newf);
+    //calnewf(newf,V);
+    shiftf(newf);
   } while(!endit(newf,count)); 
 }
 

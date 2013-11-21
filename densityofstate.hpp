@@ -34,7 +34,8 @@ class DensityOfState {
                      const vector<narray>& g,  
 		     const vector<Hamiltonian<ensemble>* >& V, 
 		     const vector<vector<uint> >& N, 
-		     const vector<valtype>& f 
+		     const vector<valtype>& f,
+		     vector<valtype>& newf 
 		    );
     //! same as the one above except we assume all elements in g[m][k] are the same for all k given m
     void operator() (
@@ -42,7 +43,8 @@ class DensityOfState {
                      const vector<histogram>& hists,  
 		     const vector<Hamiltonian<ensemble>* >& V, 
 		     const vector<vector<uint> >& N, 
-		     const vector<valtype>& f 
+		     const vector<valtype>& f,
+		     vector<valtype>& newf 
 		    ); 
     //! same as the one above except we further assume each trajectory only visit 1 state
     /** This means that V.size() == hists.size() 
@@ -83,9 +85,14 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
                               const vector<narray>& g, 
          		      const vector<Hamiltonian<ensemble>* >& V, 
          		      const vector<vector<uint> >& N, 
-         		      const vector<valtype>& f 
+         		      const vector<valtype>& f,
+			      vector<valtype>& newf
          		                   ) 
 {
+  //First empty newf array
+  newf = vector<valtype>(f.size(),0.0);
+  //expenergy[k] == exp(-V[k]->ener(vals))
+  vector<valtype> expenergy(f.size(),0.0);
   //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
   for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
     valtype num = 0.0, denum = 0.0;
@@ -99,15 +106,20 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     for(uint k = 0; k < hists.size(); ++k) {
       valtype denum_part = 0.0;
       for(uint l = 0; l < V.size(); ++l) {
-	const valtype exparg = f[l]-V[l]->ener(vals);
-	if(exparg > MAXEXPARG) { cerr << "exp(exparg) will overflow!\n"; exit(-1); }
-	else if(exparg < MINEXPARG) { continue; }
-	denum_part += N[k][l]*exp(exparg); //There should be a bin-size term here but it cancels out with the same term in f[l] 
+	const valtype exparg = -V[l]->ener(vals);
+	//if(exparg > MAXEXPARG) { cerr << "exp(exparg) will overflow!\n"; exit(-1); }
+	//else if(exparg < MINEXPARG) { continue; }
+	expenergy[l] = exp(exparg);
+	denum_part += N[k][l]*expenergy[l]/f[l]; //There should be a bin-size term here but it cancels out with the same term in f[l] 
 							 //since we assume all bin-sizes are the same across different histograms
       }
       denum += denum_part/g[k][coord];
     }
-    DOS[coord] = num/denum;
+    const valtype dos = num/denum;
+    DOS[coord] = dos;
+    for(uint l = 0; l < newf.size(); ++l) {
+      newf[l] += dos*expenergy[l]; 
+    }
   }
 }
 
@@ -117,9 +129,14 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
                               const vector<histogram>& hists,  
          		      const vector<Hamiltonian<ensemble>* >& V, 
          		      const vector<vector<uint> >& N, 
-         		      const vector<valtype>& f 
+         		      const vector<valtype>& f,
+			      vector<valtype>& newf
          		                   ) 
 {
+  //First empty newf array
+  newf = vector<valtype>(f.size(),0.0);
+  //expenergy[k] == exp(-V[k]->ener(vals))
+  vector<valtype> expenergy(f.size(),0.0);
   //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
   for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
     valtype num = 0.0, denum = 0.0;
@@ -133,15 +150,20 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     for(uint k = 0; k < hists.size(); ++k) {
       valtype denum_part = 0.0;
       for(uint l = 0; l < V.size(); ++l) {
-	const valtype exparg = f[l]-V[l]->ener(vals);
-	if(exparg > MAXEXPARG) { cerr << "exp(exparg) will overflow!\n"; exit(-1); }
-	else if(exparg < MINEXPARG) { continue; }
-	denum_part += N[k][l]*exp(exparg); //There should be a bin-size term here but it cancels out with the same term in f[l] 
+	const valtype exparg = -V[l]->ener(vals);
+	//if(exparg > MAXEXPARG) { cerr << "exp(exparg) will overflow!\n"; exit(-1); }
+	//else if(exparg < MINEXPARG) { continue; }
+	expenergy[l] = exp(exparg);
+	denum_part += N[k][l]*expenergy[l]/f[l]; //There should be a bin-size term here but it cancels out with the same term in f[l] 
 							 //since we assume all bin-sizes are the same across different histograms
       }
       denum += denum_part;
     }
-    DOS[coord] = num/denum;
+    const valtype dos = num/denum;
+    DOS[coord] = dos;
+    for(uint l = 0; l < newf.size(); ++l) {
+      newf[l] += dos*expenergy[l]; 
+    }
   }
 }
 
@@ -157,6 +179,8 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
 {
   //First empty newf array
   newf = vector<valtype>(f.size(),0.0);
+  //expenergy[k] == exp(-V[k]->ener(vals))
+  vector<valtype> expenergy(f.size(),0.0);
   //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
   //printf("#RC k hist_k N_k f_k exparg exp(exparg)\n");
   for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
@@ -171,7 +195,6 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     /*cout << "# ";
     copy(coord.begin(),coord.end(),ostream_iterator<uint>(cout," "));
     cout << num << endl;*/
-    vector<valtype> expenergy(hists.size(),0.0);
     for(uint k = 0; k < hists.size(); ++k) {
       /*cout <<"#DOS: state ensemble_params vals ener" << endl;
       cout << k << " ";
@@ -194,8 +217,8 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     const valtype dos = num/denum;
     DOS[coord] = dos;
     //printf("#num = %30.15lf denum = %30.15lf DOS = %30.15lf\n",num,denum,DOS[coord]);
-    for(uint k = 0; k < hists.size(); ++k) {
-      newf[k] += dos*expenergy[k]; 
+    for(uint l = 0; l < newf.size(); ++l) {
+      newf[l] += dos*expenergy[l]; 
     }
   }
 }
