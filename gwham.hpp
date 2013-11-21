@@ -237,7 +237,7 @@ void WHAM<ensemble,histogram,narray>::shiftf(vector<valtype>& newf) const {
 
 template <class ensemble, class histogram, class narray>
 void WHAM<ensemble,histogram,narray>::printfree() const {
-  printf("#%10s%30s\n","State","DimensionlessFreeEnergy");
+  printf("#%10s%30s\n","State","exp(-DimensionlessFreeEnergy)");
   for(uint i = 0; i < f.size(); ++i) {
     printf("#%10d%30.15lf\n",i,f[i]);
   }
