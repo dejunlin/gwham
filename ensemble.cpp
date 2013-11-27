@@ -281,10 +281,7 @@ RSTXLAMBDAsgl::RSTXLAMBDAsgl(const vector<valtype>& params) :
 valtype RSTXLAMBDAsgl::ener(const vector<valtype>& vals) const {
   //First are vals for RST
   const uint RST_size = k.size();
-  valtype V = 0.0;
-  for(uint i = 0; i < RST_size; ++i) {
-    V += RST::ener(vector<valtype>(vals.begin(),vals.begin()+RST_size));
-  }
+  valtype V = RST::ener(vector<valtype>(vals.begin(),vals.begin()+RST_size));
   //Then are for LAMBDAsgl
   //NOTE that there's no bound check here since we assume that LAMBDAsgl::i and LAMBDAsgl::L
   //will be 0 if there's virtually no elements in vals that are supposed to be processed by LAMBDAsgl
