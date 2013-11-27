@@ -16,31 +16,44 @@ using namespace std;
  *  all columns in col_rc will be histogramed
  *  all potential energy corresponding to the columns in col_rst will be histogrammed
  *  unless those which also appear in col_rc, where the RC itself will be histogrammed
+ *  A data point is binned into the histogram with the format:
+ *  RC1 RC2 ... RCn POT1 POT2 ... POTm
+ *  where there're n RC and m pot
  */
 template<class histogram, class rstfunct>
 class xxvg2hist {
   public:
-    xxvg2hist(const bitset<MAXNRST>& _col_rc, const map<uint, rstfunct>& _funct);
+    xxvg2hist(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
     linecounter operator() (fstream& fs, histogram& hist) const;
     const bitset<MAXNRST> mapkeys2bitset() const;
+    //! Just return col_rst
     const bitset<MAXNRST>& getcol_rst() const;
+    //! Shift the col_rst to the left by 2 and return it, which is the pullgrp mask
+    const bitset<MAXNRST>& getpullgrp_mask() const;
     uint getnelm() const;
   private:
     //!pullgroup id => restraint potential functors (pullgroup id starts with 0)
-    const map<uint, rstfunct> funct;
+    const map<uint, vector<rstfunct*> > funct;
     //!bitmask what columns we want to histogram
     const bitset<MAXNRST> col_rc;
     //!bitmask what columns are restrained RC
     const bitset<MAXNRST> col_rst;
     //!bitmask whatever in col_rst but not in col_rc
     const bitset<MAXNRST> col_pot;
-    //!number of element to expect, which is number of 1-bit's in col_rc plus that in col_pot
+    //!number of element in each data point to bin into histogram, which is number of 1-bit's in col_rc plus that in col_pot
     const uint nelm;
+    //!only process every stride lines from the file
+    const uint stride;
 };
 
 template<class histogram, class rstfunct>
 const bitset<MAXNRST>& xxvg2hist<histogram, rstfunct>::getcol_rst() const {
   return col_rst;
+}
+
+template<class histogram, class rstfunct>
+const bitset<MAXNRST>& xxvg2hist<histogram, rstfunct>::getpullgrp_mask() const {
+  return col_rst >> 2;
 }
 
 template<class histogram, class rstfunct>
@@ -51,7 +64,7 @@ uint xxvg2hist<histogram, rstfunct>::getnelm() const {
 template<class histogram, class rstfunct>
 const bitset<MAXNRST> xxvg2hist<histogram, rstfunct>::mapkeys2bitset() const {
   bitset<MAXNRST> keybit; //we'll need this for the next check
-  typename map<uint,rstfunct>::const_iterator it;
+  typename map<uint,vector<rstfunct*> >::const_iterator it;
   for(it = funct.begin(); it != funct.end(); ++it) {
     keybit |= (bitunit << it->first);
   }
@@ -59,12 +72,13 @@ const bitset<MAXNRST> xxvg2hist<histogram, rstfunct>::mapkeys2bitset() const {
 }
 
 template<class histogram, class rstfunct>
-xxvg2hist<histogram, rstfunct>::xxvg2hist(const bitset<MAXNRST>& _col_rc, const map<uint, rstfunct>& _funct) :
+xxvg2hist<histogram, rstfunct>::xxvg2hist(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
   funct(_funct),
   col_rc(_col_rc << 2), //2 means the 1st column is time and the 2nd column is absolute position of the reference group; TODO: we should extend this class to handle RC in all 3 dimension
   col_rst(this->mapkeys2bitset() << 2),
   col_pot(col_rst & (~col_rc)),
-  nelm(col_rc.count() + col_pot.count()) //just count how many '1's are there in both bitmasks
+  nelm(col_rc.count() + col_pot.count()), //just count how many '1's are there in both bitmasks
+  stride(_stride)
 {
   /*cout << "col_rc = " << col_rc << endl;
   cout << "col_rst = " << col_rst << endl;
@@ -75,22 +89,39 @@ template<class histogram, class rstfunct>
 linecounter xxvg2hist<histogram, rstfunct>::operator() (fstream& fs, histogram& hist) const {
   //check if the histogram is of the same dimension as the data we're about to read
   const uint nelm_hist = hist.getdim();
-  if(nelm_hist != nelm) { 
-    cerr << "Asking to read data of " << nelm << " columns but histogram is expecting " << nelm_hist << " columns." << endl; 
+  const uint nelm_data = col_pot.any() ? (funct.begin()->second).size() + col_rc.count() : col_rc.count();
+  if(nelm_hist != nelm_data) { 
+    cerr << "Asking to generate data of " << nelm_data << " columns but histogram is expecting " << nelm_hist << " columns." << endl; 
     exit(-1); 
   }
   string line;
   linecounter nsamples = 0;
+  linecounter lc = 0;
   while(getline(fs,line)) {
     if(line[0] == '@' || line[0] == '#') { continue; }
+    ++lc;
+    if(lc % stride) { continue; }
     //if(!nsamples) { ++nsamples; continue; } //always skip the 1st line, which is the last line from the last file
     vector<valtype> tmp;
     parser<valtype>(tmp,line);
     vector<valtype> data(0,0.0);
-    for(uint i = 0; i < tmp.size(); ++i) {
-      if( ((bitunit << i) & col_pot).any() ) { data.push_back((funct.find(i-2)->second(tmp[i]))); } //2 means the 1st column is time and the 2nd column is reference group position; TODO
-      else if( ((bitunit << i) & col_rc).any() ) { data.push_back(tmp[i]); }
+    vector<valtype> tmpdata(0,0);
+    for(uint i = 2; i < tmp.size(); ++i) {//2 means the 1st column is time and the 2nd column is reference group position; TODO
+      //Save the pot in tmpdata first; after we've processed all the columns, we'll push them in the data
+      if( ((bitunit << i) & col_pot).any() ) {
+	vector<rstfunct*> functs = funct.find(i-2)->second; //2 means the 1st column is time and the 2nd column is reference group position; TODO
+	if(!tmpdata.size()) { tmpdata.resize(functs.size(),0.0);}
+	for(uint j = 0; j < functs.size(); ++j) {
+	  tmpdata[j] += functs[j]->operator()(tmp[i]);
+	}
+      }
+      //We just push the RC in the data first
+      else if( ((bitunit << i) & col_rc).any() ) { data.push_back(tmp[i]); } 
     }
+    //Here we push the pot in the data
+    data.insert(data.end(),tmpdata.begin(),tmpdata.end());
+    /*cout << "data = ";
+    copy(data.begin(),data.end(),ostream_iterator<valtype>(cout," ")); cout << endl;*/
     if(hist.bin(data)) {++nsamples;}
   }
   if(!nsamples) { cerr << "All data is excluded. Please check the histogram bounds\n"; exit(-1);}

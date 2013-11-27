@@ -52,6 +52,11 @@ class umbrella_fb {
                );
     //! calculate potential given a distance
     valtype operator() (const valtype& r) const;
+    valtype getk0() const { return k0; }
+    valtype getk1() const { return k1; }
+    valtype getinit() const { return init; }
+    valtype getr0() const { return r0; }
+    valtype getr1() const { return r1; }
   private:
     //! force constant of the left wing in state A
     const valtype k0A;

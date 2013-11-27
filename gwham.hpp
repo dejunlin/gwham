@@ -78,7 +78,7 @@ class WHAM {
      //!number of dimension of the histogram
      const uint dim;
      const map<coordtype, vector<uint> > record;
-     //!free energy of each state
+     //!f[i] is the dimensionless free energy of state i 
      vector<valtype> f; 
      DOStype DOS;
 };
@@ -148,7 +148,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     lv(hists[0].getlv()),
 				     dim(binsize.size()),
 				     record(_record),
-				     f(vector<valtype>(V.size(),1.0)),
+				     f(vector<valtype>(V.size(),0.0)),
 				     DOS(DOStype(hists[0]))
 {
   //perform the WHAM iteration
@@ -204,7 +204,7 @@ bool WHAM<ensemble,histogram,narray>::endit(const vector<valtype>& newf, const u
   }
   if(count % 100 == 0) { cout << "#At the " << count << "'th iteration\n"; printfree(); } 
   for(uint i = 0; i < newf.size(); ++i) {
-    if(fabs(newf[i] - f[i]) > tol) {
+    if(fabs((newf[i] - f[i])/f[i]) > tol) {
       f = newf;
       return false;
     }
@@ -231,13 +231,13 @@ void WHAM<ensemble,histogram,narray>::shiftf(vector<valtype>& newf) const {
     newf[i] -= favg;
   }*/
   for(int i = newf.size()-1; i >= 0; --i) {
-    newf[i] /= newf[0];
+    newf[i] -= newf[0];
   }
 }
 
 template <class ensemble, class histogram, class narray>
 void WHAM<ensemble,histogram,narray>::printfree() const {
-  printf("#%10s%30s\n","State","exp(-DimensionlessFreeEnergy)");
+  printf("#%10s%30s\n","State","DimensionlessFreeEnergy");
   for(uint i = 0; i < f.size(); ++i) {
     printf("#%10d%30.15lf\n",i,f[i]);
   }

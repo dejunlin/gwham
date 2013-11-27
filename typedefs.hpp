@@ -33,4 +33,7 @@ typedef ulong linecounter; //the file line counter
 const valtype MAXEXPARG = log(DBL_MAX); //max of the arguments to std::exp() call
 const valtype MINEXPARG = log(DBL_MIN); //min of the arguments to std::exp() call
 
+//!kB in kJ/mol/K
+const valtype BoltzmannkJ = 0.0083144621; 
+
 #endif

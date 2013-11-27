@@ -71,14 +71,15 @@ class potpoly_dblwell {
     };
 };
 
-class nobias {
+//! This is just an empty bias potential class for debugging
+/*class nobias {
   public:
     nobias(const uint& _dim) : dim(_dim) {};
     valtype operator() (const vector<valtype>& coord) const { return 0.0;}
     uint getdim() const { return dim; }
   private:
     const uint dim;
-};
+};*/
 
 class harmonic {
   public:

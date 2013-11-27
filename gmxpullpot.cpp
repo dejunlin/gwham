@@ -49,7 +49,8 @@ umbrella_fb::umbrella_fb (const valtype& _k0A, const valtype& _k0B,
   init((1-L)*initA + L*initB),
   r0((1-L)*r0A + L*r0B),
   r1((1-L)*r1A + L*r1B)
-  {}
+  {
+  }
 
 umbrella_fb::umbrella_fb () :
   k0A(0),
@@ -68,7 +69,8 @@ umbrella_fb::umbrella_fb () :
   init(0),
   r0(0),
   r1(0)
-  {}
+  {
+  }
 
 valtype umbrella_fb::operator() (const valtype& r) const {
   const valtype dev = r - init;

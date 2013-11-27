@@ -23,27 +23,35 @@ typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
 int main(int argc, char* argv[]) {
-  if (argc != 9) {
-    cerr << "Usage: gwham_gromacs463_umb sysname nrun nwin rc nbins hv lv tol\n";
+  if (argc != 12) {
+    cerr << "Usage: gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstride\n";
     exit(-1);
   }
   const string sysname = string(argv[1]); //name of the system 
   				 //(your files must be named as "sysname_RUNIDx_WINID.xvg", "sysname_RUNIDdhdl_WINID.xvg")
   const uint nrun = atoi(argv[2]); //# of runs performed
   const uint nwin = atoi(argv[3]); //# of replica
-  const string rcstr = string(argv[4]); //which pull-group/RC you want the PMF on, where the pull-group id starts from 0 (1st pull-group not the reference group) 
-  const string nbinstr = string(argv[5]); //# of bins in each dimension
-  const string hvstr = string(argv[6]); //upper bounds in each dimension
-  const string lvstr = string(argv[7]); //lower bounds in each dimension
-  const double tol = atof(argv[8]); //tolerance for WHAM iteration
+  const string rcsmpstr = string(argv[4]); //which pull-group/RC you want to be histogramed on, where the pull-group id starts from 0 (1st pull-group not the reference group)
+  const string rcprtstr = string(argv[5]); //which pull-group/RC you want the PMF on. 
+  					   //Since the mpd2rst and xxvg2hist classes will re-order the RCs so that 
+					   //they are the 1st N dimension of the histogram (N is the number of RCs you histogramed on), 
+					   //rcrpt must be in the range of [0,N-1]. We could potentially allow this range to extend over N-1 but
+					   //that will require we know if all the restrained RCs are the RCs we're interested in
+  const valtype T = atof(argv[6]); //what temperature to use to calculate PMF
+  const string nbinstr = string(argv[7]); //# of bins in each dimension
+  const string hvstr = string(argv[8]); //upper bounds in each dimension
+  const string lvstr = string(argv[9]); //lower bounds in each dimension
+  const double tol = atof(argv[10]); //tolerance for WHAM iteration
+  const uint xvgstride = atoi(argv[11]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
   
-  cout << "# gwham_gromacs463_umb sysname nrun nwin rc nbins hv lv tol\n";
+  cout << "# gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstride\n";
   cout << "# ";
   copy(argv,argv+argc,ostream_iterator<char*>(cout," "));
   cout << endl;
 
-  vector<uint> rc;
-  parser<uint>(rc,rcstr);
+  vector<uint> rcsmp, rcprt;
+  parser<uint>(rcsmp,rcsmpstr);
+  parser<uint>(rcprt,rcprtstr);
   vector<uint> nbins;
   vector<valtype> hv, lv;
   parser<uint>(nbins,nbinstr);
@@ -65,43 +73,50 @@ int main(int argc, char* argv[]) {
   }
 
   //Turn rc into a bitmask
-  bitset<MAXNRST> rcmask;
-  for(uint i = 0; i < rc.size(); ++i) {
-    rcmask |= (bitunit << rc[i]);
+  bitset<MAXNRST> rcsmpmask;
+  for(uint i = 0; i < rcsmp.size(); ++i) {
+    rcsmpmask |= (bitunit << rcsmp[i]);
   }
   //Bitmask for all the pull group that're restrained
   bitset<MAXNRST> rstmask;
   //number of pullgroups in x.xvg file, including those with virtually no restraint on them
-  uint npullgrps = 0;
+  //uint npullgrps = 0;
   
   const uint ndim = nbins.size();
   //histograms for each window
   vector<histogram> hists(nwin,histogram(ndim,nbins,hv,lv));
-  //number of data points for each replica
-  vector<uint> N(nwin,0);
   
   //Read the parameters from mdp file, construct the restraint functor and bin the x.xvg file 
   //into histograms
-  const mdp2pullpot mdp2rst;
-  fileio<mdp2pullpot,map<uint,umbrella> > fmdp(mdp2rst, std::fstream::in);
-  vector<map<uint,umbrella> > rstfuncts;
+  const mdp2pullpot mdp2rst(rcsmpmask);
+  fileio<mdp2pullpot, map<uint,vector<umbrella*> >, vector<Hamiltonian<RSTXLAMBDAsgl>* > > fmdp(mdp2rst, std::fstream::in);
+  vector<Hamiltonian<RSTXLAMBDAsgl>* > V;
+  //vector<map<uint,umbrella> > rstfuncts;
+  map<uint, vector<umbrella*> > rstfuncts;
   for(uint i = 0; i < nwin; ++i) {
     char winid[MAXNDIGWIN];
     sprintf(winid,"%d",i);
     string mdpfname = sysname + "_0_" + winid + ".mdp";
-    map<uint,umbrella> rstfunct;
-    fmdp(rstfunct,mdpfname);
-    rstfuncts.push_back(rstfunct);
+    //map<uint,umbrella> rstfunct;
+    fmdp(mdpfname,rstfuncts,V);
+    //rstfuncts.push_back(rstfunct);
     //Read x.xvg file for each run
-    const xxvg2hist<histogram,umbrella> xvg2hist(rcmask,rstfunct);
-    rstmask = xvg2hist.getcol_rst() >> 2; //2 means 1st column is time; 2nd column is reference group position
-    npullgrps = xvg2hist.getnelm();
-    fileio<xxvg2hist<histogram,umbrella>,histogram> fxxvg(xvg2hist, std::fstream::in);
+  }
+
+  //number of data points for each window
+  vector<uint> N(nwin,0);
+  const xxvg2hist<histogram,umbrella> xvg2hist(rcsmpmask,rstfuncts,xvgstride);
+  //rstmask = xvg2hist.getpullgrp_mask();
+  //npullgrps = xvg2hist.getnelm();
+  fileio<xxvg2hist<histogram,umbrella>,histogram> fxxvg(xvg2hist, std::fstream::in);
+  for(uint i = 0; i < nwin; ++i) {
+    char winid[MAXNDIGWIN];
+    sprintf(winid,"%d",i);
     for(uint j = 0; j < nrun; ++j) {
       char runid[MAXNDIGRUN];
       sprintf(runid,"%d",j);
       string xxvgfname = sysname + "_" + runid + "x_" + winid + ".xvg";
-      N[i] += fxxvg(hists[i],xxvgfname);
+      N[i] += fxxvg(xxvgfname,hists[i]);
     }
   }
   /*cout << "#number of samples in each window: ";
@@ -133,13 +148,11 @@ int main(int argc, char* argv[]) {
   }*/
 
   //Construct WHAM
-  const valtype kB = 0.0083144621; //kB in kJ/mol/K
-  const valtype T = 300; //temperature in kelvin
-  vector<Hamiltonian<RST>* > V;
+  //const valtype T = 300; //temperature in kelvin
   /*cout << "#rstmask = " << rstmask << endl;
   cout << "#rcmask = " << rcmask << endl;
   cout << "#trajid rstfunct k r" << endl;*/
-  for(uint i = 0; i < nwin; ++i) {
+  /*for(uint i = 0; i < nwin; ++i) {
     const map<uint,umbrella> funct = rstfuncts[i];
     vector<valtype> k,r;
     for(uint j = 0; j < npullgrps; ++j) { //We need to pack 0 in where there's a RC but not restraint acting on it 
@@ -151,10 +164,10 @@ int main(int argc, char* argv[]) {
 	r.push_back(0.0);
       }
     }
-    /*cout << "# " << i << " ";
+    cout << "# " << i << " ";
     copy(k.begin(),k.end(),ostream_iterator<valtype>(cout," "));
     copy(r.begin(),r.end(),ostream_iterator<valtype>(cout," "));
-    cout << endl;*/
+    cout << endl;
 
     vector<valtype> params;
     params.push_back(kB);
@@ -162,7 +175,7 @@ int main(int argc, char* argv[]) {
     params.insert(params.end(),k.begin(),k.end());
     params.insert(params.end(),r.begin(),r.end());
     V.push_back(new Hamiltonian<RST>(params));
-  }
+  }*/
   /*cout << "# Restraint ensemble of each traj: " << endl;
   cout << "# trajid kB T k r" << endl;
   for(uint i = 0; i < V.size(); ++i) {
@@ -177,13 +190,16 @@ int main(int argc, char* argv[]) {
   cout << "# NOTE: WHAM iteration might break if the arguments of a exp() evaluation is ";
   cout << "out of the range [" << MINEXPARG << "," << MAXEXPARG << "]" << endl;
 
-  WHAM<RST, histogram, narray> wham(record,hists, V, N, tol);
+  WHAM<RSTXLAMBDAsgl, histogram, narray> wham(record,hists, V, N, tol);
   vector<valtype> params;
-  params.push_back(kB);
+  params.push_back(BoltzmannkJ);
   params.push_back(T);
-  params.insert(params.end(),ndim*2,0.0);
-  Hamiltonian<RST> V0(params);
-  narray rho = wham.calrho(rc,V0);
+  params.insert(params.end(),rcsmpmask.count()*2,0.0);
+  params.push_back(0.0); //LAMBDAsgl::L
+  params.push_back(0.0); //LAMBDAsgl::i
+  Hamiltonian<RSTXLAMBDAsgl> V0(params);
+  narray rho = wham.calrho(rcprt,V0);
+  //narray rho = wham.calrho(rc,V0);
   //Normalize the probability (just for comparision with other programs)
   printf("#%10s%30s%30s%30s\n","Bin","Vals","PMF","RhoNormalized");
   valtype sum = 0.0;
@@ -195,7 +211,7 @@ int main(int argc, char* argv[]) {
   for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
     const coordtype bin = it->first;
     const vector<valtype> val = rho.coord2val(bin);
-    const valtype pmf = -kB*T*log(it->second/itmax->second);
+    const valtype pmf = -BoltzmannkJ*T*log(it->second/itmax->second);
     const valtype rhonorm = it->second/sum;
     for(uint i = 0; i < bin.size(); ++i) { printf("%10d",bin[i]);}
     for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}

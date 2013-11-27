@@ -91,7 +91,8 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
 {
   //First empty newf array
   newf = vector<valtype>(f.size(),0.0);
-  //expenergy[k] == exp(-V[k]->ener(vals))
+  vector<valtype> expnewf(f.size(),0.0);
+  //expenergy[k] == exp(f[k]-V[k]->ener(vals))
   vector<valtype> expenergy(f.size(),0.0);
   //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
   for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
@@ -105,12 +106,12 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     }
     for(uint k = 0; k < hists.size(); ++k) {
       valtype denum_part = 0.0;
-      for(uint l = 0; l < V.size(); ++l) {
-	const valtype exparg = -V[l]->ener(vals);
-	//if(exparg > MAXEXPARG) { cerr << "exp(exparg) will overflow!\n"; exit(-1); }
-	//else if(exparg < MINEXPARG) { continue; }
+      for(uint l = 0; l < V.size(); ++l) { //TODO: Can't we move this loop outside the k-loop?
+	const valtype exparg = f[l]-V[l]->ener(vals);
+	if(exparg > MAXEXPARG) { cerr << "exp(exparg) will overflow!\n"; exit(-1); }
+	else if(exparg < MINEXPARG) { continue; }
 	expenergy[l] = exp(exparg);
-	denum_part += N[k][l]*expenergy[l]/f[l]; //There should be a bin-size term here but it cancels out with the same term in f[l] 
+	denum_part += N[k][l]*expenergy[l]; //There should be a bin-size term here but it cancels out with the same term in f[l] 
 							 //since we assume all bin-sizes are the same across different histograms
       }
       denum += denum_part/g[k][coord];
@@ -118,8 +119,11 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     const valtype dos = num/denum;
     DOS[coord] = dos;
     for(uint l = 0; l < newf.size(); ++l) {
-      newf[l] += dos*expenergy[l]; 
+      expnewf[l] += dos*expenergy[l]; 
     }
+  }
+  for(uint l = 0; l < expnewf.size(); ++l) {
+    newf[l] = -log(expnewf[l]/exp(f[l])); //exp(f[l]) needs to be taken out because expenergy[l] = exp(f[l]-V[l]->ener(vals))
   }
 }
 
@@ -135,7 +139,8 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
 {
   //First empty newf array
   newf = vector<valtype>(f.size(),0.0);
-  //expenergy[k] == exp(-V[k]->ener(vals))
+  vector<valtype> expnewf(f.size(),0.0);
+  //expenergy[k] == exp(f[k]-V[k]->ener(vals))
   vector<valtype> expenergy(f.size(),0.0);
   //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
   for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
@@ -150,11 +155,11 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     for(uint k = 0; k < hists.size(); ++k) {
       valtype denum_part = 0.0;
       for(uint l = 0; l < V.size(); ++l) {
-	const valtype exparg = -V[l]->ener(vals);
-	//if(exparg > MAXEXPARG) { cerr << "exp(exparg) will overflow!\n"; exit(-1); }
-	//else if(exparg < MINEXPARG) { continue; }
+	const valtype exparg = f[l]-V[l]->ener(vals);
+	if(exparg > MAXEXPARG) { cerr << "exp("<<exparg<<") will overflow!\n"; exit(-1); }
+	else if(exparg < MINEXPARG) { continue; }
 	expenergy[l] = exp(exparg);
-	denum_part += N[k][l]*expenergy[l]/f[l]; //There should be a bin-size term here but it cancels out with the same term in f[l] 
+	denum_part += N[k][l]*expenergy[l]; //There should be a bin-size term here but it cancels out with the same term in f[l] 
 							 //since we assume all bin-sizes are the same across different histograms
       }
       denum += denum_part;
@@ -162,8 +167,11 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     const valtype dos = num/denum;
     DOS[coord] = dos;
     for(uint l = 0; l < newf.size(); ++l) {
-      newf[l] += dos*expenergy[l]; 
+      expnewf[l] += dos*expenergy[l]; 
     }
+  }
+  for(uint l = 0; l < expnewf.size(); ++l) {
+    newf[l] = -log(expnewf[l]/exp(f[l])); //exp(f[l]) needs to be taken out because expenergy[l] = exp(f[l]-V[l]->ener(vals))
   }
 }
 
@@ -179,7 +187,8 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
 {
   //First empty newf array
   newf = vector<valtype>(f.size(),0.0);
-  //expenergy[k] == exp(-V[k]->ener(vals))
+  vector<valtype> expnewf(f.size(),0.0);
+  //expenergy[k] == exp(f[k]-V[k]->ener(vals))
   vector<valtype> expenergy(f.size(),0.0);
   //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
   //printf("#RC k hist_k N_k f_k exparg exp(exparg)\n");
@@ -203,11 +212,11 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
       copy(vals.begin(),vals.end(),ostream_iterator<valtype>(cout," "));
       cout << V[k]->ener(vals) << endl;*/
       valtype denum_part = 0.0;
-      const valtype exparg = -V[k]->ener(vals);
-      //if(exparg > MAXEXPARG ) { cerr << "In DensityOfState::operator(): exp("<<exparg<<") will overflow!\n"; exit(-1); }
-      //else if(exparg < MINEXPARG) { continue; }
+      const valtype exparg = f[k]-V[k]->ener(vals);
+      if(exparg > MAXEXPARG ) { cerr << "exp("<<exparg<<") will overflow!\n"; exit(-1); }
+      else if(exparg < MINEXPARG) { continue; }
       expenergy[k] = exp(exparg);
-      denum_part += N[k]*expenergy[k]/f[k]; //There should be a bin-size term here but it cancels out with the same term in f[k] 
+      denum_part += N[k]*expenergy[k]; //There should be a bin-size term here but it cancels out with the same term in f[k] 
                                       //since we assume all bin-sizes are the same across different histograms
       denum += denum_part;
 
@@ -217,8 +226,11 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     const valtype dos = num/denum;
     DOS[coord] = dos;
     //printf("#num = %30.15lf denum = %30.15lf DOS = %30.15lf\n",num,denum,DOS[coord]);
-    for(uint l = 0; l < newf.size(); ++l) {
-      newf[l] += dos*expenergy[l]; 
+    for(uint l = 0; l < expnewf.size(); ++l) {
+      expnewf[l] += dos*expenergy[l]; 
     }
+  }
+  for(uint l = 0; l < expnewf.size(); ++l) {
+    newf[l] = -log(expnewf[l]/exp(f[l])); //exp(f[l]) needs to be taken out because expenergy[l] = exp(f[l]-V[l]->ener(vals))
   }
 }

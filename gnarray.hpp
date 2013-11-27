@@ -115,7 +115,6 @@ const Tcoord gnarray<Tcoord,Telem,Tval>::val2coord(const vector<Tval>& vals) con
   copy(vals.begin(),vals.end(),ostream_iterator<Tval>(cout," "));
   cout << endl;*/
   for(uint i = 0; i < vals.size(); ++i) {
-    //cout << "  #Data is of dimension " << vals.size() << endl;
     if(vals[i] >= hv[i] || vals[i] < lv[i] || vals[i] != vals[i]) { //Here we assume the range to be [lv, hv)
       /*cout << "  #Data " << vals[i] << " is ";
       cout << "out of bound [" << lv[i] << ", " << hv[i] << "]\n";*/
@@ -132,8 +131,9 @@ bool gnarray<Tcoord,Telem,Tval>::bin(const vector<Tval>& data) {
   /*cout << "#Data ";
   copy(data.begin(),data.end(),ostream_iterator<Tval>(cout," "));*/
   if(coord.size()) { //only bin data if they're in bound
-    /*cout << "is Binned into bin ";
-    copy(coord.begin(),coord.end(),ostream_iterator<uint>(cout," "));
+    /*cout << "is Binned into bin whose vals is";
+    const vector<Tval> vals = coord2val(coord);
+    copy(vals.begin(),vals.end(),ostream_iterator<Tval>(cout," "));
     cout << endl;*/
     const typename gnarray<Tcoord,Telem,Tval>::iterator it = narr.find(coord);
     if(it != narr.end()) { ++narr[coord];  } //check this to avoid weird uninitialized value
