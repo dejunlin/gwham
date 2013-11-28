@@ -79,8 +79,6 @@ int main(int argc, char* argv[]) {
   }
   //Bitmask for all the pull group that're restrained
   bitset<MAXNRST> rstmask;
-  //number of pullgroups in x.xvg file, including those with virtually no restraint on them
-  //uint npullgrps = 0;
   
   const uint ndim = nbins.size();
   //histograms for each window
@@ -91,23 +89,18 @@ int main(int argc, char* argv[]) {
   const mdp2pullpot mdp2rst(rcsmpmask);
   fileio<mdp2pullpot, map<uint,vector<umbrella*> >, vector<Hamiltonian<RSTXLAMBDAsgl>* > > fmdp(mdp2rst, std::fstream::in);
   vector<Hamiltonian<RSTXLAMBDAsgl>* > V;
-  //vector<map<uint,umbrella> > rstfuncts;
   map<uint, vector<umbrella*> > rstfuncts;
   for(uint i = 0; i < nwin; ++i) {
     char winid[MAXNDIGWIN];
     sprintf(winid,"%d",i);
     string mdpfname = sysname + "_0_" + winid + ".mdp";
-    //map<uint,umbrella> rstfunct;
     fmdp(mdpfname,rstfuncts,V);
-    //rstfuncts.push_back(rstfunct);
-    //Read x.xvg file for each run
   }
 
   //number of data points for each window
   vector<uint> N(nwin,0);
   const xxvg2hist<histogram,umbrella> xvg2hist(rcsmpmask,rstfuncts,xvgstride);
-  //rstmask = xvg2hist.getpullgrp_mask();
-  //npullgrps = xvg2hist.getnelm();
+  //Read x.xvg file for each run
   fileio<xxvg2hist<histogram,umbrella>,histogram> fxxvg(xvg2hist, std::fstream::in);
   for(uint i = 0; i < nwin; ++i) {
     char winid[MAXNDIGWIN];
@@ -146,44 +139,6 @@ int main(int argc, char* argv[]) {
     cout << " is contributed from histogram: ";
     copy(histid.begin(),histid.end(),ostream_iterator<uint>(cout," ")); cout << endl;
   }*/
-
-  //Construct WHAM
-  //const valtype T = 300; //temperature in kelvin
-  /*cout << "#rstmask = " << rstmask << endl;
-  cout << "#rcmask = " << rcmask << endl;
-  cout << "#trajid rstfunct k r" << endl;*/
-  /*for(uint i = 0; i < nwin; ++i) {
-    const map<uint,umbrella> funct = rstfuncts[i];
-    vector<valtype> k,r;
-    for(uint j = 0; j < npullgrps; ++j) { //We need to pack 0 in where there's a RC but not restraint acting on it 
-      if( (rstmask & (bitunit << j)).any() ) { //is a restrained RC
-        k.push_back(funct.find(j)->second.getk());
-        r.push_back(funct.find(j)->second.getinit());
-      } else if ( (rcmask & (bitunit << j)).any() ) { //is a RC but not restrained
-        k.push_back(0.0); //there's virtually no restraint
-	r.push_back(0.0);
-      }
-    }
-    cout << "# " << i << " ";
-    copy(k.begin(),k.end(),ostream_iterator<valtype>(cout," "));
-    copy(r.begin(),r.end(),ostream_iterator<valtype>(cout," "));
-    cout << endl;
-
-    vector<valtype> params;
-    params.push_back(kB);
-    params.push_back(T);
-    params.insert(params.end(),k.begin(),k.end());
-    params.insert(params.end(),r.begin(),r.end());
-    V.push_back(new Hamiltonian<RST>(params));
-  }*/
-  /*cout << "# Restraint ensemble of each traj: " << endl;
-  cout << "# trajid kB T k r" << endl;
-  for(uint i = 0; i < V.size(); ++i) {
-    cout << "# " << i << " ";
-    vector<valtype> params = V[i]->getens().getparams();
-    copy(params.begin(),params.end(),ostream_iterator<valtype>(cout," "));
-    cout << endl;
-  }*/
   
   cout << "# DBL_MAX supported on this machine is " << DBL_MAX << endl;
   cout << "# DBL_MIN supported on this machine is " << DBL_MIN << endl;
@@ -199,7 +154,6 @@ int main(int argc, char* argv[]) {
   params.push_back(0.0); //LAMBDAsgl::i
   Hamiltonian<RSTXLAMBDAsgl> V0(params);
   narray rho = wham.calrho(rcprt,V0);
-  //narray rho = wham.calrho(rc,V0);
   //Normalize the probability (just for comparision with other programs)
   printf("#%10s%30s%30s%30s\n","Bin","Vals","PMF","RhoNormalized");
   valtype sum = 0.0;
