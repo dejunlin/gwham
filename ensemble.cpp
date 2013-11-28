@@ -260,6 +260,14 @@ valtype RST_fbXLAMBDAsgl::ener(const vector<valtype>& vals) const {
   return V;
 }
 
+vector<valtype> RST_fbXLAMBDAsgl::getparams() const {
+  vector<valtype> RST_fbparams = RST_fb::getparams();
+  vector<valtype> LAMBDAsglparams = LAMBDAsgl::getparams();
+  vector<valtype> params(RST_fbparams);
+  params.insert(params.end(),LAMBDAsglparams.begin(),LAMBDAsglparams.end());
+  return params;
+}
+
 RSTXLAMBDAsgl::RSTXLAMBDAsgl() : 
   Ensemble(),
   RST(),
@@ -288,6 +296,14 @@ valtype RSTXLAMBDAsgl::ener(const vector<valtype>& vals) const {
   V += LAMBDAsgl::ener(vals);
   //V is already weighted by kB*T in both RST and LAMBDAsgl
   return V;
+}
+
+vector<valtype> RSTXLAMBDAsgl::getparams() const {
+  vector<valtype> RSTparams = RST::getparams();
+  vector<valtype> LAMBDAsglparams = LAMBDAsgl::getparams();
+  vector<valtype> params(RSTparams);
+  params.insert(params.end(),LAMBDAsglparams.begin(),LAMBDAsglparams.end());
+  return params;
 }
 
 NVTL::NVTL(const valtype _kB, const valtype _T, const vector<valtype>& _L) :

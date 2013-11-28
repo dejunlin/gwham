@@ -103,6 +103,7 @@ class RSTXLAMBDAsgl : public virtual RST, public virtual LAMBDAsgl {
     RSTXLAMBDAsgl(const vector<valtype>& params);
     //! This assume that elements of vals are ordered so that the first N are for RST while LAMBDAsgl::i is the index of the element in vals
     valtype ener(const vector<valtype>& vals) const;
+    vector<valtype> getparams() const;
   private:
 };
 
@@ -113,6 +114,7 @@ class RST_fbXLAMBDAsgl : public virtual RST_fb, public virtual LAMBDAsgl {
     RST_fbXLAMBDAsgl(const vector<valtype>& params);
     //! This assume that elements of vals are ordered so that the first N are for RST_fb while LAMBDAsgl::i is the index of the element in vals
     valtype ener(const vector<valtype>& vals) const;
+    vector<valtype> getparams() const;
   private:
 };
 
