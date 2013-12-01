@@ -13,12 +13,12 @@
 #include <map>
 
 int main(int argc, char* argv[]) {
-  if (argc != 9) {
-    cerr << "Usage: mc dim nbins hv lv nwins nsteps stepsize tol\n";
+  if (argc != 10) {
+    cerr << "Usage: mc dim nbins hv lv nwins nsteps stepsize tol dim_prt\n";
     exit(-1);
   }
 
-  cout << "# mc dim nbins hv lv nwins nsteps stepsize tol\n";
+  cout << "# mc dim nbins hv lv nwins nsteps stepsize tol dim_prt\n";
   cout << "# ";
   copy(argv,argv+argc,ostream_iterator<char*>(cout," "));
   cout << endl;
@@ -31,17 +31,26 @@ int main(int argc, char* argv[]) {
   const uint nsteps = atoi(argv[6]);
   const valtype stepsize = atof(argv[7]);
   const valtype tol = atof(argv[8]);
+  const string dimprtstr = string(argv[9]);
 
-  vector<uint> nbins, nwins;
+  vector<uint> nbins, nwins, dimprt;
   vector<valtype> hv, lv;
   parser<uint>(nbins,nbinstr);
   parser<uint>(nwins,nwinsstr);
+  parser<uint>(dimprt,dimprtstr);
   parser<valtype>(hv,hvstr);
   parser<valtype>(lv,lvstr);
 
   if(nbins.size() != hv.size() || hv.size() != lv.size() || lv.size() != nwins.size() || nwins.size() != dim) {
     cerr << "The size of nbins, hv, lv, nwins aren't all " << dim << endl;
     exit(-1);
+  }
+
+  for(uint i = 0; i < dimprt.size(); ++i) {
+    if(dimprt[i] >= dim) {
+      cerr << "The dimension to be printed out must be less than " << dim << endl;
+      exit(-1);
+    }
   }
 
   const valtype kB = 0.0019872041; //boltzmann factor in kcal/mol/K
@@ -108,9 +117,9 @@ int main(int argc, char* argv[]) {
   rstparams.insert(rstparams.end(),k0.begin(),k0.end());
   rstparams.insert(rstparams.end(),r0.begin(),r0.end());
   Hamiltonian<RST> V0(rstparams);
-  vector<uint> rhodim(dim,0);
-  for(uint i = 0; i < dim; ++i) { rhodim[i] = i; }
-  narray rho = wham.calrho(rhodim,V0);
+  /*vector<uint> rhodim(dim,0);
+  for(uint i = 0; i < dim; ++i) { rhodim[i] = i; }*/
+  narray rho = wham.calrho(dimprt,V0);
   //Normalize the probability (just for comparision with other programs)
   printf("#%10s%30s%30s%30s\n","Bin","Vals","PMF","RhoNormalized");
   valtype sum = 0.0;
@@ -123,12 +132,14 @@ int main(int argc, char* argv[]) {
   //Evaluate the difference between WHAM results and analytic result
   vector<valtype> dpmf;
   valtype mindpmf = 9999999999, maxdpmf = -9999999999;
+  //potprt is the potential in the dimension we want to print out
+  const potpoly_dblwell potprt(dimprt.size(),params);
   for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
     const coordtype bin = it->first;
     const vector<valtype> val = rho.coord2val(bin);
 
     const valtype pmf = -kB*T*log(it->second/itmax->second);
-    const valtype pmf_analytic = pot(val);
+    const valtype pmf_analytic = potprt(val);
     const valtype d = pmf-pmf_analytic;
     if( d < mindpmf) { mindpmf = d; }
     else if(d > maxdpmf) { maxdpmf = d;}

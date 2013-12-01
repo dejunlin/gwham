@@ -1,6 +1,6 @@
 # Linux flags
 CC=g++
-CFLAGS= -O3 -Wall -W -g
+CFLAGS= -O3 -Wall -W 
 #Debugging flags
 #CFLAGS= -g  -Wall -W 
 LFLAGS= -lm
