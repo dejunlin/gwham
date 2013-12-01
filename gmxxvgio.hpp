@@ -11,30 +11,25 @@
 
 using namespace std;
 
-//! read gromacs x.xvg file and bin reaction coordinates into histogram
-/** rstfunct class should have member 'valtype operator() (const valtype& data)'
- *  all columns in col_rc will be histogramed
- *  all potential energy corresponding to the columns in col_rst will be histogrammed
- *  unless those which also appear in col_rc, where the RC itself will be histogrammed
- *  A data point is binned into the histogram with the format:
- *  RC1 RC2 ... RCn POT1 POT2 ... POTm
- *  where there're n RC and m pot
- */
-template<class histogram, class rstfunct>
-class xxvg2hist {
-  public:
-    xxvg2hist(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
-    linecounter operator() (fstream& fs, histogram& hist) const;
+//! Basic gromacs x.xvg file I/O interface
+template<class Tdata, class rstfunct> 
+class xxvg {
+  private:
+    //! convert the keys in xxvg::funct into a bitmask
     const bitset<MAXNRST> mapkeys2bitset() const;
+  public:
+    xxvg(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
+    virtual linecounter operator() (fstream& fs, Tdata& data) const = 0;
     //! Just return col_rst
     const bitset<MAXNRST>& getcol_rst() const;
     //! Shift the col_rst to the left by 2 and return it, which is the pullgrp mask
     const bitset<MAXNRST>& getpullgrp_mask() const;
+    //! Return xxvg::nelm
     uint getnelm() const;
-  private:
-    //!pullgroup id => restraint potential functors (pullgroup id starts with 0)
+  protected:
+    //!pullgroup id => restraint potential functors for each ensemble (pullgroup id starts with 0)
     const map<uint, vector<rstfunct*> > funct;
-    //!bitmask what columns we want to histogram
+    //!bitmask what columns we want to process 
     const bitset<MAXNRST> col_rc;
     //!bitmask what columns are restrained RC
     const bitset<MAXNRST> col_rst;
@@ -46,23 +41,23 @@ class xxvg2hist {
     const uint stride;
 };
 
-template<class histogram, class rstfunct>
-const bitset<MAXNRST>& xxvg2hist<histogram, rstfunct>::getcol_rst() const {
+template<class Tdata, class rstfunct>
+const bitset<MAXNRST>& xxvg<Tdata, rstfunct>::getcol_rst() const {
   return col_rst;
 }
 
-template<class histogram, class rstfunct>
-const bitset<MAXNRST>& xxvg2hist<histogram, rstfunct>::getpullgrp_mask() const {
+template<class Tdata, class rstfunct>
+const bitset<MAXNRST>& xxvg<Tdata, rstfunct>::getpullgrp_mask() const {
   return col_rst >> 2;
 }
 
-template<class histogram, class rstfunct>
-uint xxvg2hist<histogram, rstfunct>::getnelm() const {
+template<class Tdata, class rstfunct>
+uint xxvg<Tdata, rstfunct>::getnelm() const {
   return nelm;
 }
 
-template<class histogram, class rstfunct>
-const bitset<MAXNRST> xxvg2hist<histogram, rstfunct>::mapkeys2bitset() const {
+template<class Tdata, class rstfunct>
+const bitset<MAXNRST> xxvg<Tdata, rstfunct>::mapkeys2bitset() const {
   bitset<MAXNRST> keybit; //we'll need this for the next check
   typename map<uint,vector<rstfunct*> >::const_iterator it;
   for(it = funct.begin(); it != funct.end(); ++it) {
@@ -71,8 +66,8 @@ const bitset<MAXNRST> xxvg2hist<histogram, rstfunct>::mapkeys2bitset() const {
   return keybit;
 }
 
-template<class histogram, class rstfunct>
-xxvg2hist<histogram, rstfunct>::xxvg2hist(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
+template<class Tdata, class rstfunct>
+xxvg<Tdata, rstfunct>::xxvg(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
   funct(_funct),
   col_rc(_col_rc << 2), //2 means the 1st column is time and the 2nd column is absolute position of the reference group; TODO: we should extend this class to handle RC in all 3 dimension
   col_rst(this->mapkeys2bitset() << 2),
@@ -83,6 +78,89 @@ xxvg2hist<histogram, rstfunct>::xxvg2hist(const bitset<MAXNRST>& _col_rc, const 
   /*cout << "col_rc = " << col_rc << endl;
   cout << "col_rst = " << col_rst << endl;
   cout << "col_pot = " << col_pot << endl;*/
+}
+
+//! read gromacs x.xvg file and store a trajectory of energy differences between ensemble
+/** NOTE that the dE[t][i] produce by this operator is E[i](x[t]), where 
+ * x[t] is the coordinates at time t and E[i] is the i'th restraint potential function. 
+ * This is different from what's expected by GMBAR class but dE[t][j] - dE[t][i] always 
+ * give back E[j](x[t]) - E[i](x[t]) as is used by GMBAR anyway
+ */
+template<class rstfunct>
+class xxvg2dE : public virtual xxvg<vector<vector<valtype> >, rstfunct> {
+  using xxvg<vector<vector<valtype> >,rstfunct>::funct;
+  using xxvg<vector<vector<valtype> >,rstfunct>::col_rc;
+  using xxvg<vector<vector<valtype> >,rstfunct>::col_rst;
+  using xxvg<vector<vector<valtype> >,rstfunct>::col_pot;
+  using xxvg<vector<vector<valtype> >,rstfunct>::stride;
+  public:
+    xxvg2dE(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
+    linecounter operator() (fstream& fs, vector<vector<valtype> >& dE) const;
+  private:
+};
+
+template<class rstfunct>
+xxvg2dE<rstfunct>::xxvg2dE(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
+  xxvg<vector<vector<valtype> >,rstfunct>(_col_rc,_funct,_stride)
+{
+}
+
+template<class rstfunct>
+linecounter xxvg2dE<rstfunct>::operator() (fstream& fs, vector<vector<valtype> >& dE) const {
+  string line;
+  linecounter nsamples = 0;
+  linecounter lc = 0;
+  while(getline(fs,line)) {
+    if(line[0] == '@' || line[0] == '#') { continue; }
+    ++lc;
+    if(lc % stride) { continue; }
+    //if(!nsamples) { ++nsamples; continue; } //always skip the 1st line, which is the last line from the last file
+    vector<valtype> tmp;
+    parser<valtype>(tmp,line);
+    vector<valtype> E(0,0);
+    for(uint i = 2; i < tmp.size(); ++i) {//2 means the 1st column is time and the 2nd column is reference group position; TODO
+      if( ((bitunit << i) & col_rst).any() ) {
+	vector<rstfunct*> functs = funct.find(i-2)->second; //2 means the 1st column is time and the 2nd column is reference group position; TODO
+	if(!E.size()) { E.resize(functs.size(),0.0);}
+	for(uint j = 0; j < functs.size(); ++j) {
+	  E[j] += functs[j]->operator()(tmp[i]);
+	}
+      }
+    }
+    //cout <<"#GMXXVG: dE.size() = " << dE.size() << endl;
+    //cout <<"#GMXXVG: E.size() = " << E.size() << endl;
+    dE.push_back(E);
+    ++nsamples;
+  }
+  return nsamples;
+}
+
+//! read gromacs x.xvg file and bin reaction coordinates into histogram
+/** rstfunct class should have member 'valtype operator() (const valtype& data)'
+ *  all columns in col_rc will be histogramed
+ *  all potential energy corresponding to the columns in col_rst will be histogrammed
+ *  unless those which also appear in col_rc, where the RC itself will be histogrammed
+ *  A data point is binned into the histogram with the format:
+ *  RC1 RC2 ... RCn POT1 POT2 ... POTm
+ *  where there're n RC and m pot
+ */
+template<class histogram, class rstfunct>
+class xxvg2hist : public virtual xxvg<histogram,rstfunct> {
+  using xxvg<histogram,rstfunct>::funct;
+  using xxvg<histogram,rstfunct>::col_rc;
+  using xxvg<histogram,rstfunct>::col_rst;
+  using xxvg<histogram,rstfunct>::col_pot;
+  using xxvg<histogram,rstfunct>::stride;
+  public:
+    xxvg2hist(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
+    linecounter operator() (fstream& fs, histogram& hist) const;
+  private:
+};
+
+template<class histogram, class rstfunct>
+xxvg2hist<histogram, rstfunct>::xxvg2hist(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
+  xxvg<histogram,rstfunct>(_col_rc,_funct,_stride)
+{
 }
 
 template<class histogram, class rstfunct>
@@ -127,4 +205,5 @@ linecounter xxvg2hist<histogram, rstfunct>::operator() (fstream& fs, histogram& 
   if(!nsamples) { cerr << "All data is excluded. Please check the histogram bounds\n"; exit(-1);}
   return nsamples;
 }
+
 #endif
