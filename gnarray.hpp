@@ -24,8 +24,8 @@ class gnarray {
     const vector<Tval> coord2val(const Tcoord& coord) const;
     //!given real-space coordinate, calculate coordinate in index space
     const Tcoord val2coord(const vector<Tval>& vals) const;
-    //!bin a data point into histogram					
-    bool bin(const vector<Tval>& data);
+    //!bin a data point into histogram and increase the value by weight
+    bool bin(const vector<Tval>& data, const Telem& weight = 1);
     //!just a wrapper around map<Tcoord,Telem>::iterator
     typedef typename map<Tcoord, Telem>::iterator iterator;
     //!just a wrapper around map<Tcoord,Telem>::const_iterator
@@ -126,7 +126,7 @@ const Tcoord gnarray<Tcoord,Telem,Tval>::val2coord(const vector<Tval>& vals) con
 }
 
 template<class Tcoord, class Telem, class Tval>
-bool gnarray<Tcoord,Telem,Tval>::bin(const vector<Tval>& data) {
+bool gnarray<Tcoord,Telem,Tval>::bin(const vector<Tval>& data, const Telem& weight) {
   const Tcoord coord = val2coord(data);
   /*cout << "#Data ";
   copy(data.begin(),data.end(),ostream_iterator<Tval>(cout," "));*/
@@ -136,8 +136,8 @@ bool gnarray<Tcoord,Telem,Tval>::bin(const vector<Tval>& data) {
     copy(vals.begin(),vals.end(),ostream_iterator<Tval>(cout," "));
     cout << endl;*/
     const typename gnarray<Tcoord,Telem,Tval>::iterator it = narr.find(coord);
-    if(it != narr.end()) { ++narr[coord];  } //check this to avoid weird uninitialized value
-    else { narr[coord] = 1;}
+    if(it != narr.end()) { narr[coord] += weight;  } //check this to avoid weird uninitialized value
+    else { narr[coord] = weight;}
     return true;
   } //else { cout << "is excluded " << endl; }
   return false;
