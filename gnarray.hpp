@@ -89,6 +89,8 @@ class gnarray {
 
     //!Print out all elements
     void print() const;
+    //!Print out all elements divided by norm (normalizing factor in histogram)
+    void print(const Telem& norm) const;
     //!Output a serialized array of vals in canonical order
     vector<vector<Tval> > canonical_valseries() const; 
   private:
@@ -293,6 +295,31 @@ void gnarray<Tcoord,Telem,Tval>::print() const {
   }
 }
 
+template<class Tcoord, class Telem, class Tval>
+void gnarray<Tcoord,Telem,Tval>::print(const Telem& norm) const {
+  /*cout << "# ndim = " << dim << endl;
+  cout << "# nelms = ";
+  copy(nelms.begin(),nelms.end(),ostream_iterator<uint>(cout," "));
+  cout << endl;
+  cout << "# hv = ";
+  copy(hv.begin(),hv.end(),ostream_iterator<Tval>(cout," "));
+  cout << endl;
+  cout << "# lv = ";
+  copy(lv.begin(),lv.end(),ostream_iterator<Tval>(cout," "));
+  cout << endl;*/
+  printf("%10s%30s%20s\n","#coord","val","elements");
+  for(const_iterator it = narr.begin(); it != narr.end(); ++it) {
+    const Tcoord coord = it->first;
+    const Telem elem = it->second;
+    const vector<Tval> vals = coord2val(coord);
+    for(uint i = 0; i < coord.size(); ++i) { printf("%10d",coord[i]);}
+    for(uint i = 0; i < vals.size(); ++i) {
+      printf("%30.15lf",vals[i]);
+    }
+    cout << " " << elem/norm << endl;
+    //printf("%30.15lf\n",elem);
+  }
+}
 
 template<class Tcoord, class Telem, class Tval>
 vector<vector<Tval> > gnarray<Tcoord,Telem,Tval>::canonical_valseries() const {
