@@ -12,6 +12,10 @@ using namespace std;
 template<class Tcoord, class Telem, class Tval>
 class gnarray {
   public:
+    //!just a wrapper around map<Tcoord,Telem>::iterator
+    typedef typename map<Tcoord, Telem>::iterator iterator;
+    //!just a wrapper around map<Tcoord,Telem>::const_iterator
+    typedef typename map<Tcoord, Telem>::const_iterator const_iterator;
     //!empty constructor
     gnarray();
     //!constructor
@@ -25,11 +29,7 @@ class gnarray {
     //!given real-space coordinate, calculate coordinate in index space
     const Tcoord val2coord(const vector<Tval>& vals) const;
     //!bin a data point into histogram and increase the value by weight
-    bool bin(const vector<Tval>& data, const Telem& weight = 1);
-    //!just a wrapper around map<Tcoord,Telem>::iterator
-    typedef typename map<Tcoord, Telem>::iterator iterator;
-    //!just a wrapper around map<Tcoord,Telem>::const_iterator
-    typedef typename map<Tcoord, Telem>::const_iterator const_iterator;
+    iterator bin(const vector<Tval>& data, const Telem& weight = 1);
     //!just a wrapper around map<Tcoord,Telem>::find()
     iterator find(const Tcoord& coord);
     //!just a wrapper around map<Tcoord,Telem>::find()
@@ -126,7 +126,7 @@ const Tcoord gnarray<Tcoord,Telem,Tval>::val2coord(const vector<Tval>& vals) con
 }
 
 template<class Tcoord, class Telem, class Tval>
-bool gnarray<Tcoord,Telem,Tval>::bin(const vector<Tval>& data, const Telem& weight) {
+typename gnarray<Tcoord,Telem,Tval>::iterator gnarray<Tcoord,Telem,Tval>::bin(const vector<Tval>& data, const Telem& weight) {
   const Tcoord coord = val2coord(data);
   /*cout << "#Data ";
   copy(data.begin(),data.end(),ostream_iterator<Tval>(cout," "));*/
@@ -135,12 +135,12 @@ bool gnarray<Tcoord,Telem,Tval>::bin(const vector<Tval>& data, const Telem& weig
     const vector<Tval> vals = coord2val(coord);
     copy(vals.begin(),vals.end(),ostream_iterator<Tval>(cout," "));
     cout << endl;*/
-    const typename gnarray<Tcoord,Telem,Tval>::iterator it = narr.find(coord);
+    const iterator it = narr.find(coord);
     if(it != narr.end()) { narr[coord] += weight;  } //check this to avoid weird uninitialized value
     else { narr[coord] = weight;}
-    return true;
+    return it;
   } //else { cout << "is excluded " << endl; }
-  return false;
+  return narr.end();
 }
 
 template<class Tcoord, class Telem, class Tval>

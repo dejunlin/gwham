@@ -200,7 +200,7 @@ linecounter xxvg2hist<histogram, rstfunct>::operator() (fstream& fs, histogram& 
     data.insert(data.end(),tmpdata.begin(),tmpdata.end());
     /*cout << "data = ";
     copy(data.begin(),data.end(),ostream_iterator<valtype>(cout," ")); cout << endl;*/
-    if(hist.bin(data)) {++nsamples;}
+    if(hist.bin(data) != hist.end()) {++nsamples;}
   }
   if(!nsamples) { cerr << "All data is excluded. Please check the histogram bounds\n"; exit(-1);}
   return nsamples;
