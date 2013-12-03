@@ -138,9 +138,8 @@ typename gnarray<Tcoord,Telem,Tval>::iterator gnarray<Tcoord,Telem,Tval>::bin(co
     copy(vals.begin(),vals.end(),ostream_iterator<Tval>(cout," "));
     cout << endl;*/
     const iterator it = narr.find(coord);
-    if(it != narr.end()) { narr[coord] += weight;  } //check this to avoid weird uninitialized value
-    else { narr[coord] = weight;}
-    return it;
+    if(it != narr.end()) { it->second += weight; return it; } //check this to avoid weird uninitialized value
+    else { return narr.insert(it,pair<Tcoord,Telem>(coord,weight)); }
   } //else { cout << "is excluded " << endl; }
   return narr.end();
 }
