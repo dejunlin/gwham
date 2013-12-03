@@ -25,6 +25,10 @@ NVT::NVT(const vector<valtype>& params):
   T(params[1])
   {}
 
+valtype NVT::ener(const valtype& pot) const {
+  return pot/(kB*T);
+}
+
 valtype NVT::ener(const vector<valtype>& vals) const {
   return vals[0]/(kB*T);
 }

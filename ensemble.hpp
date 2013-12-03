@@ -24,6 +24,7 @@ class NVT : public virtual Ensemble {
     NVT(const valtype _kB, const valtype _T);
     NVT(const vector<valtype>& params);
     valtype ener(const vector<valtype>& vals) const; //vals[0] -- the fundamental hamiltonian
+    valtype ener(const valtype& pot) const; //vals[0] -- the fundamental hamiltonian
   protected:
     const valtype T; //temperature
 };
