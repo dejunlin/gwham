@@ -35,5 +35,6 @@ const valtype MINEXPARG = log(DBL_MIN); //min of the arguments to std::exp() cal
 
 //!kB in kJ/mol/K
 const valtype BoltzmannkJ = 0.0083144621; 
+const valtype Boltzmannkcal = 0.0019872041;
 
 #endif
