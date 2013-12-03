@@ -16,6 +16,8 @@ class gnarray {
     typedef typename map<Tcoord, Telem>::iterator iterator;
     //!just a wrapper around map<Tcoord,Telem>::const_iterator
     typedef typename map<Tcoord, Telem>::const_iterator const_iterator;
+    //!just Tcoord
+    typedef Tcoord hist_coord;
     //!empty constructor
     gnarray();
     //!constructor
