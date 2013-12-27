@@ -45,10 +45,9 @@ linecounter trjsubtrj<histogram>::operator() (fstream& fs, histogram& hist, map<
     parser<valtype>(tmp,line);
     const valtype bias = tmp[tmp.size()-1];
     vector<valtype> vals;
-    for(uint i = 1; i < tmp.size() - 2; ++i) { //assuming 1st column is time and the last column is bias energy
+    for(uint i = 1; i < tmp.size() - 1; ++i) { //assuming 1st column is time and the last column is bias energy
       if( ((bitunit << i) & col_rc).any() ) { vals.push_back(tmp[i]); }
     }
-    
     //Here we postpone the binning until we read all data
     //so that we can sort the bias ascendingly to minimize underflow of exp() calls
     //since we might be dealing with Boltzmann factor of very large bias
@@ -57,12 +56,12 @@ linecounter trjsubtrj<histogram>::operator() (fstream& fs, histogram& hist, map<
       ++nsamples;
       if(subtrj.find(coord) != subtrj.end()) { subtrj[coord].push_back(bias); }
       else { subtrj[coord] = vector<valtype>(1,bias); }
-    } 
+    }
   }
   typename map<hist_coord,vector<valtype> >::iterator it;
   for(it = subtrj.begin(); it != subtrj.end(); ++it) {
     const hist_coord coord = it->first;
-    vector<valtype>& bias = it->second;
+    vector<valtype> bias = it->second;
     sort(bias.begin(),bias.end());
     //Here we manually bin the bias
     for(vector<valtype>::const_iterator i = bias.begin(); i != bias.end(); ++i) {

@@ -1,6 +1,6 @@
 # Linux flags
 CC=g++
-CFLAGS= -O3 -Wall -W 
+CFLAGS= -Wall -W -g 
 #Debugging flags
 #CFLAGS= -g  -Wall -W 
 LFLAGS= -lm
@@ -19,7 +19,7 @@ LFLAGS= -lm
 #CFLAGS = -fast -arch host -tune host
 #LFLAGS = -fast -non_shared -om -WL,-om_no_inst_sched -lm
 
-SRCS=ensemble.cpp  gmxmdpio.cpp  gmxpullpot.cpp  gwham_gromacs463_umb.cpp mc.cpp ran2.c, gmbar.cpp gmbar_gromacs463_umb.cpp gwham.cpp
+SRCS=ensemble.cpp  gmxmdpio.cpp  gmxpullpot.cpp  gwham_gromacs463_umb.cpp mc.cpp ran2.c gmbar.cpp gmbar_gromacs463_umb.cpp gwham.cpp
 OBJSGMX463UMB=ensemble.o  gmxmdpio.o  gmxpullpot.o  gwham_gromacs463_umb.o 
 OBJSGMX463UMBFB=ensemble.o  gmxmdpio.o  gmxpullpot.o  gwham_gromacs463_umbfb.o 
 OBJSMBARGMX463UMB=ensemble.o  gmxmdpio.o  gmxpullpot.o  gmbar_gromacs463_umb.o gmbar.o
@@ -44,7 +44,7 @@ gmbar_gromacs463_umb.o:  gmbar.hpp densityofstate.hpp gmbar_gromacs463_umb.cpp h
 gmbar.o:  gmbar.hpp gmbar.cpp 
 	$(CC) $(CFLAGS) -c gmbar.cpp
 
-gwham.o:  gwham.cpp fileio.hpp gnarray.hpp typedefs.hpp ensemble.o fileio_utils.hpp
+gwham.o:  gwham.cpp fileio.hpp gnarray.hpp typedefs.hpp ensemble.o fileio_utils.hpp trjsubtrj.hpp
 	$(CC) $(CFLAGS) -c gwham.cpp
 
 mc.o: gwham.hpp densityofstate.hpp hamiltonian.hpp gnarray.hpp typedefs.hpp mc.hpp mc.cpp ensemble.o ran2.o fileio_utils.hpp

@@ -66,10 +66,89 @@ int main(int argc, char* argv[]) {
   const uint ndim = nbins.size();
   vector<histogram> hists(nwin,histogram(ndim,nbins,hv,lv));
   vector<map<histogram::hist_coord, vector<valtype> > > subtrjs(nwin);
+  vector<uint> N(nwin,0);
   for(uint i = 0; i < nwin; ++i) {
     char winid[MAXNDIGWIN];
     sprintf(winid,"%d",i);
     string fname = winid;
-    reader(fname,hists[i],subtrjs[i]);
+    N[i] += reader(fname,hists[i],subtrjs[i]);
+    hists[i].print(valtype(N[i]));
+  }
+
+  //Calculate variance of the mean at each bin from each traj
+  vector<map<histogram::hist_coord, valtype> > variances(nwin);
+  map<histogram::hist_coord, vector<uint> > record;
+  //cout << "#coord hist mean sqrmean variance trjsize\n";
+  for(uint i = 0; i < nwin; ++i) {
+    map<histogram::hist_coord, valtype>& variance = variances[i];
+    map<histogram::hist_coord, vector<valtype> >& subtrj = subtrjs[i];
+    map<histogram::hist_coord, vector<valtype> >::const_iterator it;
+    for(it = subtrj.begin(); it != subtrj.end(); ++it) {
+      const histogram::hist_coord coord = it->first;
+      const vector<valtype>& trj = it->second;
+      //first calculate the mean
+      valtype mean = 0.0;
+      valtype sqrmean = 0.0;
+      vector<valtype>::const_iterator trjit;
+      for(trjit = trj.begin(); trjit != trj.end(); ++trjit) {
+	const valtype x = *trjit;
+	mean += x;
+	sqrmean += x*x;
+      }
+      mean /= N[i]; //not trj.size() here since we're estimating the histogram function
+      sqrmean /= N[i];
+      //then calculate the variance of the mean
+      //NOTE: this is actually just variance of the sample not of the mean
+      //since we'll have to multiple by N[i]**2 later anyway, we don't 
+      //divide by N[i] but instead multiply by N[i] (instead of N[i]**2) later 
+      variance[coord] = (sqrmean - mean*mean);
+
+      /*copy(coord.begin(),coord.end(),ostream_iterator<uint>(cout, " "));
+      cout << i << " " << mean << " " << sqrmean << " " << variance[coord] << " " << trj.size() << endl;*/
+
+    }
+
+    //build records of what bins are contributed from which histograms btw
+    histogram::const_iterator histit;
+    for(histit = hists[i].begin(); histit != hists[i].end(); ++histit) {
+      const histogram::hist_coord coord = histit->first;
+      if(record.find(coord) != record.end()) { record[coord].push_back(i); }
+      else { record[coord] = vector<uint>(1,i); }
+    }
+  }
+
+  //Weight each histogram using the inverse of the variance at each bin
+  narray rho(ndim,nbins,hv,lv);
+  map<histogram::hist_coord,vector<uint> >::const_iterator it;
+  for(it = record.begin(); it != record.end(); ++it) {
+    const histogram::hist_coord coord = it->first;
+    const vector<uint>& histids = it->second;
+    vector<uint>::const_iterator hit;
+    valtype num = 0.0;
+    valtype denom = 0.0;
+    for(hit = histids.begin(); hit != histids.end(); ++hit) {
+      const uint histid = *hit;
+      const valtype weight = 1/(variances[histid][coord]*N[histid]);
+      denom += weight;
+      num += hists[histid][coord]*weight;
+    }
+    rho[coord] =num/denom;
+  }
+  //Normalize the probability (just for comparision with other programs)
+  printf("#%10s%30s%30s%30s\n","Bin","Vals","PMF","RhoNormalized");
+  valtype sum = 0.0;
+  narray::iterator itmax = rho.begin();
+  for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
+    if(it->second > itmax->second) { itmax = it;}
+    sum += it->second;
+  }
+  for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
+    const coordtype bin = it->first;
+    const vector<valtype> val = rho.coord2val(bin);
+    const valtype pmf = -Boltzmannkcal*T*log(it->second/itmax->second);
+    const valtype rhonorm = it->second/sum;
+    for(uint i = 0; i < bin.size(); ++i) { printf("%10d",bin[i]);}
+    for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}
+    printf("%30.15lf%30.15lf\n",pmf,rhonorm);
   }
 }
