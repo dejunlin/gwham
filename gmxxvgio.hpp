@@ -138,7 +138,8 @@ linecounter xxvg2dE<rstfunct>::operator() (fstream& fs, vector<vector<valtype> >
 //! read gromacs x.xvg file and bin reaction coordinates into histogram
 /** rstfunct class should have member 'valtype operator() (const valtype& data)'
  *  all columns in col_rc will be histogramed
- *  all potential energy corresponding to the columns in col_rst will be histogrammed
+ *  all potential energy corresponding to the columns in col_rst will be histogrammed 
+ *  (each potential energy usu. corresponds to a restraint from 1 simulation and there are multiple simulations)
  *  unless those which also appear in col_rc, where the RC itself will be histogrammed
  *  A data point is binned into the histogram with the format:
  *  RC1 RC2 ... RCn POT1 POT2 ... POTm
