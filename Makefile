@@ -1,6 +1,6 @@
 # Linux flags
 CC=g++
-CFLAGS= -Wall -W -g 
+CFLAGS= -Wall -W -O3 
 #Debugging flags
 #CFLAGS= -g  -Wall -W 
 LFLAGS= -lm
@@ -19,15 +19,14 @@ LFLAGS= -lm
 #CFLAGS = -fast -arch host -tune host
 #LFLAGS = -fast -non_shared -om -WL,-om_no_inst_sched -lm
 
-SRCS=ensemble.cpp  gmxmdpio.cpp  gmxpullpot.cpp  gwham_gromacs463_umb.cpp mc.cpp ran2.c gmbar.cpp gmbar_gromacs463_umb.cpp gwham.cpp
+SRCS=ensemble.cpp  gmxmdpio.cpp  gmxpullpot.cpp  gwham_gromacs463_umb.cpp mc.cpp ran2.c gmbar.cpp gmbar_gromacs463_umb.cpp
 OBJSGMX463UMB=ensemble.o  gmxmdpio.o  gmxpullpot.o  gwham_gromacs463_umb.o 
 OBJSGMX463UMBFB=ensemble.o  gmxmdpio.o  gmxpullpot.o  gwham_gromacs463_umbfb.o 
 OBJSMBARGMX463UMB=ensemble.o  gmxmdpio.o  gmxpullpot.o  gmbar_gromacs463_umb.o gmbar.o
 OBJSMC=ensemble.o mc.o  
 OBJSGMBAR=gmbar.o 
-OBJSGWHAM=gwham.o ensemble.o
 HEADER_FILES=densityofstate.hpp  ensemble.hpp  fileio.hpp  fileio_utils.hpp  gmxmdpio.hpp  gmxpullpot.hpp  gmxxvgio.hpp  gnarray.hpp  gwham.hpp  hamiltonian.hpp  typedefs.hpp mc.hpp gmbar.hpp trjsubtrj.hpp
-all: gwham_gromacs463_umb gwham_gromacs463_umbfb mc gmbar_gromacs463_umb gwham
+all: gwham_gromacs463_umb gwham_gromacs463_umbfb mc gmbar_gromacs463_umb 
 
 ran2.o: ran2.c
 	$(CC) $(CFLAGS) -c ran2.c
@@ -43,9 +42,6 @@ gmbar_gromacs463_umb.o:  gmbar.hpp densityofstate.hpp gmbar_gromacs463_umb.cpp h
 
 gmbar.o:  gmbar.hpp gmbar.cpp 
 	$(CC) $(CFLAGS) -c gmbar.cpp
-
-gwham.o:  gwham.cpp fileio.hpp gnarray.hpp typedefs.hpp ensemble.o fileio_utils.hpp trjsubtrj.hpp
-	$(CC) $(CFLAGS) -c gwham.cpp
 
 mc.o: gwham.hpp densityofstate.hpp hamiltonian.hpp gnarray.hpp typedefs.hpp mc.hpp mc.cpp ensemble.o ran2.o fileio_utils.hpp
 	$(CC) $(CFLAGS) -c mc.cpp
@@ -70,9 +66,6 @@ gmbar_gromacs463_umb : $(OBJSMBARGMX463UMB)
 
 mc : $(OBJSMC) 
 	$(CC) $(CFLAGS) -o mc $(OBJSMC) $(LFLAGS)
-
-gwham : $(OBJSGWHAM) 
-	$(CC) $(CFLAGS) -o gwham $(OBJSGWHAM) $(LFLAGS)
 
 #driver: bootstrap.o driver.o $(NR)/ran2.o $(NR)/locate.o
 #	$(CC) $(CFLAGS) -o driver bootstrap.o driver.o ran2.o locate.o $(LFLAGS)
