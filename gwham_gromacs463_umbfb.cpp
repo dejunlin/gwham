@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
   const double tol = atof(argv[11]); //tolerance for WHAM iteration
   const uint xvgstride = atoi(argv[12]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
   
-  cout << "# gwham_gromacs463_umbfb sysname nrun nwin runmin rc nbins hv lv tol\n";
+  cout << "# gwham_gromacs463_umbfb sysname nrun nwin runmin rcsample rcprint Temperature nbins hv lv tol xvgstride\n";
   cout << "# ";
   copy(argv,argv+argc,ostream_iterator<char*>(cout," "));
   cout << endl;
