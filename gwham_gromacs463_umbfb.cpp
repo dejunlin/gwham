@@ -23,8 +23,8 @@ typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
 int main(int argc, char* argv[]) {
-  if (argc != 13) {
-    cerr << "Usage: gwham_gromacs463_umbfb sysname nrun nwin runmin rcsample rcprint Temperature nbins hv lv tol xvgstride\n";
+  if (argc != 14) {
+    cerr << "Usage: gwham_gromacs463_umbfb sysname nrun nwin runmin rcsample rcprint Temperature nbins hv lv tol xvgstride ncolskip\n";
     exit(-1);
   }
   const string sysname = string(argv[1]); //name of the system 
@@ -44,8 +44,9 @@ int main(int argc, char* argv[]) {
   const string lvstr = string(argv[10]); //lower bounds in each dimension
   const double tol = atof(argv[11]); //tolerance for WHAM iteration
   const uint xvgstride = atoi(argv[12]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
+  const uint ncolskip = atoi(argv[13]); //skip the 1st ncolskip elements of any line of a x.xvg file
   
-  cout << "# gwham_gromacs463_umbfb sysname nrun nwin runmin rcsample rcprint Temperature nbins hv lv tol xvgstride\n";
+  cout << "# gwham_gromacs463_umbfb sysname nrun nwin runmin rcsample rcprint Temperature nbins hv lv tol xvgstride ncolskip\n";
   cout << "# ";
   copy(argv,argv+argc,ostream_iterator<char*>(cout," "));
   cout << endl;
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
 
   //number of data points for each window
   vector<uint> N(nwin,0);
-  const xxvg2hist<histogram,umbrella_fb> xvg2hist(rcsmpmask,rstfuncts,xvgstride);
+  const xxvg2hist<histogram,umbrella_fb> xvg2hist(ncolskip, rcsmpmask,rstfuncts,xvgstride);
   //Read x.xvg file for each run
   fileio<xxvg2hist<histogram,umbrella_fb>,histogram> fxxvg(xvg2hist, std::fstream::in);
   for(uint i = 0; i < nwin; ++i) {

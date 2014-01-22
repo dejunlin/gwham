@@ -18,17 +18,19 @@ class xxvg {
     //! convert the keys in xxvg::funct into a bitmask
     const bitset<MAXNRST> mapkeys2bitset() const;
   public:
-    xxvg(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
+    xxvg(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
     virtual linecounter operator() (fstream& fs, Tdata& data) const = 0;
     //! Just return col_rst
     const bitset<MAXNRST>& getcol_rst() const;
-    //! Shift the col_rst to the left by 2 and return it, which is the pullgrp mask
+    //! Shift the col_rst to the left by ncolskip and return it, which is the pullgrp mask
     const bitset<MAXNRST>& getpullgrp_mask() const;
     //! Return xxvg::nelm
     uint getnelm() const;
   protected:
     //!pullgroup id => restraint potential functors for each ensemble (pullgroup id starts with 0)
     const map<uint, vector<rstfunct*> > funct;
+    //!how many columns since the 1st one in an x.xvg file we want to skip
+    const uint ncolskip;
     //!bitmask what columns we want to process 
     const bitset<MAXNRST> col_rc;
     //!bitmask what columns are restrained RC
@@ -48,7 +50,7 @@ const bitset<MAXNRST>& xxvg<Tdata, rstfunct>::getcol_rst() const {
 
 template<class Tdata, class rstfunct>
 const bitset<MAXNRST>& xxvg<Tdata, rstfunct>::getpullgrp_mask() const {
-  return col_rst >> 2;
+  return col_rst >> ncolskip;
 }
 
 template<class Tdata, class rstfunct>
@@ -67,10 +69,11 @@ const bitset<MAXNRST> xxvg<Tdata, rstfunct>::mapkeys2bitset() const {
 }
 
 template<class Tdata, class rstfunct>
-xxvg<Tdata, rstfunct>::xxvg(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
+xxvg<Tdata, rstfunct>::xxvg(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
   funct(_funct),
-  col_rc(_col_rc << 2), //2 means the 1st column is time and the 2nd column is absolute position of the reference group; TODO: we should extend this class to handle RC in all 3 dimension
-  col_rst(this->mapkeys2bitset() << 2),
+  ncolskip(_ncolskip),
+  col_rc(_col_rc << ncolskip), //input _col_rc usu. mask pull-group id but here we want column id mask, which is pull-group id mask + ncolskip offset
+  col_rst(this->mapkeys2bitset() << ncolskip),
   col_pot(col_rst & (~col_rc)),
   nelm(col_rc.count() + col_pot.count()), //just count how many '1's are there in both bitmasks
   stride(_stride)
@@ -89,19 +92,20 @@ xxvg<Tdata, rstfunct>::xxvg(const bitset<MAXNRST>& _col_rc, const map<uint, vect
 template<class rstfunct>
 class xxvg2dE : public virtual xxvg<vector<vector<valtype> >, rstfunct> {
   using xxvg<vector<vector<valtype> >,rstfunct>::funct;
+  using xxvg<vector<vector<valtype> >,rstfunct>::ncolskip;
   using xxvg<vector<vector<valtype> >,rstfunct>::col_rc;
   using xxvg<vector<vector<valtype> >,rstfunct>::col_rst;
   using xxvg<vector<vector<valtype> >,rstfunct>::col_pot;
   using xxvg<vector<vector<valtype> >,rstfunct>::stride;
   public:
-    xxvg2dE(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
+    xxvg2dE(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
     linecounter operator() (fstream& fs, vector<vector<valtype> >& dE) const;
   private:
 };
 
 template<class rstfunct>
-xxvg2dE<rstfunct>::xxvg2dE(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
-  xxvg<vector<vector<valtype> >,rstfunct>(_col_rc,_funct,_stride)
+xxvg2dE<rstfunct>::xxvg2dE(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
+  xxvg<vector<vector<valtype> >,rstfunct>(_ncolskip, _col_rc, _funct, _stride)
 {
 }
 
@@ -118,9 +122,9 @@ linecounter xxvg2dE<rstfunct>::operator() (fstream& fs, vector<vector<valtype> >
     vector<valtype> tmp;
     parser<valtype>(tmp,line);
     vector<valtype> E(0,0);
-    for(uint i = 2; i < tmp.size(); ++i) {//2 means the 1st column is time and the 2nd column is reference group position; TODO
+    for(uint i = ncolskip; i < tmp.size(); ++i) { //we skip the 1st ncolskip column
       if( ((bitunit << i) & col_rst).any() ) {
-	vector<rstfunct*> functs = funct.find(i-2)->second; //2 means the 1st column is time and the 2nd column is reference group position; TODO
+	vector<rstfunct*> functs = funct.find(i-ncolskip)->second; 
 	if(!E.size()) { E.resize(functs.size(),0.0);}
 	for(uint j = 0; j < functs.size(); ++j) {
 	  E[j] += functs[j]->operator()(tmp[i]);
@@ -148,19 +152,20 @@ linecounter xxvg2dE<rstfunct>::operator() (fstream& fs, vector<vector<valtype> >
 template<class histogram, class rstfunct>
 class xxvg2hist : public virtual xxvg<histogram,rstfunct> {
   using xxvg<histogram,rstfunct>::funct;
+  using xxvg<histogram,rstfunct>::ncolskip;
   using xxvg<histogram,rstfunct>::col_rc;
   using xxvg<histogram,rstfunct>::col_rst;
   using xxvg<histogram,rstfunct>::col_pot;
   using xxvg<histogram,rstfunct>::stride;
   public:
-    xxvg2hist(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
+    xxvg2hist(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
     linecounter operator() (fstream& fs, histogram& hist) const;
   private:
 };
 
 template<class histogram, class rstfunct>
-xxvg2hist<histogram, rstfunct>::xxvg2hist(const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
-  xxvg<histogram,rstfunct>(_col_rc,_funct,_stride)
+xxvg2hist<histogram, rstfunct>::xxvg2hist(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
+  xxvg<histogram,rstfunct>(_ncolskip, _col_rc, _funct, _stride)
 {
 }
 
@@ -185,10 +190,10 @@ linecounter xxvg2hist<histogram, rstfunct>::operator() (fstream& fs, histogram& 
     parser<valtype>(tmp,line);
     vector<valtype> data(0,0.0);
     vector<valtype> tmpdata(0,0);
-    for(uint i = 2; i < tmp.size(); ++i) {//2 means the 1st column is time and the 2nd column is reference group position; TODO
+    for(uint i = ncolskip; i < tmp.size(); ++i) {//we skip the 1st ncolskip column
       //Save the pot in tmpdata first; after we've processed all the columns, we'll push them in the data
       if( ((bitunit << i) & col_pot).any() ) {
-	vector<rstfunct*> functs = funct.find(i-2)->second; //2 means the 1st column is time and the 2nd column is reference group position; TODO
+	vector<rstfunct*> functs = funct.find(i-ncolskip)->second; 
 	if(!tmpdata.size()) { tmpdata.resize(functs.size(),0.0);}
 	for(uint j = 0; j < functs.size(); ++j) {
 	  tmpdata[j] += functs[j]->operator()(tmp[i]);

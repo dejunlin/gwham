@@ -23,6 +23,7 @@ class mdp2pullpot {
     /** 'str' is of the syntax 'pull_.*[0-9]'
      */
     uint getpullgrpid(const string& directive, const string& str) const;
+    uint getcontactgrpid(const string& str) const;
     //! Reaction Coordinate mask that indicates what pull groups are interesting
     const bitset<MAXNRST> rcmask;
 };

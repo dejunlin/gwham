@@ -15,12 +15,20 @@ mdp2pullpot::mdp2pullpot(const bitset<MAXNRST>& _rcmask) :
   {}
 
 linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella*> >& funct, vector<Hamiltonian<RSTXLAMBDAsgl>* >& V) const {
+  //There are 2 possible modes: pull-group or contact-group
+  //for pull-group mode, we take k and init from pull-group parameters
+  //for contact-group, we take them from contact-group parameters
+  //pull-group mode is activated when pull_ncontactgroups is not defined
+  //contact-group mode is activated when pull_ncontactgroups is defined
+  //contact-group mode will overwrite pull-group mode
   string line;
   valtype T; //temperature
-  vector<valtype> lambdas, kA, kB, initA, initB;
+  vector<valtype> rstlambdas, kA, kB, initA, initB;
+  vector<vector<valtype> > contactlambdas;
   bitset<MAXNRST> ckA, ckB, cinitA, cinitB;
   uint current_lambda = 0;
   uint npullgrps = 0;
+  uint ncontactgrps = 0;
   linecounter nlines = 0;
   while(getline(fs,line)) {
     if(line[0] == ';') { continue; }
@@ -33,27 +41,53 @@ linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella*> >& 
       current_lambda = atoi(tmpstr[2].c_str());
     } else if(tmpstr[0].compare("restraint-lambdas") == 0) {
       for(uint i = 2; i < tmpstr.size(); ++i) {
+	rstlambdas.push_back(atof(tmpstr[i].c_str()));
+      }
+    } else if(tmpstr[0].compare("umbrella-contact1-lambdas") == 0) {
+      if(contactlambdas.size()) {
+	cerr << "umbrella-contact1-lambdas in mdp file must be specified before umbrella-contact2-lambdas\n";
+	exit(-1);
+      }
+      vector<valtype> lambdas;
+      for(uint i = 2; i < tmpstr.size(); ++i) {
 	lambdas.push_back(atof(tmpstr[i].c_str()));
       }
+      contactlambdas.push_back(lambdas);
+    } else if(tmpstr[0].compare("umbrella-contact2-lambdas") == 0) {
+      vector<valtype> lambdas;
+      for(uint i = 2; i < tmpstr.size(); ++i) {
+	lambdas.push_back(atof(tmpstr[i].c_str()));
+      }
+      contactlambdas.push_back(lambdas);
     } else if(tmpstr[0].compare("ref_t") == 0) {
       T = atof(tmpstr[2].c_str());
     } else if(tmpstr[0].compare("pull") == 0) {
-      if(tmpstr[2].compare("umbrella") != 0) {
-	cerr << "The pulling potential in a mdp file is not umbrella but you're asking it to read umbrella data" << endl;
+      if(tmpstr[2].compare("umbrella") != 0 && tmpstr[2].compare("contact") != 0) {
+	cerr << "The pulling potential in a mdp file is not umbrella/contact but you're asking it to read umbrella/contact data" << endl;
 	exit(-1);
       }
     } else if(tmpstr[0].compare("pull_ngroups") == 0) {
       npullgrps = atoi(tmpstr[2].c_str());
       cout << "#Reading pull potential for " << npullgrps << " pull-groups" << endl;
+      //NOTE: Here we resize the parameter arrays
+      if(!ncontactgrps) {
+        kA.resize(npullgrps); 
+        kB.resize(npullgrps); 
+        initA.resize(npullgrps); 
+        initB.resize(npullgrps); 
+      }
+    } else if(tmpstr[0].compare("pull_ncontactgroups") == 0) {
+      ncontactgrps = atoi(tmpstr[2].c_str());
+      cout << "#Reading pull potential for " << ncontactgrps << " contact-groups" << endl;
       //NOTE: Here we resize the parameter arrays 
-      kA.resize(npullgrps); 
-      kB.resize(npullgrps); 
-      initA.resize(npullgrps); 
-      initB.resize(npullgrps); 
-    } else if(tmpstr[0].compare(0,string("pull_group").length(),"pull_group") == 0) {
+      kA.resize(ncontactgrps); 
+      kB.resize(ncontactgrps); 
+      initA.resize(ncontactgrps); 
+      initB.resize(ncontactgrps); 
+    } else if(tmpstr[0].compare(0,string("pull_group").length(),"pull_group") == 0 && !ncontactgrps) {
       const uint pullgrpid = getpullgrpid("pull_group",tmpstr[0]);
       cout << "#Processing pull-group " << pullgrpid << endl;
-    } else if(tmpstr[0].compare(0,string("pull_init").length(),"pull_init") == 0) {
+    } else if(tmpstr[0].compare(0,string("pull_init").length(),"pull_init") == 0 && !ncontactgrps) {
       if(tmpstr[0].compare(0,string("pull_initB").length(),"pull_initB") == 0) {
         const uint pullgrpid = getpullgrpid("pull_initB",tmpstr[0]);
         initB[pullgrpid-1] = atof(tmpstr[2].c_str());
@@ -63,7 +97,7 @@ linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella*> >& 
         initA[pullgrpid-1] = atof(tmpstr[2].c_str());
         cinitA |= (bitunit << pullgrpid-1);
       }
-    } else if(tmpstr[0].compare(0,string("pull_k").length(),"pull_k") == 0) {
+    } else if(tmpstr[0].compare(0,string("pull_k").length(),"pull_k") == 0 && !ncontactgrps) {
       if(tmpstr[0].compare(0,string("pull_kB").length(),"pull_kB") == 0) {
         const uint pullgrpid = getpullgrpid("pull_kB",tmpstr[0]);
         kB[pullgrpid-1] = atof(tmpstr[2].c_str());
@@ -73,22 +107,54 @@ linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella*> >& 
         kA[pullgrpid-1] = atof(tmpstr[2].c_str());
         ckA |= (bitunit << pullgrpid-1);
       }
+    } else if(tmpstr[0].compare(0,string("pull_contactgroup").length(),"pull_contactgroup") == 0 && ncontactgrps) {
+      const uint contactgrpid = getcontactgrpid(tmpstr[0]);
+      char contactgrpidstr[MAXNDIGWIN];
+      sprintf(contactgrpidstr,"%d",contactgrpid);
+      string kbstr = string("pull_contactgroup") + contactgrpidstr + "_kB";
+      string kstr = string("pull_contactgroup") + contactgrpidstr + "_k";
+      string nc0bstr = string("pull_contactgroup") + contactgrpidstr + "_nc0B";
+      string nc0str = string("pull_contactgroup") + contactgrpidstr + "_nc0";
+      if(tmpstr[0].compare(0,kbstr.length(), kbstr) == 0) {
+        cout << "#Processing contact-group " << contactgrpid << endl;
+        kB[contactgrpid] = atof(tmpstr[2].c_str());
+        ckB |= (bitunit << contactgrpid);
+      } else if(tmpstr[0].compare(0,kstr.length(), kstr) == 0){
+        kA[contactgrpid] = atof(tmpstr[2].c_str());
+        ckA |= (bitunit << contactgrpid);
+      } else if(tmpstr[0].compare(0,nc0bstr.length(), nc0bstr) == 0) {
+        initB[contactgrpid] = atof(tmpstr[2].c_str());
+        cinitB |= (bitunit << contactgrpid);
+      } else if(tmpstr[0].compare(0,nc0str.length(), nc0str) == 0){
+        initA[contactgrpid] = atof(tmpstr[2].c_str());
+        cinitA |= (bitunit << contactgrpid);
+      }
     } 
   }
   //Check if we read the correct number of parameters
-  if(ckA.count() != npullgrps || cinitA.count() != npullgrps) {
-    cerr << "Number of state-A parameters is less than the number pull-groups " << npullgrps << endl;
-    exit(-1);
+  if(!ncontactgrps) {
+    if(ckA.count() != npullgrps || cinitA.count() != npullgrps) {
+      cerr << "Number of state-A parameters is less than the number pull-groups " << npullgrps << endl;
+      exit(-1);
+    }
+  } else {
+    if(ckA.count() != ncontactgrps || cinitA.count() != ncontactgrps) {
+      cerr << "Number of state-A parameters is less than the number contact-groups " << ncontactgrps << endl;
+      exit(-1);
+    }
   }
   //cout << "# pullgrpid kA kB initA initB lambda" << endl;
-  for(uint i = 0; i < npullgrps; ++i) {
+  const uint maxi = ncontactgrps ? ncontactgrps : npullgrps;
+  for(uint i = 0; i < maxi;  ++i) {
     if(kA[i] == kB[i] && kA[i] == 0 && (rcmask & (bitunit << i)).none()) { continue; }
     //Occasionaly, the B-state parameters are not available and we'll assume they're the same as the A-state ones
     if((ckA & (bitunit << i)).any() && (ckB & (bitunit << i)).none()) { kB[i] = kA[i]; } 
     if((cinitA & (bitunit << i)).any() && (cinitB & (bitunit << i)).none()) { initB[i] = initA[i]; }
     valtype l;
-    if(!lambdas.size()) { l = 0;}
-    else { l = lambdas[current_lambda]; }
+    if(!rstlambdas.size() && !contactlambdas.size()) { l = 0;}
+    else if (ncontactgrps) { 
+      l = contactlambdas[i][current_lambda]; 
+    }
 
     //cout << "# " << i << " " << kA[i] << " " << kB[i] << " " << initA[i] << " " << initB[i] << " " << l << endl;
     //funct.insert(pair<uint,umbrella>(i, umbrella(kA[i],kB[i],initA[i],initB[i],l)));
@@ -97,28 +163,32 @@ linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella*> >& 
   }
   //Construct Hamiltonian
   vector<valtype> k, init;
-  vector<uint> RC_pullgrpids;
-  for(uint i = 0; i < npullgrps; ++i) {
+  vector<uint> RC_grpids;
+  for(uint i = 0; i < maxi; ++i) {
     //For RCs that are interesting, we build RST hamiltonian on them
     //NOTE that even for RCs that are virtually NOT restrained, we still build RST 
     //hamiltonian on them but the parameters are implicitly zero
     if( (rcmask & (bitunit << i)).any() ) {
       if(funct.find(i) == funct.end()) {
-	cerr << "Pull group " << i << " is interesting but there's no umbrella restraint on it.\n";
+	if(ncontactgrps) {
+	  cerr << "Contact group " << i << " is interesting but there's no umbrella restraint on it.\n";
+	} else {
+	  cerr << "Pull group " << i << " is interesting but there's no umbrella restraint on it.\n";
+	}
 	exit(-1);
       }
       k.push_back(funct[i][funct[i].size()-1]->getk());
       init.push_back(funct[i][funct[i].size()-1]->getinit());
-      RC_pullgrpids.push_back(i);
+      RC_grpids.push_back(i);
     }
   }
-  //RC_pullgrpids.size() is how many RC we're interested in, which will be the first RC_pullgrpids.size() elements of the histogram data point
+  //RC_grpids.size() is how many RC we're interested in, which will be the first RC_grpids.size() elements of the histogram data point
   //funct.begin()->size() tells how man states we've processed, including the current one
   //so the potential due to the restrained RCs we're not interested will be combined as the whichlambda'th element in one histogram data point
   if(!funct.size()) { cerr << "There's no any restraint applied on any of the RCs you're interested in. Check the input files again\n"; exit(-1); }
   //dumRCsize is how many restrained RC we're NOT interested in
-  const uint dumRCsize = funct.size() - RC_pullgrpids.size();
-  const uint whichlambda = dumRCsize ? (RC_pullgrpids.size() + (funct.begin()->second).size() - 1) : 0;
+  const uint dumRCsize = funct.size() - RC_grpids.size();
+  const uint whichlambda = dumRCsize ? (RC_grpids.size() + (funct.begin()->second).size() - 1) : 0;
   vector<valtype> params;
   params.push_back(BoltzmannkJ);
   params.push_back(T);
@@ -127,8 +197,8 @@ linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella*> >& 
   params.push_back(dumRCsize ? 1.0 : 0.0); //should just weight it to 0 if dumRCsize == 0
   params.push_back(whichlambda); 
   V.push_back(new Hamiltonian<RSTXLAMBDAsgl>(params));
-  cout << "#mdp2pullpot processed " << RC_pullgrpids.size() << " RCs you're interested in, whose id (indexed begins from zero) are: ";
-  copy(RC_pullgrpids.begin(),RC_pullgrpids.end(),ostream_iterator<uint>(cout," "));
+  cout << "#mdp2pullpot processed " << RC_grpids.size() << " RCs you're interested in, whose id (indexed begins from zero) are: ";
+  copy(RC_grpids.begin(),RC_grpids.end(),ostream_iterator<uint>(cout," "));
   cout << " and they'll be binned into histogram.\n";
   cout << "#The rest " << dumRCsize << " restrained RCs will be combined into their total bias energy, which will be binned into histogram\n";
   cout << "#We're now at the " << (funct.begin()->second).size() << "'th hamiltonian\n";
@@ -144,6 +214,12 @@ uint mdp2pullpot::getpullgrpid(const string& directive, const string& str) const
   cout << "str = " << str << endl;
   cout << "size_num = " << size_num << endl;*/
   return atoi(numstr.c_str());
+}
+
+uint mdp2pullpot::getcontactgrpid(const string& str) const {
+  vector<string> out;
+  parser<string>(out, str, "_");
+  return getpullgrpid("contactgroup",out[1]);
 }
 
 linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella_fb*> >& funct, vector<Hamiltonian<RST_fbXLAMBDAsgl>* >& V) const {

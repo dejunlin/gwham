@@ -23,8 +23,8 @@ typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
 int main(int argc, char* argv[]) {
-  if (argc != 12) {
-    cerr << "Usage: gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstride\n";
+  if (argc != 13) {
+    cerr << "Usage: gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstride ncolskip\n";
     exit(-1);
   }
   const string sysname = string(argv[1]); //name of the system 
@@ -43,8 +43,9 @@ int main(int argc, char* argv[]) {
   const string lvstr = string(argv[9]); //lower bounds in each dimension
   const double tol = atof(argv[10]); //tolerance for WHAM iteration
   const uint xvgstride = atoi(argv[11]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
+  const uint ncolskip = atoi(argv[12]); //skip the 1st ncolskip elements in any line of a x.xvg file
   
-  cout << "# gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstride\n";
+  cout << "# gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstride ncolskip\n";
   cout << "# ";
   copy(argv,argv+argc,ostream_iterator<char*>(cout," "));
   cout << endl;
@@ -109,7 +110,7 @@ int main(int argc, char* argv[]) {
 
   //number of data points for each window
   vector<uint> N(nwin,0);
-  const xxvg2hist<histogram,umbrella> xvg2hist(rcsmpmask,rstfuncts,xvgstride);
+  const xxvg2hist<histogram,umbrella> xvg2hist(ncolskip, rcsmpmask, rstfuncts, xvgstride);
   //Read x.xvg file for each run
   fileio<xxvg2hist<histogram,umbrella>,histogram> fxxvg(xvg2hist, std::fstream::in);
   for(uint i = 0; i < nwin; ++i) {
@@ -139,16 +140,16 @@ int main(int argc, char* argv[]) {
       record[coord].push_back(i);
     }
   }
-  /*for(map<coordtype,vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
+  for(map<coordtype,vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
     const coordtype coord = it->first;
     const vector<uint> histid = it->second;
     const vector<valtype> vals = hists[histid[0]].coord2val(coord);
     cout << "#Bin: ";
     copy(coord.begin(),coord.end(),ostream_iterator<uint>(cout," "));
     copy(vals.begin(),vals.end(),ostream_iterator<valtype>(cout," "));
-    cout << " is contributed from histogram: ";
+    cout << " is contributed from " << histid.size() << " histograms: ";
     copy(histid.begin(),histid.end(),ostream_iterator<uint>(cout," ")); cout << endl;
-  }*/
+  }
   
   cout << "# DBL_MAX supported on this machine is " << DBL_MAX << endl;
   cout << "# DBL_MIN supported on this machine is " << DBL_MIN << endl;
