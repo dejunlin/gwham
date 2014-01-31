@@ -12,39 +12,48 @@ using namespace std;
 template<class Taction, class Tdata1, class Tdata2 = int>
 class fileio {
   public:
-    fileio(const Taction& act, const ios_base::openmode& mode);
+    fileio(const Taction& act, const ios_base::openmode& mode, const bool& perm);
     //! just open a file handle
-    void fopen(const string& fname, fstream& fs) const;
+    bool fopen(const string& fname, fstream& fs) const;
     //! write data to fstream or read data from fstream and return the number line processed
     linecounter operator() (const string& fname, Tdata1& data1) const; 
     //! write data to fstream or read data from fstream and return the number line processed
     linecounter operator() (const string& fname, Tdata1& data1, Tdata2& data2) const; 
   private:
     const Taction funct; //what action to take (how to read/write file in what format)
-    const ios_base::openmode iomode; //read or write 
+    const ios_base::openmode iomode; //read or write
+    const bool ifperm; //if true, won't exit even though a file can't be opened
 };
 
 
 template<class Taction, class Tdata1, class Tdata2>
-fileio<Taction, Tdata1, Tdata2>::fileio(const Taction& act, const ios_base::openmode& mode) :
+fileio<Taction, Tdata1, Tdata2>::fileio(const Taction& act, const ios_base::openmode& mode, const bool& perm = true) :
   funct(act),
-  iomode(mode)
+  iomode(mode),
+  ifperm(perm)
 {}
 
 template<class Taction, class Tdata1, class Tdata2>
-void fileio<Taction, Tdata1, Tdata2>::fopen(const string& fname, fstream& fs) const {
+bool fileio<Taction, Tdata1, Tdata2>::fopen(const string& fname, fstream& fs) const {
   fs.open(fname.c_str(),iomode);
   if(!fs.good()) {
-    cerr << "Error opening file: " << fname << endl;
-    exit(-1);
+    if(!ifperm) {
+      cerr << "Error opening file: " << fname << endl;
+      exit(-1);
+    } else {
+      return false;
+    }
   }
-  else { cout << "#Opening file: " << fname << endl; }
+  else { 
+    cout << "#Opening file: " << fname << endl; 
+    return true;
+  }
 }
 
 template<class Taction, class Tdata1, class Tdata2>
 linecounter fileio<Taction, Tdata1, Tdata2>::operator()(const string& fname, Tdata1& data1) const {
   fstream fs;
-  fopen(fname,fs);
+  if(!fopen(fname,fs)) { return 0; }
   const ulong nlines = funct(fs,data1);
   fs.close();
   return nlines;
@@ -53,7 +62,7 @@ linecounter fileio<Taction, Tdata1, Tdata2>::operator()(const string& fname, Tda
 template<class Taction, class Tdata1, class Tdata2>
 linecounter fileio<Taction, Tdata1, Tdata2>::operator()(const string& fname, Tdata1& data1, Tdata2& data2) const {
   fstream fs;
-  fopen(fname,fs);
+  if(!fopen(fname,fs)) { return 0; }
   const ulong nlines = funct(fs,data1,data2);
   fs.close();
   return nlines;

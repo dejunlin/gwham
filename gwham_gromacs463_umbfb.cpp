@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
   //Read the parameters from mdp file, construct the restraint functor and bin the x.xvg file 
   //into histograms
   const mdp2pullpot mdp2rst(rcsmpmask);
-  fileio<mdp2pullpot, map<uint,vector<umbrella_fb*> >, vector<Hamiltonian<RST_fbXLAMBDAsgl>* > > fmdp(mdp2rst, std::fstream::in);
+  fileio<mdp2pullpot, map<uint,vector<umbrella_fb*> >, vector<Hamiltonian<RST_fbXLAMBDAsgl>* > > fmdp(mdp2rst, std::fstream::in, 0);
   vector<Hamiltonian<RST_fbXLAMBDAsgl>* > V;
   map<uint, vector<umbrella_fb*> > rstfuncts;
   for(uint i = 0; i < nwin; ++i) {
