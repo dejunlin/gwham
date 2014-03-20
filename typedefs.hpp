@@ -5,6 +5,7 @@
 #include <math.h>
 #include <float.h>
 #include <limits>
+#include <climits>
 #include <bitset>
 
 using namespace std;
@@ -29,6 +30,7 @@ typedef vector<uint> coordtype; //type of the coordinate for histogram and narra
 typedef double valtype; //the data type we histogram
 typedef ulong histcounter; //the histogram counter
 typedef ulong linecounter; //the file line counter
+static const ulong MAXNLINE = ULONG_MAX; //maximum number of lines that can be counted 
 
 const valtype MAXEXPARG = log(DBL_MAX); //max of the arguments to std::exp() call
 const valtype MINEXPARG = log(DBL_MIN); //min of the arguments to std::exp() call
