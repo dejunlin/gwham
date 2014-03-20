@@ -24,8 +24,8 @@ typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
 int main(int argc, char* argv[]) {
-  if (argc != 14) {
-    cerr << "Usage: gmbar_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgskip xvgstride ncolskip\n";
+  if (argc != 13) {
+    cerr << "Usage: gmbar_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstride ncolskip\n";
     exit(-1);
   }
   const string sysname = string(argv[1]); //name of the system 
@@ -43,11 +43,10 @@ int main(int argc, char* argv[]) {
   const string hvstr = string(argv[8]); //upper bounds in each dimension
   const string lvstr = string(argv[9]); //lower bounds in each dimension
   const double tol = atof(argv[10]); //tolerance for WHAM iteration
-  const uint xvgskip = atoi(argv[11]); //Skip this many lines from the beginning of the x.xvg files
-  const uint xvgstride = atoi(argv[12]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
-  const uint ncolskip = atoi(argv[13]); //skip the 1st ncolskip elements in any line of a x.xvg file
+  const uint xvgstride = atoi(argv[11]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
+  const uint ncolskip = atoi(argv[12]); //skip the 1st ncolskip elements in any line of a x.xvg file
   
-  cout << "# gmbar_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgskip xvgstride ncolskip\n";
+  cout << "# gmbar_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstride ncolskip\n";
   cout << "# ";
   copy(argv,argv+argc,ostream_iterator<char*>(cout," "));
   cout << endl;
@@ -114,8 +113,10 @@ int main(int argc, char* argv[]) {
   vector<uint> N(nwin,0);
   //dE for each frame of each trajectory
   vector<vector<vector<valtype> > > dE(nwin);
+  const xxvg2dE<umbrella> xvg2dE(ncolskip,rcsmpmask,rstfuncts,xvgstride);
   //const xxvg2hist<histogram,umbrella> xvg2hist(rcsmpmask,rstfuncts,xvgstride);
   //Read x.xvg file for each run
+  fileio<xxvg2dE<umbrella>,vector<vector<valtype> > > fxxvg(xvg2dE, std::fstream::in);
   for(uint i = 0; i < nwin; ++i) {
     char winid[MAXNDIGWIN];
     sprintf(winid,"%d",i);
@@ -123,15 +124,7 @@ int main(int argc, char* argv[]) {
       char runid[MAXNDIGRUN];
       sprintf(runid,"%d",j);
       string xxvgfname = sysname + "_" + runid + "x_" + winid + ".xvg";
-      if(j == 0) {
-        const xxvg2dE<umbrella> xvg2dE(ncolskip,rcsmpmask,rstfuncts,xvgskip, xvgstride);
-        fileio<xxvg2dE<umbrella>,vector<vector<valtype> > > fxxvg(xvg2dE, std::fstream::in);
-        N[i] += fxxvg(xxvgfname,dE[i]);
-      } else {
-        const xxvg2dE<umbrella> xvg2dE(ncolskip,rcsmpmask,rstfuncts,0, xvgstride);
-        fileio<xxvg2dE<umbrella>,vector<vector<valtype> > > fxxvg(xvg2dE, std::fstream::in);
-        N[i] += fxxvg(xxvgfname,dE[i]);
-      }
+      N[i] += fxxvg(xxvgfname,dE[i]);
     }
   }
   /*cout << "#number of samples in each window: ";
