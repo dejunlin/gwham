@@ -2,70 +2,44 @@
 #define FILEIO_HPP
 
 #include "typedefs.hpp"
-#include "iostream"
 #include <fstream>
-#include <stdlib.h>
+#include <vector>
+#include "fileio_utils.hpp"
 
 using namespace std;
 
-//class Taction should provide operator() (fstream& fs, Tdata& data) 
-template<class Taction, class Tdata1, class Tdata2 = int>
 class fileio {
   public:
-    fileio(const Taction& act, const ios_base::openmode& mode, const bool& perm);
+    fileio(const string& _fname, const ios_base::openmode& mode, const bool& perm, const linecounter _lb, const linecounter _ls, const linecounter _le);
+    fileio(const ios_base::openmode& mode, const bool& perm, const linecounter _lb, const linecounter _ls, const linecounter _le);
+    fileio(const fileio& _fio);
+    //! read one line at a time and cache it into fileio::line 
+    bool readaline(); 
+    //! read all lines and cached them into fileio::lines
+    void readall();
+    //! just open a file handle with the mode specified at instantiation
+    bool fopen(const string& _fname);
     //! just open a file handle
-    bool fopen(const string& fname, fstream& fs) const;
-    //! write data to fstream or read data from fstream and return the number line processed
-    linecounter operator() (const string& fname, Tdata1& data1) const; 
-    //! write data to fstream or read data from fstream and return the number line processed
-    linecounter operator() (const string& fname, Tdata1& data1, Tdata2& data2) const; 
-  private:
-    const Taction funct; //what action to take (how to read/write file in what format)
-    const ios_base::openmode iomode; //read or write
+    bool fopen(const string& _fname, const ios_base::openmode& mode);
+    //! break line into vector of valtype 
+    vector<valtype> line2val() const;
+    //! break line into vector of string 
+    vector<string> line2str() const;
+    //! return fileio::lines for read-only
+    const vector<string>& getlines() const;
+    string fname; //filename
+    ios_base::openmode iomode; //read or write
     const bool ifperm; //if true, won't exit even though a file can't be opened
+    const linecounter lb; //beginning (from 1) line of input file to be actually parsed 
+    const linecounter ls; //parse the input file every this many of lines, starting from fileio::lb
+    const linecounter le; //ending line of input file to be actually parsed
+    linecounter lc; //number of lines actually read, excluding comments but including lines before fileio::lb
+    string line; //used by fileio::readbyline()
+    vector<string> lines; //used by fileio::readall()
+  private:
+    //! just open a file handle
+    bool fopen();
+    fstream fs; //fstream handle
 };
-
-
-template<class Taction, class Tdata1, class Tdata2>
-fileio<Taction, Tdata1, Tdata2>::fileio(const Taction& act, const ios_base::openmode& mode, const bool& perm = true) :
-  funct(act),
-  iomode(mode),
-  ifperm(perm)
-{}
-
-template<class Taction, class Tdata1, class Tdata2>
-bool fileio<Taction, Tdata1, Tdata2>::fopen(const string& fname, fstream& fs) const {
-  fs.open(fname.c_str(),iomode);
-  if(!fs.good()) {
-    if(!ifperm) {
-      cerr << "Error opening file: " << fname << endl;
-      exit(-1);
-    } else {
-      return false;
-    }
-  }
-  else { 
-    cout << "#Opening file: " << fname << endl; 
-    return true;
-  }
-}
-
-template<class Taction, class Tdata1, class Tdata2>
-linecounter fileio<Taction, Tdata1, Tdata2>::operator()(const string& fname, Tdata1& data1) const {
-  fstream fs;
-  if(!fopen(fname,fs)) { return 0; }
-  const ulong nlines = funct(fs,data1);
-  fs.close();
-  return nlines;
-}
-
-template<class Taction, class Tdata1, class Tdata2>
-linecounter fileio<Taction, Tdata1, Tdata2>::operator()(const string& fname, Tdata1& data1, Tdata2& data2) const {
-  fstream fs;
-  if(!fopen(fname,fs)) { return 0; }
-  const ulong nlines = funct(fs,data1,data2);
-  fs.close();
-  return nlines;
-}
 
 #endif

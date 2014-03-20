@@ -5,8 +5,9 @@
 #include "gmxpullpot.hpp"
 #include "hamiltonian.hpp"
 #include "ensemble.hpp"
-#include <fstream>
+#include <string>
 #include <map>
+#include "fileio.hpp"
 
 using namespace std;
 
@@ -15,9 +16,9 @@ using namespace std;
  */
 class mdp2pullpot {
   public:
-    mdp2pullpot(const bitset<MAXNRST>& _rcmask);
-    linecounter operator() (fstream& fs, map<uint,vector<umbrella*> >& funct, vector<Hamiltonian<RSTXLAMBDAsgl>* >& V) const;
-    linecounter operator() (fstream& fs, map<uint,vector<umbrella_fb*> >& funct, vector<Hamiltonian<RST_fbXLAMBDAsgl>* >& V) const;
+    mdp2pullpot(const bitset<MAXNRST>& _rcmask, const fileio& _fio);
+    linecounter operator() (const string& fname, map<uint,vector<umbrella*> >& funct, vector<Hamiltonian<RSTXLAMBDAsgl>* >& V);
+    linecounter operator() (const string& fname, map<uint,vector<umbrella_fb*> >& funct, vector<Hamiltonian<RST_fbXLAMBDAsgl>* >& V);
   private:
     //! Given a directive keyword in the COM-pull section in mdp file, extract the pullgrp id
     /** 'str' is of the syntax 'pull_.*[0-9]'
@@ -26,6 +27,7 @@ class mdp2pullpot {
     uint getcontactgrpid(const string& str) const;
     //! Reaction Coordinate mask that indicates what pull groups are interesting
     const bitset<MAXNRST> rcmask;
+    fileio fio;
 };
 
 #endif

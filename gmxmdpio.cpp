@@ -1,6 +1,6 @@
 #include "typedefs.hpp"
 #include "gmxmdpio.hpp"
-#include "fileio_utils.hpp"
+#include "fileio.hpp"
 #include <string>
 #include <map>
 #include <fstream>
@@ -10,18 +10,19 @@
 
 using namespace std;
 
-mdp2pullpot::mdp2pullpot(const bitset<MAXNRST>& _rcmask) :
-  rcmask(_rcmask)
+mdp2pullpot::mdp2pullpot(const bitset<MAXNRST>& _rcmask, const fileio& _fio) :
+  rcmask(_rcmask), 
+  fio(_fio)
   {}
 
-linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella*> >& funct, vector<Hamiltonian<RSTXLAMBDAsgl>* >& V) const {
+linecounter mdp2pullpot::operator() (const string& fname, map<uint,vector<umbrella*> >& funct, vector<Hamiltonian<RSTXLAMBDAsgl>* >& V) {
+  fio.fopen(fname);
   //There are 2 possible modes: pull-group or contact-group
   //for pull-group mode, we take k and init from pull-group parameters
   //for contact-group, we take them from contact-group parameters
   //pull-group mode is activated when pull_ncontactgroups is not defined
   //contact-group mode is activated when pull_ncontactgroups is defined
   //contact-group mode will overwrite pull-group mode
-  string line;
   valtype T; //temperature
   vector<valtype> rstlambdas, kA, kB, initA, initB;
   vector<vector<valtype> > contactlambdas;
@@ -30,10 +31,8 @@ linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella*> >& 
   uint npullgrps = 0;
   uint ncontactgrps = 0;
   linecounter nlines = 0;
-  while(getline(fs,line)) {
-    if(line[0] == ';') { continue; }
-    vector<string> tmpstr;
-    parser<string>(tmpstr,line);
+  while(fio.readaline()) {
+    vector<string> tmpstr = fio.line2str();
     //ignore empty lines
     if(!tmpstr.size()) { continue; }
     ++nlines;
@@ -222,8 +221,8 @@ uint mdp2pullpot::getcontactgrpid(const string& str) const {
   return getpullgrpid("contactgroup",out[1]);
 }
 
-linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella_fb*> >& funct, vector<Hamiltonian<RST_fbXLAMBDAsgl>* >& V) const {
-  string line;
+linecounter mdp2pullpot::operator() (const string& fname, map<uint,vector<umbrella_fb*> >& funct, vector<Hamiltonian<RST_fbXLAMBDAsgl>* >& V) {
+  fio.fopen(fname);
   linecounter nlines = 0;
   vector<valtype> lambdas, k0A, k0B, k1A, k1B, initA, initB, r0A, r0B, r1A, r1B;
   // counters to tell if the number of parameters read in is correct
@@ -231,11 +230,8 @@ linecounter mdp2pullpot::operator() (fstream& fs, map<uint,vector<umbrella_fb*> 
   valtype T; //temperature
   uint current_lambda = 0;
   uint npullgrps = 0;
-  while(getline(fs,line)) {
-    //ignore comments
-    if(line[0] == ';') { continue; }
-    vector<string> tmpstr;
-    parser<string>(tmpstr,line);
+  while(fio.readaline()) {
+    vector<string> tmpstr = fio.line2str();
     //ignore empty lines
     if(!tmpstr.size()) { continue; }
     ++nlines;

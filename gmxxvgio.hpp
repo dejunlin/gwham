@@ -2,7 +2,7 @@
 #define GMXXVGIO_HPP
 
 #include "typedefs.hpp"
-#include "fileio_utils.hpp"
+#include "fileio.hpp"
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
@@ -18,8 +18,8 @@ class xxvg {
     //! convert the keys in xxvg::funct into a bitmask
     const bitset<MAXNRST> mapkeys2bitset() const;
   public:
-    xxvg(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
-    virtual linecounter operator() (fstream& fs, Tdata& data) const = 0;
+    xxvg(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, fileio& _fio);
+    virtual linecounter operator() (const string& fname, Tdata& data) = 0;
     //! Just return col_rst
     const bitset<MAXNRST>& getcol_rst() const;
     //! Shift the col_rst to the left by ncolskip and return it, which is the pullgrp mask
@@ -39,8 +39,8 @@ class xxvg {
     const bitset<MAXNRST> col_pot;
     //!number of element in each data point to bin into histogram, which is number of 1-bit's in col_rc plus that in col_pot
     const uint nelm;
-    //!only process every stride lines from the file
-    const uint stride;
+    //!fileio object
+    fileio fio;
 };
 
 template<class Tdata, class rstfunct>
@@ -69,14 +69,14 @@ const bitset<MAXNRST> xxvg<Tdata, rstfunct>::mapkeys2bitset() const {
 }
 
 template<class Tdata, class rstfunct>
-xxvg<Tdata, rstfunct>::xxvg(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
+xxvg<Tdata, rstfunct>::xxvg(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, fileio& _fio) :
   funct(_funct),
   ncolskip(_ncolskip),
   col_rc(_col_rc << ncolskip), //input _col_rc usu. mask pull-group id but here we want column id mask, which is pull-group id mask + ncolskip offset
   col_rst(this->mapkeys2bitset() << ncolskip),
   col_pot(col_rst & (~col_rc)),
   nelm(col_rc.count() + col_pot.count()), //just count how many '1's are there in both bitmasks
-  stride(_stride)
+  fio(_fio)
 {
   /*cout << "col_rc = " << col_rc << endl;
   cout << "col_rst = " << col_rst << endl;
@@ -96,39 +96,33 @@ class xxvg2dE : public virtual xxvg<vector<vector<valtype> >, rstfunct> {
   using xxvg<vector<vector<valtype> >,rstfunct>::col_rc;
   using xxvg<vector<vector<valtype> >,rstfunct>::col_rst;
   using xxvg<vector<vector<valtype> >,rstfunct>::col_pot;
-  using xxvg<vector<vector<valtype> >,rstfunct>::stride;
+  using xxvg<vector<vector<valtype> >,rstfunct>::fio;
   public:
-    xxvg2dE(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
-    linecounter operator() (fstream& fs, vector<vector<valtype> >& dE) const;
+    xxvg2dE(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, fileio& _fio);
+    linecounter operator() (const string& fname, vector<vector<valtype> >& dE) ;
   private:
 };
 
 template<class rstfunct>
-xxvg2dE<rstfunct>::xxvg2dE(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
-  xxvg<vector<vector<valtype> >,rstfunct>(_ncolskip, _col_rc, _funct, _stride)
+xxvg2dE<rstfunct>::xxvg2dE(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, fileio& _fio) :
+  xxvg<vector<vector<valtype> >,rstfunct>(_ncolskip, _col_rc, _funct, _fio)
 {
 }
 
 template<class rstfunct>
-linecounter xxvg2dE<rstfunct>::operator() (fstream& fs, vector<vector<valtype> >& dE) const {
-  string line;
-  linecounter nsamples = 0;
-  linecounter lc = 0;
-  while(getline(fs,line)) {
-    if(line[0] == '@' || line[0] == '#') { continue; }
-    ++lc;
-    if(lc % stride) { continue; }
-    //if(!nsamples) { ++nsamples; continue; } //always skip the 1st line, which is the last line from the last file
-    vector<valtype> tmp;
-    parser<valtype>(tmp,line);
+linecounter xxvg2dE<rstfunct>::operator() (const string& fname, vector<vector<valtype> >& dE) {
+  fio.fopen(fname);
+  uint nsamples = 0;
+  while(fio.readaline()) {
+    vector<valtype> tmp = fio.line2val();
     vector<valtype> E(0,0);
     for(uint i = ncolskip; i < tmp.size(); ++i) { //we skip the 1st ncolskip column
       if( ((bitunit << i) & col_rst).any() ) {
-	vector<rstfunct*> functs = funct.find(i-ncolskip)->second; 
-	if(!E.size()) { E.resize(functs.size(),0.0);}
-	for(uint j = 0; j < functs.size(); ++j) {
-	  E[j] += functs[j]->operator()(tmp[i]);
-	}
+  	vector<rstfunct*> functs = funct.find(i-ncolskip)->second; 
+  	if(!E.size()) { E.resize(functs.size(),0.0);}
+  	for(uint j = 0; j < functs.size(); ++j) {
+  	  E[j] += functs[j]->operator()(tmp[i]);
+  	}
       }
     }
     //cout <<"#GMXXVG: dE.size() = " << dE.size() << endl;
@@ -156,21 +150,21 @@ class xxvg2hist : public virtual xxvg<histogram,rstfunct> {
   using xxvg<histogram,rstfunct>::col_rc;
   using xxvg<histogram,rstfunct>::col_rst;
   using xxvg<histogram,rstfunct>::col_pot;
-  using xxvg<histogram,rstfunct>::stride;
+  using xxvg<histogram,rstfunct>::fio;
   public:
-    xxvg2hist(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride);
-    linecounter operator() (fstream& fs, histogram& hist) const;
+    xxvg2hist(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, fileio& _fio);
+    linecounter operator() (const string& fname, histogram& hist) ;
   private:
 };
 
 template<class histogram, class rstfunct>
-xxvg2hist<histogram, rstfunct>::xxvg2hist(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, const uint& _stride) :
-  xxvg<histogram,rstfunct>(_ncolskip, _col_rc, _funct, _stride)
+xxvg2hist<histogram, rstfunct>::xxvg2hist(const uint _ncolskip, const bitset<MAXNRST>& _col_rc, const map<uint, vector<rstfunct*> >& _funct, fileio& _fio) :
+  xxvg<histogram,rstfunct>(_ncolskip, _col_rc, _funct, _fio)
 {
 }
 
 template<class histogram, class rstfunct>
-linecounter xxvg2hist<histogram, rstfunct>::operator() (fstream& fs, histogram& hist) const {
+linecounter xxvg2hist<histogram, rstfunct>::operator() (const string& fname, histogram& hist) {
   //check if the histogram is of the same dimension as the data we're about to read
   const uint nelm_hist = hist.getdim();
   const uint nelm_data = col_pot.any() ? (funct.begin()->second).size() + col_rc.count() : col_rc.count();
@@ -178,26 +172,20 @@ linecounter xxvg2hist<histogram, rstfunct>::operator() (fstream& fs, histogram& 
     cerr << "Asking to generate data of " << nelm_data << " columns but histogram is expecting " << nelm_hist << " columns." << endl; 
     exit(-1); 
   }
-  string line;
-  linecounter nsamples = 0;
-  linecounter lc = 0;
-  while(getline(fs,line)) {
-    if(line[0] == '@' || line[0] == '#') { continue; }
-    ++lc;
-    if(lc % stride) { continue; }
-    //if(!nsamples) { ++nsamples; continue; } //always skip the 1st line, which is the last line from the last file
-    vector<valtype> tmp;
-    parser<valtype>(tmp,line);
+  fio.fopen(fname);
+  uint nsamples = 0;
+  while(fio.readaline()) {
+    vector<valtype> tmp = fio.line2val();
     vector<valtype> data(0,0.0);
     vector<valtype> tmpdata(0,0);
     for(uint i = ncolskip; i < tmp.size(); ++i) {//we skip the 1st ncolskip column
       //Save the pot in tmpdata first; after we've processed all the columns, we'll push them in the data
       if( ((bitunit << i) & col_pot).any() ) {
-	vector<rstfunct*> functs = funct.find(i-ncolskip)->second; 
-	if(!tmpdata.size()) { tmpdata.resize(functs.size(),0.0);}
-	for(uint j = 0; j < functs.size(); ++j) {
-	  tmpdata[j] += functs[j]->operator()(tmp[i]);
-	}
+  	vector<rstfunct*> functs = funct.find(i-ncolskip)->second; 
+  	if(!tmpdata.size()) { tmpdata.resize(functs.size(),0.0);}
+  	for(uint j = 0; j < functs.size(); ++j) {
+  	  tmpdata[j] += functs[j]->operator()(tmp[i]);
+  	}
       }
       //We just push the RC in the data first
       else if( ((bitunit << i) & col_rc).any() ) { data.push_back(tmp[i]); } 
@@ -206,9 +194,8 @@ linecounter xxvg2hist<histogram, rstfunct>::operator() (fstream& fs, histogram& 
     data.insert(data.end(),tmpdata.begin(),tmpdata.end());
     /*cout << "data = ";
     copy(data.begin(),data.end(),ostream_iterator<valtype>(cout," ")); cout << endl;*/
-    if(hist.bin(data) != hist.end()) {++nsamples;}
+    if(hist.bin(data) != hist.end()) { ++nsamples; }
   }
-  if(!nsamples) { cerr << "All data is excluded. Please check the histogram bounds\n"; exit(-1);}
   return nsamples;
 }
 

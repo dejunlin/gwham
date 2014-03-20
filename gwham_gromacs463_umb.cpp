@@ -23,8 +23,9 @@ typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
 int main(int argc, char* argv[]) {
-  if (argc != 13) {
-    cerr << "Usage: gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstride ncolskip\n";
+  string cmdline("Usage: gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstart xvgstride xvgend ncolskip\n");
+  if (argc != 15) {
+    cerr << cmdline;
     exit(-1);
   }
   const string sysname = string(argv[1]); //name of the system 
@@ -42,10 +43,12 @@ int main(int argc, char* argv[]) {
   const string hvstr = string(argv[8]); //upper bounds in each dimension
   const string lvstr = string(argv[9]); //lower bounds in each dimension
   const double tol = atof(argv[10]); //tolerance for WHAM iteration
-  const uint xvgstride = atoi(argv[11]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
-  const uint ncolskip = atoi(argv[12]); //skip the 1st ncolskip elements in any line of a x.xvg file
+  const uint xvgstart = atoi(argv[11]); //first line to read (excluding comment-lines) in the x.xvg files
+  const uint xvgstride = atoi(argv[12]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
+  const uint xvgend = atoi(argv[13]); //last line to read (excluding comment-lines) in the x.xvg files
+  const uint ncolskip = atoi(argv[14]); //skip the 1st ncolskip elements in any line of a x.xvg file
   
-  cout << "# gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstride ncolskip\n";
+  cout << cmdline;
   cout << "# ";
   copy(argv,argv+argc,ostream_iterator<char*>(cout," "));
   cout << endl;
@@ -87,15 +90,15 @@ int main(int argc, char* argv[]) {
   
   //Read the parameters from mdp file, construct the restraint functor and bin the x.xvg file 
   //into histograms
-  const mdp2pullpot mdp2rst(rcsmpmask);
-  fileio<mdp2pullpot, map<uint,vector<umbrella*> >, vector<Hamiltonian<RSTXLAMBDAsgl>* > > fmdp(mdp2rst, std::fstream::in, 0);
+  fileio fmdp(std::fstream::in, false, 1, 1, MAXNLINE);
+  mdp2pullpot mdp2rst(rcsmpmask, fmdp);
   vector<Hamiltonian<RSTXLAMBDAsgl>* > V;
   map<uint, vector<umbrella*> > rstfuncts;
   for(uint i = 0; i < nwin; ++i) {
     char winid[MAXNDIGWIN];
     sprintf(winid,"%d",i);
     string mdpfname = sysname + "_0_" + winid + ".mdp";
-    fmdp(mdpfname,rstfuncts,V);
+    mdp2rst(mdpfname, rstfuncts, V);
   }
   
   //Check if all windows have the same temperature, if not, just quit
@@ -110,9 +113,9 @@ int main(int argc, char* argv[]) {
 
   //number of data points for each window
   vector<uint> N(nwin,0);
-  const xxvg2hist<histogram,umbrella> xvg2hist(ncolskip, rcsmpmask, rstfuncts, xvgstride);
+  fileio fxxvg(std::fstream::in, 1, xvgstart, xvgstride, xvgend);
+  xxvg2hist<histogram,umbrella> xvg2hist(ncolskip, rcsmpmask, rstfuncts, fxxvg);
   //Read x.xvg file for each run
-  fileio<xxvg2hist<histogram,umbrella>,histogram> fxxvg(xvg2hist, std::fstream::in);
   for(uint i = 0; i < nwin; ++i) {
     char winid[MAXNDIGWIN];
     sprintf(winid,"%d",i);
@@ -120,7 +123,7 @@ int main(int argc, char* argv[]) {
       char runid[MAXNDIGRUN];
       sprintf(runid,"%d",j);
       string xxvgfname = sysname + "_" + runid + "x_" + winid + ".xvg";
-      N[i] += fxxvg(xxvgfname,hists[i]);
+      N[i] += xvg2hist(xxvgfname,hists[i]);
     }
   }
   /*cout << "#number of samples in each window: ";
