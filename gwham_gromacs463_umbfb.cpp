@@ -23,8 +23,8 @@ typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
 int main(int argc, char* argv[]) {
-  if (argc != 14) {
-    cerr << "Usage: gwham_gromacs463_umbfb sysname nrun nwin runmin rcsample rcprint Temperature nbins hv lv tol xvgstride ncolskip\n";
+  if (argc != 15) {
+    cerr << "Usage: gwham_gromacs463_umbfb sysname nrun nwin runmin rcsample rcprint Temperature nbins hv lv tol xvgskip xvgstride ncolskip\n";
     exit(-1);
   }
   const string sysname = string(argv[1]); //name of the system 
@@ -43,10 +43,11 @@ int main(int argc, char* argv[]) {
   const string hvstr = string(argv[9]); //upper bounds in each dimension
   const string lvstr = string(argv[10]); //lower bounds in each dimension
   const double tol = atof(argv[11]); //tolerance for WHAM iteration
-  const uint xvgstride = atoi(argv[12]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
-  const uint ncolskip = atoi(argv[13]); //skip the 1st ncolskip elements of any line of a x.xvg file
+  const uint xvgskip = atoi(argv[12]); //Skip this many lines from the beginning of the x.xvg files
+  const uint xvgstride = atoi(argv[13]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
+  const uint ncolskip = atoi(argv[14]); //skip the 1st ncolskip elements of any line of a x.xvg file
   
-  cout << "# gwham_gromacs463_umbfb sysname nrun nwin runmin rcsample rcprint Temperature nbins hv lv tol xvgstride ncolskip\n";
+  cout << "# gwham_gromacs463_umbfb sysname nrun nwin runmin rcsample rcprint Temperature nbins hv lv tol xvgskip xvgstride ncolskip\n";
   cout << "# ";
   copy(argv,argv+argc,ostream_iterator<char*>(cout," "));
   cout << endl;
@@ -120,7 +121,7 @@ int main(int argc, char* argv[]) {
 
   //number of data points for each window
   vector<uint> N(nwin,0);
-  const xxvg2hist<histogram,umbrella_fb> xvg2hist(ncolskip, rcsmpmask,rstfuncts,xvgstride);
+  const xxvg2hist<histogram,umbrella_fb> xvg2hist(ncolskip, rcsmpmask,rstfuncts,xvgskip,xvgstride);
   //Read x.xvg file for each run
   fileio<xxvg2hist<histogram,umbrella_fb>,histogram> fxxvg(xvg2hist, std::fstream::in);
   for(uint i = 0; i < nwin; ++i) {
