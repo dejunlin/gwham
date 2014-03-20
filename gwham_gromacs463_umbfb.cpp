@@ -121,9 +121,7 @@ int main(int argc, char* argv[]) {
 
   //number of data points for each window
   vector<uint> N(nwin,0);
-  const xxvg2hist<histogram,umbrella_fb> xvg2hist(ncolskip, rcsmpmask,rstfuncts,xvgskip,xvgstride);
   //Read x.xvg file for each run
-  fileio<xxvg2hist<histogram,umbrella_fb>,histogram> fxxvg(xvg2hist, std::fstream::in);
   for(uint i = 0; i < nwin; ++i) {
     char winid[MAXNDIGWIN];
     sprintf(winid,"%d",i);
@@ -131,7 +129,15 @@ int main(int argc, char* argv[]) {
       char runid[MAXNDIGRUN];
       sprintf(runid,"%d",j);
       string xxvgfname = sysname + "_" + runid + "x_" + winid + ".xvg";
-      N[i] += fxxvg(xxvgfname,hists[i]);
+      if(j == 0) {
+        const xxvg2hist<histogram,umbrella_fb> xvg2hist(ncolskip, rcsmpmask,rstfuncts,xvgskip,xvgstride);
+        fileio<xxvg2hist<histogram,umbrella_fb>,histogram> fxxvg(xvg2hist, std::fstream::in);
+        N[i] += fxxvg(xxvgfname,hists[i]);
+      } else {
+        const xxvg2hist<histogram,umbrella_fb> xvg2hist(ncolskip, rcsmpmask,rstfuncts,0,xvgstride);
+        fileio<xxvg2hist<histogram,umbrella_fb>,histogram> fxxvg(xvg2hist, std::fstream::in);
+        N[i] += fxxvg(xxvgfname,hists[i]);
+      }
     }
   }
   /*cout << "#number of samples in each window: ";

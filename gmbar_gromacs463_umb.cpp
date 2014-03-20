@@ -114,10 +114,8 @@ int main(int argc, char* argv[]) {
   vector<uint> N(nwin,0);
   //dE for each frame of each trajectory
   vector<vector<vector<valtype> > > dE(nwin);
-  const xxvg2dE<umbrella> xvg2dE(ncolskip,rcsmpmask,rstfuncts,xvgskip, xvgstride);
   //const xxvg2hist<histogram,umbrella> xvg2hist(rcsmpmask,rstfuncts,xvgstride);
   //Read x.xvg file for each run
-  fileio<xxvg2dE<umbrella>,vector<vector<valtype> > > fxxvg(xvg2dE, std::fstream::in);
   for(uint i = 0; i < nwin; ++i) {
     char winid[MAXNDIGWIN];
     sprintf(winid,"%d",i);
@@ -125,7 +123,15 @@ int main(int argc, char* argv[]) {
       char runid[MAXNDIGRUN];
       sprintf(runid,"%d",j);
       string xxvgfname = sysname + "_" + runid + "x_" + winid + ".xvg";
-      N[i] += fxxvg(xxvgfname,dE[i]);
+      if(j == 0) {
+        const xxvg2dE<umbrella> xvg2dE(ncolskip,rcsmpmask,rstfuncts,xvgskip, xvgstride);
+        fileio<xxvg2dE<umbrella>,vector<vector<valtype> > > fxxvg(xvg2dE, std::fstream::in);
+        N[i] += fxxvg(xxvgfname,dE[i]);
+      } else {
+        const xxvg2dE<umbrella> xvg2dE(ncolskip,rcsmpmask,rstfuncts,0, xvgstride);
+        fileio<xxvg2dE<umbrella>,vector<vector<valtype> > > fxxvg(xvg2dE, std::fstream::in);
+        N[i] += fxxvg(xxvgfname,dE[i]);
+      }
     }
   }
   /*cout << "#number of samples in each window: ";
