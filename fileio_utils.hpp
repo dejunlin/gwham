@@ -9,7 +9,7 @@
 using namespace std;
 
 template <class Tp> 
-void parser(vector<Tp>& output,string str, string delims=" \t") {
+void parser(vector<Tp>& output, const string& str, string delims=" \t") {
 	char * str_c = new char[str.size()+1];
 	str_c[str.size()] = '\0';
 	memcpy(str_c,str.c_str(),str.size());
