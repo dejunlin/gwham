@@ -14,7 +14,7 @@ fileio::fileio(
   const linecounter _lb=0, 
   const linecounter _ls=1, 
   const linecounter _le=MAXNLINE) :
-  fname(fname),
+  fname(_fname),
   iomode(mode),
   ifperm(perm),
   lb(_lb),
@@ -60,19 +60,19 @@ fileio::fileio(const fileio& _fio) :
 
 bool fileio::fopen(const string& _fname) {
   if(fs.is_open()) { fs.close(); }
-  fname = _fname;
-  fopen();
   if(!line.empty()) { line.clear(); }
   if(!lines.empty()) { lines.clear(); }
+  fname = _fname;
+  return fopen();
 }
 
 bool fileio::fopen(const string& _fname, const ios_base::openmode& mode) {
   if(fs.is_open()) { fs.close(); }
-  fname = _fname;
-  iomode = mode;
-  fopen();
   if(!line.empty()) { line.clear(); }
   if(!lines.empty()) { lines.clear(); }
+  fname = _fname;
+  iomode = mode;
+  return fopen();
 }
 
 bool fileio::fopen() {
