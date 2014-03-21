@@ -126,13 +126,13 @@ int main(int argc, char* argv[]) {
       N[i] += xvg2hist(xxvgfname,hists[i]);
     }
   }
-  /*cout << "#number of samples in each window: ";
+  cout << "#number of samples in each window: ";
   copy(N.begin(),N.end(),ostream_iterator<uint>(cout," ")); cout << endl;
   //print the histograms
   for(uint i = 0; i < nwin; ++i) {
     cout << "#Histogram " << i << endl;
     hists[i].print();
-  }*/
+  }
 
   //build records of what bins in the histograms are non-zero
   map<coordtype, vector<uint> > record;
