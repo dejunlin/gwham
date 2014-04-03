@@ -27,6 +27,8 @@ class fileio {
     vector<string> line2str() const;
     //! return fileio::lines for read-only
     const vector<string>& getlines() const;
+    //! reset lc to 0
+    void resetlc();
     string fname; //filename
     ios_base::openmode iomode; //read or write
     const bool ifperm; //if true, won't exit even though a file can't be opened

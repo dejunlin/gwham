@@ -119,6 +119,7 @@ int main(int argc, char* argv[]) {
   for(uint i = 0; i < nwin; ++i) {
     char winid[MAXNDIGWIN];
     sprintf(winid,"%d",i);
+    xvg2hist.resetfiolc(); //reset the line counter fileio::lc to 0
     for(uint j = 0; j < nrun; ++j) {
       char runid[MAXNDIGRUN];
       sprintf(runid,"%d",j);

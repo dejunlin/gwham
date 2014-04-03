@@ -127,3 +127,5 @@ vector<string> fileio::line2str() const {
 }
 
 const vector<string>& fileio::getlines() const { return lines; }
+
+void fileio::resetlc() { lc = 0; }

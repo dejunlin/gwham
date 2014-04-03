@@ -26,6 +26,8 @@ class xxvg {
     const bitset<MAXNRST>& getpullgrp_mask() const;
     //! Return xxvg::nelm
     uint getnelm() const;
+    //! Reset the fileio::lc linecounter to 0
+    void resetfiolc();
   protected:
     //!pullgroup id => restraint potential functors for each ensemble (pullgroup id starts with 0)
     const map<uint, vector<rstfunct*> > funct;
@@ -56,6 +58,11 @@ const bitset<MAXNRST>& xxvg<Tdata, rstfunct>::getpullgrp_mask() const {
 template<class Tdata, class rstfunct>
 uint xxvg<Tdata, rstfunct>::getnelm() const {
   return nelm;
+}
+
+template<class Tdata, class rstfunct>
+void xxvg<Tdata, rstfunct>::resetfiolc() {
+  fio.resetlc();
 }
 
 template<class Tdata, class rstfunct>
