@@ -37,7 +37,11 @@ class fileio {
     string line; //used by fileio::readbyline()
     vector<string> lines; //used by fileio::readall()
   private:
-    //! just open a file handle
+    //! open a new file handle
+    /**
+     * this function will test if the old filehandle is open, if so close it;
+     * it also clear fileio::line, fileio::lines
+     */
     bool fopen();
     fstream fs; //fstream handle
 };

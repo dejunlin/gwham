@@ -59,23 +59,20 @@ fileio::fileio(const fileio& _fio) :
 }
 
 bool fileio::fopen(const string& _fname) {
-  if(fs.is_open()) { fs.close(); }
-  if(!line.empty()) { line.clear(); }
-  if(!lines.empty()) { lines.clear(); }
   fname = _fname;
   return fopen();
 }
 
 bool fileio::fopen(const string& _fname, const ios_base::openmode& mode) {
-  if(fs.is_open()) { fs.close(); }
-  if(!line.empty()) { line.clear(); }
-  if(!lines.empty()) { lines.clear(); }
   fname = _fname;
   iomode = mode;
   return fopen();
 }
 
 bool fileio::fopen() {
+  if(fs.is_open()) { fs.close(); }
+  if(!line.empty()) { line.clear(); }
+  if(!lines.empty()) { lines.clear(); }
   fs.open(fname.c_str(),iomode);
   if(!fs.good()) {
     if(!ifperm) {
