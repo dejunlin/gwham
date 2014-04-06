@@ -23,7 +23,7 @@ typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
 int main(int argc, char* argv[]) {
-  string cmdline("Usage: gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstart xvgstride xvgend ncolskip\n");
+  string cmdline("#Usage: gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstart xvgstride xvgend ncolskip\n");
   if (argc != 15) {
     cerr << cmdline;
     exit(-1);
