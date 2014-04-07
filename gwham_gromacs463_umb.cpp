@@ -50,7 +50,9 @@ int main(int argc, char* argv[]) {
   
   cout << cmdline;
   cout << "# ";
-  copy(argv,argv+argc,ostream_iterator<char*>(cout," "));
+  for(int i = 0; i < argc; ++i) {
+    cout << "'" << argv[i] << "' ";
+  }
   cout << endl;
 
   vector<uint> rcsmp, rcprt;
