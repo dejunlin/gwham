@@ -1,0 +1,63 @@
+\section{Introduction}
+
+Weighted Histogram Analysis Method has been widely used in the field of 
+molecular dynamics simulations in calculating the potential of mean force
+(PMF)~\cite{Kumar1992,Roux1995275}.
+It has also been used in free energy calculation in a alchemical scheme~\cite{Kumar1992} as 
+well as estimating the ensemble average from generalized ensemble simulations~\cite{Chodera2007}.
+However, commonly used implementation of WHAM such as Alan Grossfield's 
+implementation~\cite{wham205} and GROMACS ``g\_wham" only support PMF calculation.
+Moreover, most implementations uses the direct iteration to solve for PMFs 
+while it's been shown~\cite{Zhu2012} that there're more efficient way to 
+reach the same answers. Here I combine the reasonings behind the aforementioned
+literature and put together an implementation of WHAM that's capable of solving 
+the following general problem:
+
+Suppose the we have $K$ Hamiltonian of the same thermodynamic ensemble with
+each characterized by different thermodynamics parameters. If we let $\vect{x} \in
+ \nspace{R}{N}$ being the generalized coordinates, which has $N$  degrees of 
+ freedom, and
+\begin{equation}\label{eq:Ham}
+H_{i}(\vect{x}) = \beta_{i}[ U_{i}(\vect{x}) + P_{i}V(\vect{x}) + \dotprd{\boldsymbol\mu_{i}}{\vect{n}(\vect{x})}]
+\end{equation}
+be the Hamiltonian of the $i$'th system, where $\beta_{i}, U_{i}, P_{i}, V, \boldsymbol\mu_{i}$
+and $\vect{n}$ are the inverse temperature, potential energy, the pressure, the volumn, the chemical
+potentials for each system components and the number of molecules for each components, 
+respectively. The potential energy $U_{i}$ can be further decomposed into 
+the internal potential $U$ and $L$ external potentials $\vect{U}_{b}$, both 
+of which are of the same form across the $K$ systems, so that 
+\begin{equation}\label{eq:Pot}
+U_{i}(\vect{x}) = U(\vect{x}) + \dotprd{\boldsymbol\lambda_{i}}{\vect{U}_{b}}
+\end{equation} 
+Each of the $K$ systems can has its own specific $\boldsymbol\lambda_{i}$,  
+which is often used in the alchemical calculations. Here both $\boldsymbol\lambda_{i}$ 
+and $\vect{U}_{b}$ are of the dimension of $L$. To simplify the expression, 
+we rewrite equation~\ref{eq:Ham} into
+\begin{equation}\label{eq:simHam}
+H_{i}(\vect{x}) = \beta_{i}\dotprd{\vect{R}_{i}}{\vect{q}(\vect{x})}
+\end{equation}
+where $\vect{R}_{i} \equiv \{1, \boldsymbol\lambda_{i}, P_{i}, \boldsymbol\mu_{i}\}$
+and $\vect{q}(\vect{x}) \equiv \{U(\vect{x}), \vect{U}_{b}(\vect{x}), V(\vect{x}), \vect{n}(\vect{x})\}$
+are the arrays of intensive and extensive parameters, respectively. 
+We further define unnormalized probability density 
+\begin{equation}
+p_{i}(\vect{x}) \equiv \exp(-H_{i}(\vect{x}))
+\end{equation}
+and the partition function
+\begin{equation}
+Q_{i} \equiv \intgrln{}{}{p_{i}}{x} 
+\end{equation}
+
+Now we'd like to estimate the ensemble average of some observable 
+$O \equiv O(\vect{x})$ in any of the system $i$
+\begin{equation}
+\eavg{O}_{i} \equiv \frac{\intgrln{}{}{p_{i}(\vect{x})O}{x}}{Q_{i}}
+\end{equation}
+To do that, we carry out $S$ simulations ($S \ge K$) with each 
+simulation visiting at least $1$ of the $K$ systems. As soon as the transition 
+from one systems to the other follows the same statistics as those used 
+in transition between configuration in any of the systems, we can simply 
+assert $S = K$ for simplicity and the cases where $S > K$ can be handled 
+accordingly without troubles at all. From each simulation, we will have one 
+estimate of $O$. The purpose of WHAM is to provide an optimal estimate of 
+$O$ by combining the estimates from all the $S$ simulations.

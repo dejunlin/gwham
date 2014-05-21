@@ -1,0 +1,46 @@
+% Packages to load (all standard on a modern LaTeX system on Linux)
+
+% Make doublespaced ugly typography required for mysterious 
+% reasons by most journals - comment out for normal output
+\usepackage{setspace} 
+%\doublespacing
+
+% AMS-Math package to have nice multi-line equations and other goodies
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{authblk}
+\usepackage{tikz}
+\usepackage{mathrsfs}
+\usepackage{hyperref}
+
+% Show labels for easy orientation, comment out for final version
+% \usepackage{showlabels}
+
+% EPS/PDF graphics
+% Place figures in the document directory in both the EPS and PDF
+% formats, e.g., fig_1.eps and fig_1.pdf. Use the includegraphics
+% command without file extension, e.g. \includegraphics*[width=3.25in]{fig_1}
+% The pdflatex or latex programs then work automagically with the 
+% appropriate formats.  EPS figures can be converted to PDF using
+% the epstopdf program present on most Linux disributions
+\usepackage{epstopdf}
+\usepackage{graphicx}
+
+
+% Citation style in the text: numbers in parenthesis, sorted by their
+% order in the list of references.
+% Uses a range if possible: (1-3), not (1,2,3)
+\usepackage[round,numbers,sort&compress]{natbib}
+\bibliographystyle{plainnat}
+% Bibliography style (requires the style file biophysj.bst in the 
+% document directory)
+
+%For referencing Supplement cross-ref
+\usepackage{xr}
+
+%Cyrillic symbol
+\usepackage[OT2,T1]{fontenc}
+\DeclareSymbolFont{cyrletters}{OT2}{wncyr}{m}{n}
+\DeclareMathSymbol{\Sha}{\mathalpha}{cyrletters}{"58}

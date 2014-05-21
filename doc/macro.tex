@@ -1,0 +1,91 @@
+% Examples of special definitions (amsmath package required)
+\newcommand{\erf}{\operatorname{erf}}        % error function
+\newcommand{\erfc}{\operatorname{erfc}}      % complementary error function
+\newcommand{\BibTeX}{\textsc{Bib}\TeX}       % corect BibTeX appearance
+
+\newcommand{\mytitle}{Generalized Weighted Histogram Analysis Method}
+
+\newcommand{\myauthors}{Dejun Lin}
+
+\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu} %adjust the length of overbar for complex conjugate
+\newcommand{\vect}[1]{\mathbf{#1}} %vector
+\newcommand{\vnorm}[1]{\lvert\mathbf{#1}\rvert} %vector
+\newcommand{\vnorms}[1]{\lvert\mathbf{#1}\rvert^{2}} %vector
+\newcommand{\adet}[1]{\lvert \mathrm{det}#1 \rvert} %absolute value of a determinant
+\newcommand{\invt}[1]{\tilde{#1}} %inverse transpose
+\newcommand{\lowceil}[1]{\left \lfloor{#1}\right \rfloor}
+\newcommand{\nspace}[2]{\mathbb{#1}^{#2}} %general space
+\newcommand{\lattic}[1]{\mathcal{#1}} %general lattice
+\newcommand{\dlattic}[1]{\tilde{\lattic{#1}}} %general dual lattice
+\newcommand{\flattic}[3]{#1_{\lattic{#2}}\argn{#3}}
+\newcommand{\fdlattic}[3]{\hat{#1}_{\dlattic{#2}}\argn{#3}}
+\newcommand{\dotprd}[2]{\mathbf{#1}\cdot\mathbf{#2}} %vector-vector dot product
+\newcommand{\matprd}[2]{\mathbf{#1}^{(2)}\cdot\mathbf{#2}} %matrix-vector multiplication
+\newcommand{\detrace}{ \mathscr{T}_{n} } %detracer operator 
+\newcommand{\tensor}[2]{ \mathbf{#1}^{(#2)} } %tensor 
+\newcommand{\tensorcom}[3]{ #1^{(#2)}(#3_{1},#3_{2},#3_{3}) } %tensor in compressed form 
+\newcommand{\tensorcomm}[4]{ #1^{(#2)}(#3_{1}-#4_{1},#3_{2}-#4_{2},#3_{3}-#4_{3}) } %tensor in compressed form
+\newcommand{\tensora}[4]{ #1^{(#2)}_{#3\dotso#4} } %tensor with 1 set of subscripts
+\newcommand{\tensorab}[6]{ #1^{(#2)}_{#3\dotso#4#5\dotso#6} }  %tensor with 2 sets of subscripts
+\newcommand{\bdelta}{\boldsymbol\delta} %kronecker delta
+\newcommand{\bdeltat}[1]{\tensor{\bdelta}{#1}} %kronecker delta as tensor
+\newcommand{\rdel}[2]{\tensor{r}{#1} \bdeltat{#2} }
+\newcommand{\rdelcom}[3]{r^{(#1)} \tensorcom{\delta}{#2}{#3}}
+\newcommand{\contract}[1]{\nobreak\,\nobreak\cdot\nobreak\,\nobreak#1\,\nobreak\cdot\,\nobreak} %general tensor contraction
+\newcommand{\coulomb}{ \frac{1}{4\pi\varepsilon_{0}\varepsilon_{1}} } %Coulomb's constant inverse
+\newcommand{\emp}[2]{ \boldsymbol\mu^{(#1)}_{#2} } %emp moments
+\newcommand{\grad}[2]{\boldsymbol\nabla^{(#1)}_{#2}} %gradient operator
+\newcommand{\gs}[1]{\gamma_{#1}(\vect{r}-\vect{r}_{#1})}
+\newcommand{\kernel}[2]{ \gs{#1} \gs{#2}*G } %interaction energy integrant
+\newcommand{\kernelI}[2]{ \intgrln{\mathrm{all\;space}}{}{\kernel{i}{j} }{r} } %interaction energy integral
+\newcommand{\triplet}[2]{\density{#1}{#2}* G\argn{r} } %density * shape * Green's function
+\newcommand{\density}[2]{#1 * \gamma_{#2}\argn{r} } %density * shape 
+\newcommand{\lvcv}{\tensor{\boldsymbol\epsilon}{3}}
+\newcommand{\lvcva}{\tensor{\boldsymbol\epsilon}{3}_{ijk}}
+\newcommand{\empop}[2]{\emp{#1}{#2}\contract{#1}\grad{#1}{#2}} %emp operator
+\newcommand{\empopu}[2]{(-1)^{#1}\emp{#1}{#2}\contract{#1}\grad{#1}{u}} %emp operator
+\newcommand{\empopft}[2]{\emp{#1}{#2}\contract{#1}\tensor{S}{#1}} %emp operator
+\newcommand{\empopm}[1]{\mathsf{m}_{#1}} %emp operator
+\newcommand{\empopmG}[1]{\empopm{#1}^{\gamma}} %emp operator (shaped)
+\newcommand{\empopmft}[1]{\hat{\mathsf{m}}_{#1}} %emp operator
+\newcommand{\empopM}{\mathsf{M}} %emp operator
+\newcommand{\empopMft}{\hat{\mathsf{M}}} %emp operator
+\newcommand{\bincontrg}[5]{ #1 \contract{#2} #3 \contract{#4} #5 } %generic bi-contraction 
+\newcommand{\bincontr}[6]{\bincontrg{#1}{#2}{\grad{#2+#4}{#6}#3}{#4}{#5}} %contraction for energy
+\newcommand{\bincontrf}[6]{\bincontrg{#1}{#2}{\grad{#2+#4+1}{#6}#3}{#4}{#5}} %contraction for energy
+\newcommand{\bincontrt}[6]{\bincontrg{#1}{#2}{\grad{#2+#4+1}{#6}#3}{#4}{#5}} %contraction for energy
+\newcommand{\empbin}[5]{(-1)^{#3} \bincontr{\emp{#1}{#2}}{#1}{#5}{#3}{\emp{#3}{#4}}{#4} } %emp bilinear form 
+\newcommand{\empbinf}[5]{(-1)^{#3} \bincontrf{\emp{#1}{#2}}{#1}{#5}{#3}{\emp{#3}{#4}}{#4}} %emp bilinear form vector form
+\newcommand{\empbint}[5]{ (-1)^{#3} (#1+1) \bincontrt{\emp{#1+1}{#2}}{#1}{#5}{#3}{\emp{#3}{#4}}{#4} \contract{2} \lvcv } %emp bilinear form vector form
+\newcommand{\args}[1]{(#1)} %scalar argument of a function
+\newcommand{\argn}[1]{\args{\mathbf{#1}}} %vector argument of a function
+\newcommand{\argns}[1]{\args{\mathbf{#1}^{2}}} %vector argument of a function
+\newcommand{\gauss}[2]{e^{-#1 \lvert #2 \rvert^{2}}} %gaussian
+\newcommand{\gaussft}[3]{\hat{#1}_{#2}\argn{#3}} %gaussian
+\newcommand{\boyso}[2]{\frac{\erf(\sqrt{#1}\lvert#2\rvert)}{\lvert#2\rvert}} %rank-0 boys function
+\newcommand{\boysco}[2]{\frac{\erfc(\sqrt{#1}\lvert#2\rvert)}{\lvert#2\rvert}} %rank-0 boys function
+\newcommand{\gnorm}{(\alpha/\pi)^{3/2}} %coefficient of diffuse EMP 
+\newcommand{\empdist}[2]{ \gnorm\empopm{#2}\gauss{\alpha}{\mathbf{r}-\mathbf{r}_{#2}} } %diffuse EMP
+\newcommand{\dirac}[2]{\diracA{{#1}-{#2}}} %dirac delta
+\newcommand{\diracA}[1]{\delta({#1})} %dirac delta
+\newcommand{\dcomb}[2]{\sum_{\vect{#1}\in\mathbf{Z}^{3}}^{}\delta(\mathbf{r}-\matprd{#2}{#1})} %Dirac comb
+\newcommand{\intgrl}[4]{\int_{#1}^{#2}{#3}\args{#4}\mathrm{d}#4} %integral of a 1d function
+\newcommand{\intgrlnoarg}[4]{\int_{#1}^{#2}{#3}\mathrm{d}#4} %integral of a 1d function
+\newcommand{\intgrln}[4]{\intgrl{#1}{#2}{#3}{\mathbf{#4}}}  %integral of a multi-d function
+\newcommand{\harmonic}[1]{ e^{i2\pi#1} } %harmonics
+\newcommand{\harmonicm}[1]{ e^{-i2\pi#1} } %harmonics
+\newcommand{\ftn}[3]{\intgrln{\mathrm{all\;space}}{}{\harmonicm{\dotprd{#3}{#2}}#1}{#2} } %multi-dim FT
+\newcommand{\fseriesn}[4]{\frac{1}{\adet{\tensor{#1}{2}}} \sum_{\vect{#2}\in\dlattic{#3}} \harmonic{\dotprd{#4}{#2}} } %multi-dim Fourier series
+\newcommand{\intgrlf}[4]{\int_{#1}^{#2}{#3}\mathrm{d}#4} %integral of a 1d function
+\newcommand{\intgrlnf}[4]{\intgrlf{#1}{#2}{#3}{\mathbf{#4}}}  %integral of a multi-d function
+\newcommand{\ftnf}[3]{\intgrlnf{\mathrm{all\;space}}{}{\harmonicm{\dotprd{#3}{#2}}#1}{#2} } %multi-dim FT
+\newcommand{\invftn}[3]{\intgrln{\mathrm{all\;space}}{}{\harmonic{\dotprd{#3}{#2}}#1}{#2} } %multi-dim inverse FT
+\newcommand{\partd}[2]{\partial#1_{#2}} %partial differential
+\newcommand{\dfdxs}[3]{\frac{\mathrm{d}^{#3}#1}{\mathrm{d}\argns{#2}^{#3}}}
+\newcommand{\sumdlattic}[2]{\sum_{\vect{#1}\in\dlattic{#2}}} %sum in k-space
+\newcommand{\sumlattic}[2]{\sum_{\vect{#1}\in\lattic{#2}}} %sum in r-space
+\newcommand{\Rpoisson}{\xrightleftharpoons{Possion}}
+\newcommand{\sumconst}[2]{\sum_{\{#1;#2_{1},#2_{2},#2_{3}\}}} %the sum over 3 variables whose sum is a constant
+\newcommand{\trisum}[2]{\sum_{#2_{1}=0}^{\lowceil{\frac{#1_{1}}{2}}} \sum_{#2_{2}=0}^{\lowceil{\frac{#1_{2}}{2}}} \sum_{#2_{3}=0}^{\lowceil{\frac{#1_{3}}{2}}}}
+\newcommand{\pair}[2]{\mathrm{P}^{#1}_{#2}} %number of ways to pick #1 pairs from a set of #2 elements
+\newcommand{\eavg}[1]{\langle #1 \rangle}

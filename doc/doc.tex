@@ -1,0 +1,59 @@
+% Template for BJ paper in LaTeX (Jan Hrabe, NKI, 05/16/2005)
+%
+% To compile into a document, run
+% latex bj_latex_template
+% bibtex bj_latex_template
+% latex bj_latex_template (run 2-3 times repeatedly)
+% dvips bj_latex_template.dvi
+%
+% or replace the latex command by the pdflatex command in the lines above to
+% generate a PDF file and use acroread or xpdf for viewing and
+% printing instead of the postscript generating program dvips
+
+% Use standard article document class with slightly bigger font and 
+% a separate title page
+
+\documentclass[12pt]{article}
+
+% all packages
+\input{packages}
+
+%label the equation as $sectionid.$equationid
+\numberwithin{equation}{section}
+
+% all the macros and commands
+\input{macro}
+
+\input{redefcmd}
+
+% title for the paper is here
+\input{titlecovermisc}
+%cross-ref SI
+%\externaldocument[S-]{supplement}
+
+% We are done with the headers, the actual document starts here
+\begin{document}
+% generate the title page from the info in the headers above
+\maketitle
+
+% 200 words max Abstract
+\input{intro}
+%\input{theory}
+%\input{kspace}
+%\input{self-correction}
+%\input{dspace}
+% New page
+\clearpage
+
+% New page
+\clearpage
+
+% Compile and format the bibliography (bj_bibtex_template.bib BibTeX
+% file must be present in the document directory)
+\bibliography{dejun}
+
+\newpage
+%\listoffigures
+
+% closing statement, nothing below matters
+\end{document}
