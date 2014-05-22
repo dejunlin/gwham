@@ -8,12 +8,12 @@ well as estimating the ensemble average from generalized ensemble simulations~\c
 However, commonly used implementation of WHAM such as Alan Grossfield's 
 implementation~\cite{wham205} and GROMACS ``g\_wham" only support PMF calculation.
 Moreover, most implementations uses the direct iteration to solve for PMFs 
-while it's been shown~\cite{Zhu2012} that there're more efficient way to 
+while it's been shown~\cite{Zhu2012} that there are more efficient way to 
 reach the same answers. Here I combine the reasonings behind the aforementioned
 literature and put together an implementation of WHAM that's capable of solving 
 the following general problem:
 
-Suppose the we have $K$ Hamiltonian of the same thermodynamic ensemble with
+Suppose the we have $K$ systems of the same thermodynamic ensemble with
 each characterized by different thermodynamics parameters. If we let $\vect{x} \in
  \nspace{R}{N}$ being the generalized coordinates, which has $N$  degrees of 
  freedom, and
@@ -21,7 +21,7 @@ each characterized by different thermodynamics parameters. If we let $\vect{x} \
 H_{i}(\vect{x}) = \beta_{i}[ U_{i}(\vect{x}) + P_{i}V(\vect{x}) + \dotprd{\boldsymbol\mu_{i}}{\vect{n}(\vect{x})}]
 \end{equation}
 be the Hamiltonian of the $i$'th system, where $\beta_{i}, U_{i}, P_{i}, V, \boldsymbol\mu_{i}$
-and $\vect{n}$ are the inverse temperature, potential energy, the pressure, the volumn, the chemical
+and $\vect{n}$ are the inverse temperature, potential energy, the pressure, the volume, the chemical
 potentials for each system components and the number of molecules for each components, 
 respectively. The potential energy $U_{i}$ can be further decomposed into 
 the internal potential $U$ and $L$ external potentials $\vect{U}_{b}$, both 
@@ -59,5 +59,13 @@ from one systems to the other follows the same statistics as those used
 in transition between configuration in any of the systems, we can simply 
 assert $S = K$ for simplicity and the cases where $S > K$ can be handled 
 accordingly without troubles at all. From each simulation, we will have one 
-estimate of $O$. The purpose of WHAM is to provide an optimal estimate of 
-$O$ by combining the estimates from all the $S$ simulations.
+estimate of $O$. For example, the PMF of a reaction coordinate $\boldsymbol\xi \equiv \boldsymbol\xi(\vect{x})$
+is
+\begin{equation}
+\label{eq:PMF}
+w(\boldsymbol\xi) \equiv \eavg{\delta(\boldsymbol\xi - \boldsymbol\xi(\vect{x})} 
+\end{equation}
+
+The purpose of WHAM is to provide an optimal estimate of 
+$O$ by combining the estimates from all the $S$ simulations. 
+
