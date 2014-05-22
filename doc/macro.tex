@@ -72,6 +72,7 @@
 \newcommand{\intgrl}[4]{\int_{#1}^{#2}{#3}\args{#4}\mathrm{d}#4} %integral of a 1d function
 \newcommand{\intgrlnoarg}[4]{\int_{#1}^{#2}{#3}\mathrm{d}#4} %integral of a 1d function
 \newcommand{\intgrln}[4]{\intgrl{#1}{#2}{#3}{\mathbf{#4}}}  %integral of a multi-d function
+\newcommand{\intgrlnnoarg}[4]{\intgrlnoarg{#1}{#2}{#3}{\mathbf{#4}}}  %integral of a multi-d function
 \newcommand{\harmonic}[1]{ e^{i2\pi#1} } %harmonics
 \newcommand{\harmonicm}[1]{ e^{-i2\pi#1} } %harmonics
 \newcommand{\ftn}[3]{\intgrln{\mathrm{all\;space}}{}{\harmonicm{\dotprd{#3}{#2}}#1}{#2} } %multi-dim FT
@@ -89,3 +90,5 @@
 \newcommand{\trisum}[2]{\sum_{#2_{1}=0}^{\lowceil{\frac{#1_{1}}{2}}} \sum_{#2_{2}=0}^{\lowceil{\frac{#1_{2}}{2}}} \sum_{#2_{3}=0}^{\lowceil{\frac{#1_{3}}{2}}}}
 \newcommand{\pair}[2]{\mathrm{P}^{#1}_{#2}} %number of ways to pick #1 pairs from a set of #2 elements
 \newcommand{\eavg}[1]{\langle #1 \rangle}
+\newcommand{\dG}{\mathrm{\Delta}G}
+\newcommand{\dev}{\mathrm{\delta}}

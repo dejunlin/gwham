@@ -1,3 +1,104 @@
 \section{Theory} 
+In order to combine the information from multiple systems, we resort to 
+quantities which are conserved across all the systems. One obvious quantity 
+is $\vect{q}$ as defined in equation~\ref{eq:q}. If we know $p_{i}(\vect{q})$, 
+the probability density of $\vect{q}$, we can reformulate equations~\ref{eq:Q} 
+and \ref{eq:O} in terms of $p_{i}(\vect{q})$:
+\begin{equation}
+Q_{i} = \intgrln{}{}{p_{i}}{\vect{q}}
+\label{eq:Q_q}
+\end{equation}
+\begin{equation}
+\eavg{O}_{i} = \frac{\intgrln{}{}{p_{i}(\vect{q})O}{\vect{q}}}{Q_{i}} 
+\label{eq:Oavg_q}
+\end{equation}
+and $p_{i}(\vect{q})$ is defined as
+\begin{equation}
+p_{i}(\vect{q}) \equiv \Omega(\vect{q}) \exp(-H_{i}(\vect{q})) 
+\label{eq:p_q}
+\end{equation}
+where
+\begin{equation}
+\Omega(\vect{q}) \equiv \intgrlnnoarg{}{}{\delta(\vect{q}-\vect{q}(\vect{x}))}{x}
+\label{eq:omega}
+\end{equation}
+is the density of state at $\vect{q}$. $O(\vect{q})$ can be obtained by
+\begin{equation}
+O(\vect{q}) \equiv \frac{\intgrln{}{}{\delta(\vect{q}-\vect{q}(\vect{x}))O}{\vect{x}}}{Q_{i}}
+\label{eq:O_q}
+\end{equation}
 
-To obtain the optimal  
+WHAM works in the following way. First, we discretize the space of $\vect{q}$ 
+into a $d \equiv \mathrm{dim}(\vect{q})$ -dimensional grid, where each grid point can be 
+identified by a unique vector $\mathbf{m} \in \nspace{Z}{d}$. Now we denote the 
+value of a function of $\mathbf{q}$: $f(\mathbf{q})$ takes in bin $\mathbf{m}$ 
+as $f_\mathbf{m}$. If we have a total of $N_i$ samples from the $i$'th 
+simulation where $n_{i,\mathbf{m}}$ are histogrammed into the bin $\mathbf{m}$. 
+Then we combine the histograms from all $S$ simulations to optimally estimate 
+$\Omega_{\mathbf{m}}$ and thus $p_{i,m}$. There're several approaches to arrive 
+at the same set of WHAM equations that gives the optimal estimate of $\Omega_{\mathbf{m}}$: 
+the original WHAM paper\cite{Kumar1992} as well as the PT/STWHAM one\cite{Chodera2007} 
+treats $\Omega_\mathbf{m}$ as a weighted sum of $\Omega_{i,\mathbf{m}}$, 
+the density of state in bin $\mathbf{m}$ estimated from the $i$'th simulation alone, 
+where the weights are $\dev^2 \Omega_{i,\mathbf{m}}$, the respective statistical 
+uncertainty of $\Omega_{i,\mathbf{m}}$ from each simulation. This approach introduces
+the statistical uncertainty in the samples and help the development of basis error 
+analysis. But the number of WHAM equations resulting from this approach is the 
+same as number of bins, which takes a tremendous amount of computational resources 
+to solve. Here we take the maximum likelihood approach instead, which was reported 
+by Zhu and Hummer~\cite{Zhu2012}, because it shows a way to solve the same problem 
+in terms of $Q_i$ in lieu of $\Omega_\mathbf{m}$, which dramatically reduces the 
+number of parameters to determine and boost the computation significantly~\cite{Zhu2012}.
+Although in that paper, their results only applied to calculating PMFs, which is
+not an limitation on the discussion here.
+
+The maximum likelihood approach maximize the following likelihood function given 
+$\{p_{i,\mathbf{m}}\}_i$ and $\{n_{i,\mathbf{m}}\}_i$, where $\{f_i\}_i$ denotes the set 
+of $f_i$ for all $i$:
+\begin{equation}
+A(\{n_{i,\mathbf{m}}\}_{i,\mathbf{m}} | \{p_{i,\mathbf{m}}\}_{i,\mathbf{m}}) \equiv \\
+\prod_{i=1}^{S} P_{i}(\{n_{i,\mathbf{m}}\}_{\mathbf{m}} | \{p_{i,\mathbf{m}}\}_{\mathbf{m}})
+\label{eq:A}
+\end{equation}
+where $A_{i}(\{n_{i,\mathbf{m}}\}_{\mathbf{m}} | \{p_{i,\mathbf{m}}\}_{\mathbf{m}})$ 
+is the probability of observing the $i$'th histograms $\{n_{i,\mathbf{m}}\}_{\mathbf{m}}$ 
+given $\{n_{i,\mathbf{m}}\}_{\mathbf{m}}$:
+\begin{equation}
+A_{i}(\{n_{i,\mathbf{m}}\}_{\mathbf{m}} | \{p_{i,\mathbf{m}}\}_{\mathbf{m}}) \equiv \\
+\frac{(N_i)!}{\prod\limits_{\mathbf{m}}^{} (n_{i,\mathbf{m}})!} \\
+\prod\limits_{\mathbf{m}}^{} (p_{i,\mathbf{m}}/Q_{i})^{n_{i,\mathbf{m}}}
+\label{eq:Ai}
+\end{equation}
+We define our log-likelihood function $F$ from the relation:
+\begin{equation}
+\ln(A(\{\Omega_{i,\mathbf{m}}\}_{i,\mathbf{m}})) = - F(\{\Omega_{\mathbf{m}}\}_{\mathbf{m}}) + const.
+\label{eq:F}
+\end{equation}
+where we treat all the quantities known during the analysis, such as 
+$\{n_{i,\mathbf{m}}\}_{i,\mathbf{m}}$ and $\exp(-H_{i,\mathbf{m}})$, as constants.
+Our optimal estimate of $\{\Omega_{i,\mathbf{m}}\}_{i,\mathbf{m}}$ would be the one 
+that minimizes $F$. Substituting equations~\ref{eq:A} and \ref{eq:Ai} into \ref{eq:F} 
+gives 
+\begin{equation}
+F(\{\Omega_{\mathbf{m}}\}_{\mathbf{m}}) = -\sum_{\mathbf{m}}^{} C_{\mathbf{m}} \ln \Omega_{\mathbf{m}} \\
+- \sum_{i}^{} N_i \ln f_{i}
+\label{eq:Fex}
+\end{equation}
+where $C_{\mathbf{m}} \equiv \sum\limits_{i}^{} n_{i,\mathbf{m}}$ is the number of counts
+in bin $\mathbf{m}$ and $f_{i}$ is inverse of $Q_{i}$ which takes the discretized form
+\begin{equation}
+f_{i} \equiv \frac{1}{\sum_{\mathbf{m}}^{} \Omega_{\mathbf{m}} \exp(-H_{i,\mathbf{m}}) M}
+\end{equation}
+and $M$ is the $d$-dimensional volume of each bin, which we assume to be constant across 
+different $\mathbf{m}$. If we take the derivative of $F$ in equation~\ref{eq:Fex} with
+respect to $\Omega_{\mathbf{m}}$, we have
+\begin{equation}
+\frac{\partial F}{\partial \Omega_{\mathbf{m}}} = -C_{m}/\Omega_{m} + \sum_{i}^{} N_{i} f_{i} \exp(-H_{i,\mathbf{m}}) M
+\label{eq:dFdw}
+\end{equation}
+By demanding equation~\ref{eq:dFdw} to zero we obtain the WHAM equations in the same form 
+as those obtained before~\cite{Zhu2012,Chodera2007,Kumar1992}:
+\begin{equation}
+\Omega_{m} = \frac{C_{\mathbf{m}}}{\sum\limits_{i}^{} N_{i} f_{i} exp(-H_{i,\mathbf{m}}) M}
+\label{eq:WHAM1}
+\end{equation}

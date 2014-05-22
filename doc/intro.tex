@@ -36,36 +36,50 @@ we rewrite equation~\ref{eq:Ham} into
 \begin{equation}\label{eq:simHam}
 H_{i}(\vect{x}) = \beta_{i}\dotprd{\vect{R}_{i}}{\vect{q}(\vect{x})}
 \end{equation}
-where $\vect{R}_{i} \equiv \{1, \boldsymbol\lambda_{i}, P_{i}, \boldsymbol\mu_{i}\}$
-and $\vect{q}(\vect{x}) \equiv \{U(\vect{x}), \vect{U}_{b}(\vect{x}), V(\vect{x}), \vect{n}(\vect{x})\}$
+where 
+\begin{equation}
+\vect{R}_{i} \equiv \{1, \boldsymbol\lambda_{i}, P_{i}, \boldsymbol\mu_{i}\}
+\label{eq:R}
+\end{equation}
+and
+\begin{equation}
+\vect{q}(\vect{x}) \equiv \{U(\vect{x}), \vect{U}_{b}(\vect{x}), V(\vect{x}), \vect{n}(\vect{x})\}
+\label{eq:q}
+\end{equation}
 are the arrays of intensive and extensive parameters, respectively. 
 We further define unnormalized probability density 
-\begin{equation}
+\begin{equation}\label{eq:p}
 p_{i}(\vect{x}) \equiv \exp(-H_{i}(\vect{x}))
 \end{equation}
 and the partition function
-\begin{equation}
+\begin{equation}\label{eq:Q}
 Q_{i} \equiv \intgrln{}{}{p_{i}}{x} 
 \end{equation}
 
 Now we'd like to estimate the ensemble average of some observable 
 $O \equiv O(\vect{x})$ in any of the system $i$
-\begin{equation}
+\begin{equation}\label{eq:O}
 \eavg{O}_{i} \equiv \frac{\intgrln{}{}{p_{i}(\vect{x})O}{x}}{Q_{i}}
 \end{equation}
+For example, the PMF of a reaction coordinate 
+$\boldsymbol\xi \equiv \boldsymbol\xi(\vect{x})$ is
+\begin{equation}
+\label{eq:PMF}
+w(\boldsymbol\xi) \equiv \eavg{\delta(\boldsymbol\xi - \boldsymbol\xi(\vect{x}))} 
+\end{equation}
+where $\delta$ is the Dirac delta function.
+Or in other cases we want to know the free energy difference between 
+any two systems $i$ and $j$:
+\begin{equation}
+\dG_{ij} \equiv -k_{B}T \ln\frac{Q_{j}}{Q_{i}}
+\label{eq:dG}
+\end{equation}
+
 To do that, we carry out $S$ simulations ($S \ge K$) with each 
 simulation visiting at least $1$ of the $K$ systems. As soon as the transition 
 from one systems to the other follows the same statistics as those used 
 in transition between configuration in any of the systems, we can simply 
 assert $S = K$ for simplicity and the cases where $S > K$ can be handled 
-accordingly without troubles at all. From each simulation, we will have one 
-estimate of $O$. For example, the PMF of a reaction coordinate $\boldsymbol\xi \equiv \boldsymbol\xi(\vect{x})$
-is
-\begin{equation}
-\label{eq:PMF}
-w(\boldsymbol\xi) \equiv \eavg{\delta(\boldsymbol\xi - \boldsymbol\xi(\vect{x})} 
-\end{equation}
-
-The purpose of WHAM is to provide an optimal estimate of 
-$O$ by combining the estimates from all the $S$ simulations. 
-
+accordingly without troubles at all. The purpose of WHAM is to provide 
+an optimal estimate of $O$ and $\dG_{ij}$ by combining the estimates from 
+all the $S$ simulations. 
