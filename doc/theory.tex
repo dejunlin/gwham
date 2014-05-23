@@ -82,7 +82,7 @@ gives
 \begin{equation}
 F(\{\Omega_{\mathbf{m}}\}_{\mathbf{m}}) = -\sum_{\mathbf{m}}^{} C_{\mathbf{m}} \ln \Omega_{\mathbf{m}} \\
 - \sum_{i}^{} N_i \ln f_{i}
-\label{eq:Fex}
+\label{eq:Fexw}
 \end{equation}
 where $C_{\mathbf{m}} \equiv \sum\limits_{i}^{} n_{i,\mathbf{m}}$ is the number of counts
 in bin $\mathbf{m}$ and $f_{i}$ is inverse of $Q_{i}$ which takes the discretized form
@@ -90,7 +90,7 @@ in bin $\mathbf{m}$ and $f_{i}$ is inverse of $Q_{i}$ which takes the discretize
 f_{i} \equiv \frac{1}{\sum_{\mathbf{m}}^{} \Omega_{\mathbf{m}} \exp(-H_{i,\mathbf{m}}) M}
 \end{equation}
 and $M$ is the $d$-dimensional volume of each bin, which we assume to be constant across 
-different $\mathbf{m}$. If we take the derivative of $F$ in equation~\ref{eq:Fex} with
+different $\mathbf{m}$. If we take the derivative of $F$ in equation~\ref{eq:Fexw} with
 respect to $\Omega_{\mathbf{m}}$, we have
 \begin{equation}
 \frac{\partial F}{\partial \Omega_{\mathbf{m}}} = -C_{m}/\Omega_{m} + \sum_{i}^{} N_{i} f_{i} \exp(-H_{i,\mathbf{m}}) M
@@ -102,3 +102,70 @@ as those obtained before~\cite{Zhu2012,Chodera2007,Kumar1992}:
 \Omega_{m} = \frac{C_{\mathbf{m}}}{\sum\limits_{i}^{} N_{i} f_{i} exp(-H_{i,\mathbf{m}}) M}
 \label{eq:WHAM1}
 \end{equation}
+Since $\{f_{i}\}_{i}$ are functions of $\{\Omega_{\mathbf{m}}\}_{\mathbf{m}}$, equation~\ref{eq:WHAM1}
+is a set of nonlinear equations which are usually solved by iteratively updating 
+$\{f_{i}\}_{i}$ and $\{\Omega_{\mathbf{m}}\}_{\mathbf{m}}$ until self-consistency is 
+achieved~\cite{Kumar1992,wham205}. However, as demonstrated in the special case of PMF 
+calculations~\cite{Zhu2012}, it's more efficient to minimize $F$ in terms of $\{f_{i}\}_{i}$ 
+in lieu of $\{\Omega_{\mathbf{m}}\}_{\mathbf{m}}$ because there are less simulations than 
+the number of bins in general and therefore much less computational cost. This improvement of 
+efficiency should be highlighted in cases where $\mathbf{m}$ is high-dimensional, i.e. $d$ is 
+large, where the number of bins grow exponentially as a function of $d$.
+
+To proceed, we re-interpret $F$ as a new function of $\{f_{i}\}_{i}$:
+\begin{equation}
+F(\{f_{i}\}_{i}) = - \sum_{i}^{} N_i \ln f_{i} \\ 
+-\sum_{\mathbf{m}}^{} C_{\mathbf{m}} \ln \frac{C_{\mathbf{m}}}{z_{\mathbf{m}}} 
+\label{eq:Fexf}
+\end{equation}
+or a function of $g_{i} \equiv \ln f_{i}$
+\begin{equation}
+F(\{g_{i}\}_{i}) = - \sum_{i}^{} N_i g_{i} \\ 
+-\sum_{\mathbf{m}}^{} C_{\mathbf{m}} \ln \frac{C_{\mathbf{m}}}{z_{\mathbf{m}}} 
+\label{eq:Fexg}
+\end{equation}
+with $c_{i,\mathbf{m}} \equiv M \exp(-H_{i,\mathbf{m}})$ and 
+$z_{\mathbf{m}} \equiv z_{\mathbf{m}}(\{g_{i}\}_{i}) \equiv \sum\limits_{i}^{} N_{i} c_{i,\mathbf{m}} \exp(g_{i})$ 
+for convenience. It's straightforward to show that
+\begin{equation}
+\frac{\partial F}{\partial g_{i}} = 0 \: \forall i \Leftrightarrow \frac{\partial F}{\partial \Omega_{\mathbf{m}}} \: \forall \mathbf{m}
+\label{eq:Fequiv}
+\end{equation}
+Also, notice that $F(\{g_{i}\}_{i})$ is a convex function of $\{g_{i}\}_{i}$ and thus has one 
+global minimum. To show that, we first give the first and second partial derivatives of $F$:
+\begin{equation}
+\frac{\partial F}{\partial g_{i}}  = N_{i} (\exp(g_{i}) \sum_{\mathbf{m}}^{} \frac{C_{\mathbf{m}} c_{i,\mathbf{m}} }{z_{\mathbf{m}}} -1)
+\label{eq:dFdg}
+\end{equation}
+\begin{equation}
+\frac{\partial^2 F }{\partial g_{i} \partial g_{j}} =  \\
+\delta_{ij} N_{i} \exp(g_{i}) \sum_{\mathbf{m}}^{} \frac{C_{\mathbf{m}} c_{i,\mathbf{m}}}{z_{\mathbf{m}}} - \\
+N_{i} N_{j} \exp(g_{i}+g_{j}) \sum_{\mathbf{m}}^{} \frac{C_{m}c_{i,\mathbf{m}}c_{j,\mathbf{m}}}{z_{\mathbf{m}}^2}
+\label{eq:dFdg2}
+\end{equation}
+where $\delta_{ij}$ is the kronecker delta. Let $\mathbf{B}$ be the Hessian matrix of $F$. We 
+have $\mathbf{B} = \mathbf{C} - \sum\limits_{\mathbf{m}}^{} C_{\mathbf{m}} \mathbf{D}_{\mathbf{m}} \otimes \mathbf{D}_{\mathbf{m}}$ 
+where $\mathbf{C}$ is a diagonal matrix with the main diagonal being 
+$\{N_{i} \exp(g_{i}) \sum\limits_{\mathbf{m}}^{} \frac{C_{\mathbf{m}} c_{i,\mathbf{m}}}{z_{\mathbf{m}}}\}_{i}$, 
+the first term in equation~\ref{eq:dFdg2}, and $\mathbf{D}_{\mathbf{m}} \equiv \{N_{i} \exp(g_{i}) c_{i,\mathbf{m}}/z_{\mathbf{m}}\}_{i}$.
+Next we'll show $\mathbf{a}^{\mathrm{T}} \mathbf{B} \mathbf{a} \ge 0\;\forall \mathbf{a} \in \nspace{R}{K}$.
+\begin{align}
+\mathbf{a}^{\mathrm{T}} \mathbf{B} \mathbf{a} &\ge 0 \Leftrightarrow \notag \\
+\mathbf{a}^{\mathrm{T}} \mathbf{C} \mathbf{a} &\ge \sum_{\mathbf{m}}^{} C_{\mathbf{m}}  \mathbf{a}^{\mathrm{T}} \mathbf{D}_{\mathbf{m}} \otimes \mathbf{D}_{\mathbf{m}} \mathbf{a}  \Leftrightarrow \notag \\
+\mathbf{a}^{\mathrm{T}} \mathbf{C} \mathbf{a} &\ge \sum_{\mathbf{m}}^{} C_{\mathbf{m}} (\mathbf{a} \cdot \mathbf{D}_{\mathbf{m}})^2 \Leftrightarrow \notag \\
+\sum_{\mathbf{m}}^{} \frac{\sum\limits_{i}^{} a_{i}^{2} N_{i} \exp(g_{i}) C_{\mathbf{m}} c_{i,\mathbf{m}}}{z_{\mathbf{m}}} &\ge  
+\sum_{\mathbf{m}}^{} \frac{C_{\mathbf{m}}(\sum_{i}^{} N_{i} c_{i,\mathbf{m}} \exp(g_{i}) a_{i})^{2}}{z_{\mathbf{m}}^{2}} \Leftarrow \notag \\
+z_{\mathbf{m}} \sum\limits_{i}^{} a_{i}^{2} N_{i} \exp(g_{i}) c_{i,\mathbf{m}} &\ge  
+(\sum_{i}^{} N_{i} c_{i,\mathbf{m}} \exp(g_{i}) a_{i})^{2}, \;\forall \mathbf{m} \Leftrightarrow \notag \\
+\vnorm{\mathbf{s}_{\mathbf{m}}}^{2} \vnorm{\mathbf{t}_{\mathbf{m}}}^{2} &\ge \vnorm{\mathbf{s}_{\mathbf{m}} \cdot \mathbf{t}_{\mathbf{m}}}^{2}  
+\label{eq:derv1}
+\end{align}
+where
+\begin{align}
+\mathbf{s}_{\mathbf{m}} &\equiv \{\sqrt{N_{i} c_{i,\mathbf{m}} \exp(g_{i})}\}_{i}, \notag \\
+\mathbf{t}_{\mathbf{m}} &\equiv \{a_{i} \sqrt{N_{i} c_{i,\mathbf{m}} \exp(g_{i})}\}_{i}
+\label{eq:derv2}
+\end{align}
+and the last step in equation~\ref{eq:derv1} follows the Cauchy-Schwarz inequality.  
+The twice differentiable function $F$ has positive semidefinite Hessian for all $\{g_{i}\}_{i}$ 
+and thus is concave. 
