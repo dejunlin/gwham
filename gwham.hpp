@@ -81,6 +81,62 @@ class WHAM {
      //!f[i] is the dimensionless free energy of state i 
      vector<valtype> f; 
      DOStype DOS;
+     
+     /*
+      * =====================================================================================
+      *        Class:  LogLikeFunct
+      *  Description:  The log-likelihood function of WHAM
+      * =====================================================================================
+      */
+     class LogLikeFunct
+     {
+       public:
+	 /* ====================  LIFECYCLE     ======================================= */
+	 LogLikeFunct (                             /* constructor */
+		      const vector<uint>& N
+		      );
+
+	 /* ====================  ACCESSORS     ======================================= */
+
+	 /* ====================  MUTATORS      ======================================= */
+
+	 /* ====================  OPERATORS     ======================================= */
+
+	 /* 
+	  * ===  FUNCTION  ======================================================================
+	  *         Name:  operator()
+	  *  Description:   
+	  * ====================================================================================
+	  * @param[in] dfs dfs[i] is dg_i as in equation 2.20 in the documentation 
+	  * @param[in] record record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
+          * @param[in] hists Generic histogram for each trajectory
+          * @param[in] V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
+          * @param[in] N N[k] is the number of samples the k'th trajectory 
+          */
+	 valtype
+	   operator() ( 
+                      const vector<valtype>& dfs,
+                      const map<coordtype, vector<uint> >& _record, 
+                      const vector<histogram>& hists,  
+                      const vector<Hamiltonian<ensemble>* >& V, 
+		      const vector<uint>& N
+	              ) const
+	   {};
+
+       protected:
+	 /* ====================  METHODS       ======================================= */
+
+	 /* ====================  DATA MEMBERS  ======================================= */
+	 //! sN[i] = N[i+1] + N[i+2] + ... + N[K]
+	 vector<uint>& sN;
+
+       private:
+	 /* ====================  METHODS       ======================================= */
+
+	 /* ====================  DATA MEMBERS  ======================================= */
+
+     }; /* -----  end of class LogLikeFunct  ----- */
+
 };
 
 template <class ensemble, class histogram, class narray>
