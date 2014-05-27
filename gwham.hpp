@@ -95,14 +95,13 @@ class WHAM {
           * @param[in] N N[k] is the number of samples the k'th trajectory
 	  * @param[out] gradF gradF[i] is dF/d(deltaG_i) in equation 2.23 in the doc
           */
-	 valtype
+	  void 
 	   operator() ( 
                       const vector<valtype>& df,
                       const vector<histogram>& hists,  
                       const vector<Hamiltonian<ensemble>* >& V, 
-		      const vector<uint>& N,
-		      vector<valtype>& gradF
-	              ) const
+		      const vector<uint>& N
+	              )
 	   {};
 
        protected:
@@ -114,7 +113,11 @@ class WHAM {
 	 /* ====================  METHODS       ======================================= */
 
 	 /* ====================  DATA MEMBERS  ======================================= */
+	 //! pointer to the outter object that contains *this 
 	 WHAM<ensemble,histogram,narray>* const wham;
+	 //! value of the likelihood function, which is updated when LogLikeFunct::operator() is called
+	 valtype F;
+	 vector<valtype> gradF;
 
      }; /* -----  end of class LogLikeFunct  ----- */
      friend class LogLikeFunct;
@@ -142,7 +145,9 @@ class WHAM {
 template <class ensemble, class histogram, class narray>
 valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::LogLikeFunct
 (const WHAM<ensemble,histogram,narray>& _wham) :
-  wham(_wham) 
+  wham(_wham),
+  F(0),
+  gradF(vector<valtype>(wham->f.size()-1, 0.0))
   {};
 
 template <class ensemble, class histogram, class narray>
@@ -151,14 +156,12 @@ valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
   const vector<valtype>& df,
   const vector<histogram>& hists,  
   const vector<Hamiltonian<ensemble>* >& V, 
-  const vector<uint>& N,
-  vector<valtype>& gradF
+  const vector<uint>& N
 ) const {
   const uint G = df.size();
   const uint K = N.size();
   //TODO: We should check if K == G + 1 here but ignore this for now
   //since we expect WHAM constructor compute df from WHAM::f initially
-  vector<valtype> gradF(G,0);
 
   // First term in equation 2.22 and 2.23 in doc
   valtype F_part1 = 0.0;
@@ -256,6 +259,10 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     DOS(DOStype(hists[0])),
 				     funct(this)
 {
+  //First use a minimizer to get the optimal estimate of WHAM::f
+  //TODO: just use dlib L-BFGS here -- we might eventually implement our own
+   
+
   //perform the WHAM iteration
   ulong count = 0;
   vector<double> newf(f);
