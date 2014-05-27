@@ -51,7 +51,7 @@ class WHAM {
          const vector<histogram>& hists,  
 	 const vector<Hamiltonian<ensemble>* >& V, 
          const vector<uint>& N, 
-	 const valtype _tol 
+	 const valtype _tol
 	);
     //! Based on the density of state, calculate a new set of free energies
     void calnewf(vector<valtype>& f, const vector<Hamiltonian<ensemble>* >& V) const;
@@ -66,6 +66,59 @@ class WHAM {
     //!print out all free energies
     void printfree() const;
   private:
+     /*
+      * =====================================================================================
+      *        Class:  LogLikeFunct
+      *  Description:  The log-likelihood function of WHAM
+      * =====================================================================================
+      */
+     class LogLikeFunct
+     {
+       public:
+	 /* ====================  LIFECYCLE     ======================================= */
+	 LogLikeFunct (WHAM<ensemble,histogram,narray>* const _wham);                          /* constructor */
+
+	 /* ====================  ACCESSORS     ======================================= */
+
+	 /* ====================  MUTATORS      ======================================= */
+
+	 /* ====================  OPERATORS     ======================================= */
+
+	 /* 
+	  * ===  FUNCTION  ======================================================================
+	  *         Name:  operator()
+	  *  Description:   
+	  * ====================================================================================
+	  * @param[in] df df[i] is dg_i as in equation 2.20 in the documentation 
+          * @param[in] hists Generic histogram for each trajectory
+          * @param[in] V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
+          * @param[in] N N[k] is the number of samples the k'th trajectory
+	  * @param[out] gradF gradF[i] is dF/d(deltaG_i) in equation 2.23 in the doc
+          */
+	 valtype
+	   operator() ( 
+                      const vector<valtype>& df,
+                      const vector<histogram>& hists,  
+                      const vector<Hamiltonian<ensemble>* >& V, 
+		      const vector<uint>& N,
+		      vector<valtype>& gradF
+	              ) const
+	   {};
+
+       protected:
+	 /* ====================  METHODS       ======================================= */
+
+	 /* ====================  DATA MEMBERS  ======================================= */
+
+       private:
+	 /* ====================  METHODS       ======================================= */
+
+	 /* ====================  DATA MEMBERS  ======================================= */
+	 WHAM<ensemble,histogram,narray>* const wham;
+
+     }; /* -----  end of class LogLikeFunct  ----- */
+     friend class LogLikeFunct;
+
      //!max number of iterations
      static const ulong MAXIT = 1000000;
      //!check if WHAM iteration should end; also update WHAM::f if not end
@@ -79,65 +132,58 @@ class WHAM {
      const uint dim;
      const map<coordtype, vector<uint> > record;
      //!f[i] is the dimensionless free energy of state i 
-     vector<valtype> f; 
+     vector<valtype> f;
+     //! density of state
      DOStype DOS;
-     
-     /*
-      * =====================================================================================
-      *        Class:  LogLikeFunct
-      *  Description:  The log-likelihood function of WHAM
-      * =====================================================================================
-      */
-     class LogLikeFunct
-     {
-       public:
-	 /* ====================  LIFECYCLE     ======================================= */
-	 LogLikeFunct (                             /* constructor */
-		      const vector<uint>& N
-		      );
-
-	 /* ====================  ACCESSORS     ======================================= */
-
-	 /* ====================  MUTATORS      ======================================= */
-
-	 /* ====================  OPERATORS     ======================================= */
-
-	 /* 
-	  * ===  FUNCTION  ======================================================================
-	  *         Name:  operator()
-	  *  Description:   
-	  * ====================================================================================
-	  * @param[in] dfs dfs[i] is dg_i as in equation 2.20 in the documentation 
-	  * @param[in] record record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
-          * @param[in] hists Generic histogram for each trajectory
-          * @param[in] V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
-          * @param[in] N N[k] is the number of samples the k'th trajectory 
-          */
-	 valtype
-	   operator() ( 
-                      const vector<valtype>& dfs,
-                      const map<coordtype, vector<uint> >& _record, 
-                      const vector<histogram>& hists,  
-                      const vector<Hamiltonian<ensemble>* >& V, 
-		      const vector<uint>& N
-	              ) const
-	   {};
-
-       protected:
-	 /* ====================  METHODS       ======================================= */
-
-	 /* ====================  DATA MEMBERS  ======================================= */
-	 //! sN[i] = N[i+1] + N[i+2] + ... + N[K]
-	 vector<uint>& sN;
-
-       private:
-	 /* ====================  METHODS       ======================================= */
-
-	 /* ====================  DATA MEMBERS  ======================================= */
-
-     }; /* -----  end of class LogLikeFunct  ----- */
-
+     //! the likelihood function to be optimized
+     const LogLikeFunct funct;
 };
+
+template <class ensemble, class histogram, class narray>
+valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::LogLikeFunct
+(const WHAM<ensemble,histogram,narray>& _wham) :
+  wham(_wham) 
+  {};
+
+template <class ensemble, class histogram, class narray>
+valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
+(
+  const vector<valtype>& df,
+  const vector<histogram>& hists,  
+  const vector<Hamiltonian<ensemble>* >& V, 
+  const vector<uint>& N,
+  vector<valtype>& gradF
+) const {
+  const uint G = df.size();
+  const uint K = N.size();
+  //TODO: We should check if K == G + 1 here but ignore this for now
+  //since we expect WHAM constructor compute df from WHAM::f initially
+  vector<valtype> gradF(G,0);
+
+  // First term in equation 2.22 and 2.23 in doc
+  valtype F_part1 = 0.0;
+  vector<uint> sN(K,0); //sN[i] = N[i+1] + N[i+2] + ... + N[K-1] is the coefficient of df[i]
+  for (  int i = K-2; i >= 0; --i ) {
+    sN[i] = sN[i+1] + N[i+1];
+  }
+  for ( uint i = 0; i < G ; ++i ) {
+    F_part1 -= sN[i] * df[i];
+    gradF[i] -= sN[i];
+  }
+
+  // Second term in equation 2.22 and 2.23 in doc, which is just sum over m: 
+  // C_m*ln(C_m*Omega_m) and Omega_m is computed in DOS
+  // we need to update WHAM::f from df first
+  vector<valtype>& f = wham->f;
+  f[0] = 0.0;
+  for ( uint i = 0; i < G; ++i) {
+    f[i+1] = fs[i] + df[i];
+  }
+  valtype F_part2 = 0.0;
+  wham->DOS(wham->record,hists,V,N,f,F_part2,gradF);
+  const valtype F = F_part1 + F_part2;
+  return F;
+}
 
 template <class ensemble, class histogram, class narray>
 WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _record, 
@@ -154,6 +200,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     record(_record),
 				     f(vector<valtype>(V.size(),0.0)),
 				     DOS(DOStype(hists[0]))
+				     funct(this)
 {
   //perform the WHAM iteration
   ulong count = 0;
@@ -180,6 +227,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     record(_record),
 				     f(vector<valtype>(V.size(),0.0)),
 				     DOS(DOStype(hists[0]))
+				     funct(this)
 {
   //perform the WHAM iteration
   ulong count = 0;
@@ -205,7 +253,8 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     dim(binsize.size()),
 				     record(_record),
 				     f(vector<valtype>(V.size(),0.0)),
-				     DOS(DOStype(hists[0]))
+				     DOS(DOStype(hists[0])),
+				     funct(this)
 {
   //perform the WHAM iteration
   ulong count = 0;
