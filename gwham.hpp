@@ -127,19 +127,30 @@ class WHAM {
      static const ulong MAXIT = 1000000;
      //!check if WHAM iteration should end; also update WHAM::f if not end
      bool endit(const vector<valtype>& newf, const ulong& count); 
-     const valtype tol;
+     //!record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i
+     const map<coordtype, vector<uint> >* const record;
+     //!Generic histogram for each trajectory
+     const vector<histogram>* const hists;  
+     //!Statistical inefficiency for each trajectory in each bin
+     const vector<narray>* const g;
+     //!V[i] is the hamiltonian functor the i'th state that compute the energy given the values corresponding to a histogram bin m 
+     const vector<Hamiltonian<ensemble>* >* const V; 
+     //!N[k][l] is the number of samples the k'th trajectory visiting the l'th state
+     const vector<vector<uint> >* const N;
+     //!Tolerance for WHAM iteration
+     const valtype tol; 
+     //!f[i] is the dimensionless free energy of state i 
      //!bin-size of each dimension of the histogram
      const vector<valtype> binsize;
      //!lower bound in real space of the histogram
      const vector<valtype> lv;
      //!number of dimension of the histogram
      const uint dim;
-     const map<coordtype, vector<uint> >& record;
-     //!f[i] is the dimensionless free energy of state i 
+     //!dimensionless free energy of each state
      vector<valtype> f;
-     //! density of state
+     //!density of state
      DOStype DOS;
-     //! the likelihood function to be optimized
+     //!the likelihood function to be optimized
      const LogLikeFunct funct;
 };
 
@@ -196,19 +207,23 @@ const vector<valtype>& WHAM<ensemble,histogram,narray>::LogLikeFunct::getgradF()
 
 template <class ensemble, class histogram, class narray>
 WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _record, 
-                                      const vector<histogram>& hists,  
-                                      const vector<narray>& g,  
-	                              const vector<Hamiltonian<ensemble>* >& V, 
-                                      const vector<vector<uint> >& N, 
+                                      const vector<histogram>& _hists,  
+                                      const vector<narray>& _g,  
+	                              const vector<Hamiltonian<ensemble>* >& _V, 
+                                      const vector<vector<uint> >& _N, 
 	                              const double _tol 
 	                             ):
+				     record(&_record),
+				     hists(&_hists),
+				     g(&_g),
+				     V(&_V),
+				     N(&_N),
 				     tol(_tol),
-				     binsize(hists[0].getbinsize()),
-				     lv(hists[0].getlv()),
+				     binsize((*hists)[0].getbinsize()),
+				     lv((*hists)[0].getlv()),
 				     dim(binsize.size()),
-				     record(_record),
-				     f(vector<valtype>(V.size(),0.0)),
-				     DOS(DOStype(hists[0])),
+				     f(vector<valtype>(V->size(),0.0)),
+				     DOS(DOStype((*hists)[0])),
 				     funct(this)
 {
   //perform the WHAM iteration
@@ -216,7 +231,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   vector<double> newf(f);
   do {
     ++count;
-    DOS(record,hists,g,V,N,f,newf);
+    DOS(*record, *hists, *g, *V, *N, f, newf);
     //calnewf(newf,V);
     shiftf(newf);
   } while(!endit(newf,count)); 
@@ -224,18 +239,22 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 
 template <class ensemble, class histogram, class narray>
 WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _record, 
-                                      const vector<histogram>& hists,  
-	                              const vector<Hamiltonian<ensemble>* >& V, 
-                                      const vector<vector<uint> >& N, 
+                                      const vector<histogram>& _hists,  
+	                              const vector<Hamiltonian<ensemble>* >& _V, 
+                                      const vector<vector<uint> >& _N, 
 	                              const double _tol 
 	                             ):
+				     record(&_record),
+				     hists(&_hists),
+				     g(NULL),
+				     V(&_V),
+				     N(&_N),
 				     tol(_tol),
-				     binsize(hists[0].getbinsize()),
-				     lv(hists[0].getlv()),
+				     binsize((*hists)[0].getbinsize()),
+				     lv((*hists)[0].getlv()),
 				     dim(binsize.size()),
-				     record(_record),
-				     f(vector<valtype>(V.size(),0.0)),
-				     DOS(DOStype(hists[0])),
+				     f(vector<valtype>(V->size(),0.0)),
+				     DOS(DOStype((*hists)[0])),
 				     funct(this)
 {
   //perform the WHAM iteration
@@ -243,7 +262,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   vector<double> newf(f);
   do {
     ++count;
-    DOS(record,hists,V,N,f,newf);
+    DOS(*record, *hists, *V, *N, f, newf);
     //calnewf(newf,V);
     shiftf(newf);
   } while(!endit(newf,count)); 
@@ -251,18 +270,22 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 
 template <class ensemble, class histogram, class narray>
 WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _record, 
-                                      const vector<histogram>& hists,  
-	                              const vector<Hamiltonian<ensemble>* >& V, 
-                                      const vector<uint>& N, 
+                                      const vector<histogram>& _hists,  
+	                              const vector<Hamiltonian<ensemble>* >& _V, 
+                                      const vector<uint>& _N, 
 	                              const double _tol 
 	                             ):
+				     record(&_record),
+				     hists(&_hists),
+				     g(NULL),
+				     V(&_V),
+				     N(new vector<vector<uint> >(1, _N)), //TODO: this could cause memory leak
 				     tol(_tol),
-				     binsize(hists[0].getbinsize()),
-				     lv(hists[0].getlv()),
+				     binsize((*hists)[0].getbinsize()),
+				     lv((*hists)[0].getlv()),
 				     dim(binsize.size()),
-				     record(_record),
-				     f(vector<valtype>(V.size(),0.0)),
-				     DOS(DOStype(hists[0])),
+				     f(vector<valtype>(V->size(),0.0)),
+				     DOS(DOStype((*hists)[0])),
 				     funct(this)
 {
   //First use a minimizer to get the optimal estimate of WHAM::f
@@ -274,31 +297,31 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   vector<double> newf(f);
   do {
     ++count;
-    DOS(record,hists,V,N,f,newf);
+    DOS(*record, *hists, *V, (*N)[0],f, newf);
     //calnewf(newf,V);
     shiftf(newf);
   } while(!endit(newf,count));
 }
 
 template <class ensemble, class histogram, class narray>
-void WHAM<ensemble,histogram,narray>::calnewf(vector<valtype>& newf, const vector<Hamiltonian<ensemble>* >& V) const {
+void WHAM<ensemble,histogram,narray>::calnewf(vector<valtype>& newf, const vector<Hamiltonian<ensemble>* >& _V) const {
   for(uint l = 0; l < newf.size(); ++l) {
     double expmf = 0.0;
     /*cout <<"#calnewf: state ensemble_params" << endl;
     cout << "#" << l << " ";
-    const vector<valtype> params = V[l]->getens().getparams();
+    const vector<valtype> params = _V[l]->getens().getparams();
     copy(params.begin(),params.end(),ostream_iterator<valtype>(cout," ")); cout << endl;
     cout <<"#calnewf: vals ener" << endl;*/
 
     /*cout <<"#state RC energy DOS expmf\n";
     cout <<"#be " << l << endl;*/
     //Here we only loop through non-zero elements of DOS
-    for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
+    for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
       const coordtype coord = it->first;
       const vector<uint> histids = it->second;
       const vector<valtype> vals = coord2val(coord);
       //calculate f[l] for all l
-      const valtype exparg = -V[l]->ener(vals);
+      const valtype exparg = -_V[l]->ener(vals);
       /*cout << "#";
       copy(vals.begin(),vals.end(),ostream_iterator<valtype>(cout," "));
       cout << " " << exparg << endl;*/
@@ -362,7 +385,7 @@ void WHAM<ensemble,histogram,narray>::printfree() const {
 }
 
 template <class ensemble, class histogram, class narray>
-narray WHAM<ensemble,histogram,narray>::calrho(const vector<uint>& _dim, const Hamiltonian<ensemble>& V) const {
+narray WHAM<ensemble,histogram,narray>::calrho(const vector<uint>& _dim, const Hamiltonian<ensemble>& _V) const {
 
   if(_dim.size() > dim) {
     cerr << "The number of dimension can't be larger than " << dim << endl;
@@ -392,11 +415,11 @@ narray WHAM<ensemble,histogram,narray>::calrho(const vector<uint>& _dim, const H
 
   narray rho(DOS.getdosarr(),_dim);
   //Again we only loop through non-zero elements of DOS
-  for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
+  for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
     const coordtype coord = it->first;
     const vector<uint> histids = it->second;
     const vector<valtype> vals = coord2val(coord);
-    const valtype exparg = -V.ener(vals);
+    const valtype exparg = -_V.ener(vals);
     //if(exparg > MAXEXPARG ) { cerr << "In WHAM::calrho: exp("<<exparg<<") will overflow!\n"; exit(-1); }
     //else if(exparg < MINEXPARG) { continue; }
     const valtype weight = exp(exparg);
