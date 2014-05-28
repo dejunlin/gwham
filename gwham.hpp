@@ -137,6 +137,8 @@ class WHAM {
      const vector<Hamiltonian<ensemble>* >* const V; 
      //!N[k][l] is the number of samples the k'th trajectory visiting the l'th state
      const vector<vector<uint> >* const N;
+     //!N1[k] is the number of samples from the k'th trajectory
+     const vector<uint>* const N1;
      //!Tolerance for WHAM iteration
      const valtype tol; 
      //!f[i] is the dimensionless free energy of state i 
@@ -218,6 +220,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     g(&_g),
 				     V(&_V),
 				     N(&_N),
+				     N1(NULL),
 				     tol(_tol),
 				     binsize((*hists)[0].getbinsize()),
 				     lv((*hists)[0].getlv()),
@@ -249,6 +252,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     g(NULL),
 				     V(&_V),
 				     N(&_N),
+				     N1(NULL),
 				     tol(_tol),
 				     binsize((*hists)[0].getbinsize()),
 				     lv((*hists)[0].getlv()),
@@ -279,7 +283,8 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     hists(&_hists),
 				     g(NULL),
 				     V(&_V),
-				     N(new vector<vector<uint> >(1, _N)), //TODO: this could cause memory leak
+				     N(NULL),
+				     N1(&_N),
 				     tol(_tol),
 				     binsize((*hists)[0].getbinsize()),
 				     lv((*hists)[0].getlv()),
@@ -297,7 +302,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   vector<double> newf(f);
   do {
     ++count;
-    DOS(*record, *hists, *V, (*N)[0],f, newf);
+    DOS(*record, *hists, *V, *N1, f, newf);
     //calnewf(newf,V);
     shiftf(newf);
   } while(!endit(newf,count));
