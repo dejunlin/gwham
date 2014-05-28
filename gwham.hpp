@@ -79,8 +79,14 @@ class WHAM {
 	 LogLikeFunct (WHAM<ensemble,histogram,narray>* const _wham);                          /* constructor */
 
 	 /* ====================  ACCESSORS     ======================================= */
-	 valtype getF() const;
-	 const vector<valtype>& getgradF() const;
+	 //! call this->(df) and then return F; this is awkward but it's how dlib works:
+	 //dlib::find_min() always call getF() and getgradF() in pair such that getF() 
+	 //is called first and then is getgradF() -- This is really dumb since in general
+	 //you can save a lot of computation by calculating the function and its derivative
+	 //together
+	 valtype getF(const vector<valtype>& df);
+	 //! just return gradF; NOTE that this is expected to be called right after getF() 
+	 const vector<valtype> getgradF(const vector<valtype>& df) const;
 
 	 /* ====================  MUTATORS      ======================================= */
 
@@ -146,7 +152,7 @@ class WHAM {
      //!density of state
      DOStype DOS;
      //!the likelihood function to be optimized
-     const LogLikeFunct funct;
+     LogLikeFunct funct;
 };
 
 template <class ensemble, class histogram, class narray>
@@ -196,10 +202,13 @@ void WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
 }
 
 template <class ensemble, class histogram, class narray>
-valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::getF() const { return F; }
+valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::getF(const vector<valtype>& df) { 
+  this->operator()(df);
+  return F; 
+}
 
 template <class ensemble, class histogram, class narray>
-const vector<valtype>& WHAM<ensemble,histogram,narray>::LogLikeFunct::getgradF() const { return gradF; }
+const vector<valtype> WHAM<ensemble,histogram,narray>::LogLikeFunct::getgradF(const vector<valtype>& df) const { return gradF; }
 
 template <class ensemble, class histogram, class narray>
 WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _record, 
@@ -289,7 +298,6 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 {
   //First use a minimizer to get the optimal estimate of WHAM::f
   //TODO: just use dlib L-BFGS here -- we might eventually implement our own
-   
 
   //perform the WHAM iteration
   ulong count = 0;
