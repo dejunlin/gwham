@@ -79,8 +79,8 @@ class WHAM {
 	 LogLikeFunct (WHAM<ensemble,histogram,narray>* const _wham);                          /* constructor */
 
 	 /* ====================  ACCESSORS     ======================================= */
-	 valtype getF() const {};
-	 const vector<valtype>& getgradF() const {};
+	 valtype getF() const;
+	 const vector<valtype>& getgradF() const;
 
 	 /* ====================  MUTATORS      ======================================= */
 
@@ -103,8 +103,7 @@ class WHAM {
                       const vector<histogram>& hists,  
                       const vector<Hamiltonian<ensemble>* >& V, 
 		      const vector<uint>& N
-	              )
-	   {};
+	              );
 
        protected:
 	 /* ====================  METHODS       ======================================= */
@@ -145,8 +144,8 @@ class WHAM {
 };
 
 template <class ensemble, class histogram, class narray>
-valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::LogLikeFunct
-(const WHAM<ensemble,histogram,narray>& _wham) :
+WHAM<ensemble,histogram,narray>::LogLikeFunct::LogLikeFunct
+(WHAM<ensemble,histogram,narray>* const _wham) :
   wham(_wham),
   F(0),
   gradF(vector<valtype>(wham->f.size()-1, 0.0))
@@ -159,7 +158,7 @@ void WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
   const vector<histogram>& hists,  
   const vector<Hamiltonian<ensemble>* >& V, 
   const vector<uint>& N
-) const {
+) {
   const uint G = df.size();
   const uint K = N.size();
   //TODO: We should check if K == G + 1 here but ignore this for now
@@ -182,12 +181,18 @@ void WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
   vector<valtype>& f = wham->f;
   f[0] = 0.0;
   for ( uint i = 0; i < G; ++i) {
-    f[i+1] = fs[i] + df[i];
+    f[i+1] = f[i] + df[i];
   }
   valtype F_part2 = 0.0;
   wham->DOS(wham->record,hists,V,N,f,F_part2,gradF);
   F = F_part1 + F_part2;
 }
+
+template <class ensemble, class histogram, class narray>
+valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::getF() const { return F; }
+
+template <class ensemble, class histogram, class narray>
+const vector<valtype>& WHAM<ensemble,histogram,narray>::LogLikeFunct::getgradF() const { return gradF; }
 
 template <class ensemble, class histogram, class narray>
 WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _record, 
@@ -203,7 +208,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     dim(binsize.size()),
 				     record(_record),
 				     f(vector<valtype>(V.size(),0.0)),
-				     DOS(DOStype(hists[0]))
+				     DOS(DOStype(hists[0])),
 				     funct(this)
 {
   //perform the WHAM iteration
@@ -230,7 +235,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     dim(binsize.size()),
 				     record(_record),
 				     f(vector<valtype>(V.size(),0.0)),
-				     DOS(DOStype(hists[0]))
+				     DOS(DOStype(hists[0])),
 				     funct(this)
 {
   //perform the WHAM iteration
