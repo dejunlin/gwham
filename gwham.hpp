@@ -134,7 +134,7 @@ class WHAM {
      const vector<valtype> lv;
      //!number of dimension of the histogram
      const uint dim;
-     const map<coordtype, vector<uint> > record;
+     const map<coordtype, vector<uint> >& record;
      //!f[i] is the dimensionless free energy of state i 
      vector<valtype> f;
      //! density of state
