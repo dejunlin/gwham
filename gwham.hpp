@@ -92,17 +92,10 @@ class WHAM {
 	  *  Description:   
 	  * ====================================================================================
 	  * @param[in] df df[i] is dg_i as in equation 2.20 in the documentation 
-          * @param[in] hists Generic histogram for each trajectory
-          * @param[in] V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
-          * @param[in] N N[k] is the number of samples the k'th trajectory
-	  * @param[out] gradF gradF[i] is dF/d(deltaG_i) in equation 2.23 in the doc
           */
 	  void 
 	   operator() ( 
-                      const vector<valtype>& df,
-                      const vector<histogram>& hists,  
-                      const vector<Hamiltonian<ensemble>* >& V, 
-		      const vector<uint>& N
+                      const vector<valtype>& df
 	              );
 
        protected:
@@ -167,11 +160,12 @@ WHAM<ensemble,histogram,narray>::LogLikeFunct::LogLikeFunct
 template <class ensemble, class histogram, class narray>
 void WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
 (
-  const vector<valtype>& df,
-  const vector<histogram>& hists,  
-  const vector<Hamiltonian<ensemble>* >& V, 
-  const vector<uint>& N
+  const vector<valtype>& df
 ) {
+  const vector<histogram>& hists = *(wham->hists);  
+  const vector<Hamiltonian<ensemble>* >& V = *(wham->V); 
+  const vector<uint>& N = *(wham->N1);
+
   const uint G = df.size();
   const uint K = N.size();
   //TODO: We should check if K == G + 1 here but ignore this for now
