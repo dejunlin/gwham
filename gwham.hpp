@@ -79,6 +79,8 @@ class WHAM {
 	 LogLikeFunct (WHAM<ensemble,histogram,narray>* const _wham);                          /* constructor */
 
 	 /* ====================  ACCESSORS     ======================================= */
+	 valtype getF() const {};
+	 const vector<valtype>& getgradF() const {};
 
 	 /* ====================  MUTATORS      ======================================= */
 
@@ -151,7 +153,7 @@ valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::LogLikeFunct
   {};
 
 template <class ensemble, class histogram, class narray>
-valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
+void WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
 (
   const vector<valtype>& df,
   const vector<histogram>& hists,  
@@ -184,8 +186,7 @@ valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
   }
   valtype F_part2 = 0.0;
   wham->DOS(wham->record,hists,V,N,f,F_part2,gradF);
-  const valtype F = F_part1 + F_part2;
-  return F;
+  F = F_part1 + F_part2;
 }
 
 template <class ensemble, class histogram, class narray>
