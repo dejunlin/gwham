@@ -7,6 +7,9 @@
 #include <iterator>
 #include <vector>
 
+#include "Optimizer.hpp"
+
+
 using namespace std;
 
 //histogram class must provide public member function 'coord2val' that maps a coordinate to corresponding value
@@ -84,9 +87,9 @@ class WHAM {
 	 //is called first and then is getgradF() -- This is really dumb since in general
 	 //you can save a lot of computation by calculating the function and its derivative
 	 //together
-	 valtype getF(const vector<valtype>& df);
+	 valtype getF() const;
 	 //! just return gradF; NOTE that this is expected to be called right after getF() 
-	 const vector<valtype> getgradF(const vector<valtype>& df) const;
+	 const vector<valtype>& getgradF() const;
 
 	 /* ====================  MUTATORS      ======================================= */
 
@@ -95,7 +98,7 @@ class WHAM {
 	 /* 
 	  * ===  FUNCTION  ======================================================================
 	  *         Name:  operator()
-	  *  Description:   
+	  *  Description: update F and gradF    
 	  * ====================================================================================
 	  * @param[in] df df[i] is dg_i as in equation 2.20 in the documentation 
           */
@@ -202,13 +205,19 @@ void WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
 }
 
 template <class ensemble, class histogram, class narray>
-valtype WHAM<ensemble,histogram,narray>::LogLikeFunct::getF(const vector<valtype>& df) { 
-  this->operator()(df);
+valtype 
+WHAM<ensemble,histogram,narray>
+::LogLikeFunct::getF() const 
+{ 
   return F; 
 }
 
 template <class ensemble, class histogram, class narray>
-const vector<valtype> WHAM<ensemble,histogram,narray>::LogLikeFunct::getgradF(const vector<valtype>& df) const { return gradF; }
+const vector<valtype>& WHAM<ensemble,histogram,narray>
+::LogLikeFunct::getgradF() const 
+{ 
+  return gradF; 
+}
 
 template <class ensemble, class histogram, class narray>
 WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _record, 
@@ -298,6 +307,9 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 {
   //First use a minimizer to get the optimal estimate of WHAM::f
   //TODO: just use dlib L-BFGS here -- we might eventually implement our own
+  //df is our initial guess of delta-F
+  vector<valtype> df(f.size()-1,0);
+  optimize_dlib_lbfgs(funct, df, tol);
 
   //perform the WHAM iteration
   ulong count = 0;
