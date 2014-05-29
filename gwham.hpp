@@ -104,7 +104,7 @@ class WHAM {
           */
 	  void 
 	   operator() ( 
-                      const vector<valtype>& df
+                      const vector<valtype>& q
 	              );
 
        protected:
@@ -163,52 +163,37 @@ WHAM<ensemble,histogram,narray>::LogLikeFunct::LogLikeFunct
 (WHAM<ensemble,histogram,narray>* const _wham) :
   wham(_wham),
   F(0),
-  gradF(vector<valtype>(wham->f.size()-1, 0.0))
+  gradF(vector<valtype>(wham->f.size(), 0.0))
   {};
 
 template <class ensemble, class histogram, class narray>
 void WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
 (
-  const vector<valtype>& df
+  const vector<valtype>& q
 ) {
-  cout << "df optimized from dlib::lbfgs: ";
-  copy(df.begin(), df.end(), ostream_iterator<valtype>(cout, " ")); 
-  cout << endl;
 
   const map<coordtype, vector<uint> >& record = *(wham->record);
   const vector<histogram>& hists = *(wham->hists);  
   const vector<Hamiltonian<ensemble>* >& V = *(wham->V); 
   const vector<uint>& N = *(wham->N1);
 
-  const uint G = df.size();
+  const uint G = q.size();
   const uint K = N.size();
-  //TODO: We should check if K == G + 1 here but ignore this for now
-  //since we expect WHAM constructor compute df from WHAM::f initially
 
   // First term in equation 2.22 and 2.23 in doc
   valtype F_part1 = 0.0;
-  vector<uint> sN(K,0); //sN[i] = N[i+1] + N[i+2] + ... + N[K-1] is the coefficient of df[i]
-  for (  int i = K-2; i >= 0; --i ) {
-    sN[i] = sN[i+1] + N[i+1];
-  }
   for ( uint i = 0; i < G ; ++i ) {
-    F_part1 -= sN[i] * df[i];
-    gradF[i] -= sN[i];
+    cout << "q[" << i << "] = " << q[i] << endl;
+    const valtype lnq = log(q[i]);
+    wham->f[i] = lnq;
+    F_part1 -= N[i] * lnq;
+    gradF[i] -= N[i];
   }
 
   // Second term in equation 2.22 and 2.23 in doc, which is just sum over m: 
   // C_m*ln(C_m*Omega_m) and Omega_m is computed in DOS
-  // we need to update WHAM::f from df first
-  vector<valtype>& f = wham->f;
-  f[0] = 0.0;
-  for ( uint i = 0; i < G; ++i) {
-    f[i+1] = f[i] + df[i];
-  }
-  cout << "f optimized from dlib::lbfgs: ";
-  copy(f.begin(), f.end(), ostream_iterator<valtype>(cout, " ")); 
-  cout << endl;
   valtype F_part2 = 0.0;
-  wham->DOS(record,hists,V,N,f,F_part2,gradF);
+  wham->DOS(record, hists, V, N, q, F_part2, gradF);
   F = F_part1 + F_part2;
 }
 
@@ -316,9 +301,12 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   //First use a minimizer to get the optimal estimate of WHAM::f
   //TODO: just use dlib L-BFGS here -- we might eventually implement our own
   //df is our initial guess of delta-F
-  vector<valtype> df(f.size()-1,0);
-  dlibOPT::optimize_dlib_lbfgs(funct, df, tol);
-
+  vector<valtype> q(f.size(), 1);
+  dlibOPT::optimize_dlib_lbfgs(funct, q, tol);
+  cout << "f optimized from dlib::lbfgs: ";
+  copy(f.begin(), f.end(), ostream_iterator<valtype>(cout, " ")); 
+  cout << endl;
+  
   //perform the WHAM iteration
   ulong count = 0;
   vector<double> newf(f);

@@ -71,7 +71,7 @@ class DensityOfState {
                      const vector<histogram>& hists,  
 		     const vector<Hamiltonian<ensemble>* >& V, 
 		     const vector<uint>& N, 
-		     const vector<valtype>& f,
+		     const vector<valtype>& q,
 		     valtype& F,
 		     vector<valtype>& gradF
 		    );
@@ -258,14 +258,14 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
                               const vector<histogram>& hists,  
          		      const vector<Hamiltonian<ensemble>* >& V, 
          		      const vector<uint>& N, 
-         		      const vector<valtype>& f,
+         		      const vector<valtype>& q,
 			      valtype& F,
 			      vector<valtype>& gradF
          		                   ) 
 {
   const uint G = gradF.size();
   //expenergy[k] == exp(f[k]-V[k]->ener(vals))
-  vector<valtype> expenergy(f.size(),0.0);
+  vector<valtype> expenergy(V.size(),0.0);
   //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
   //printf("#RC k hist_k N_k f_k exparg exp(exparg)\n");
   for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
@@ -278,25 +278,21 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
       num += hists[histid][coord];  
     }
     //The contribution of DOS to gradF[i] is a weighted sum of density of state
-    //and the weight is sum over k = i+1 to K : denum_part[k]
+    //and the weight is just the i'th denum_part 
     vector<valtype> weights(G,0);
     for(uint k = 0; k < hists.size(); ++k) {
       valtype denum_part = 0.0;
-      const valtype exparg = f[k]-V[k]->ener(vals);
+      const valtype exparg = -V[k]->ener(vals);
       if(exparg > MAXEXPARG ) { 
 	cerr << "exp("<<exparg<<") will overflow!\n"; 
-	cerr << "f[" << k << "] = " << f[k] << " V[" << k << "] = " << V[k]->ener(vals) << endl;
 	exit(-1); 
-      }
-      else if(exparg < MINEXPARG) { continue; }
+      } else if(exparg < MINEXPARG) { continue; }
       expenergy[k] = exp(exparg);
-      denum_part += N[k]*expenergy[k]; //There should be a bin-size term here but it cancels out with the same term in f[k] 
+      denum_part += q[k]*N[k]*expenergy[k]; //There should be a bin-size term here but it cancels out with the same term in f[k] 
                                       //since we assume all bin-sizes are the same across different histograms
       denum += denum_part;
-      //update weights for gradF 
-      for ( int j = k - 1; j >= 0 ; --j) {
-	weights[j] += denum_part;
-      }
+      //update weights for gradF
+      weights[k] = denum_part;
     }
     const valtype dos = num/denum;
     DOS[coord] = dos;

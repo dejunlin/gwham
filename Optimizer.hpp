@@ -18,6 +18,7 @@
 #include "dlib/optimization.h"
 #include <algorithm>
 #include "typedefs.hpp"
+#include <climits>
 
 namespace dlibOPT {
 /*
@@ -123,13 +124,22 @@ void optimize_dlib_lbfgs(Kernel& funct, iT& startingpoint, const double& tol) {
   Funct<Kernel, iT, cvect, double> ft(&funct);
   gradFunct<Kernel, iT, cvect, cvect> gradft(&funct);
   cvect sp(startingpoint.size());
+  cvect upbound(startingpoint.size());
+  cvect lowbound(startingpoint.size());
   for(uint i = 0; i < startingpoint.size(); ++i) {
-    sp(i) = startingpoint[i]; 
+    sp(i) = startingpoint[i];
+    upbound(i) = 99999999;
+    lowbound(i) = DBL_MIN;
   }
-  dlib::find_min(dlib::lbfgs_search_strategy(10),  // The 10 here is basically a measure of how much memory L-BFGS will use.
+  /*  dlib::find_min(dlib::lbfgs_search_strategy(10),  // The 10 here is basically a measure of how much memory L-BFGS will use.
            dlib::objective_delta_stop_strategy(tol).be_verbose(),  // Adding be_verbose() causes a message to be 
                                                                     // printed for each iteration of optimization.
             ft, gradft, sp, -1);
+  */
+  dlib::find_min_box_constrained(dlib::lbfgs_search_strategy(10),  // The 10 here is basically a measure of how much memory L-BFGS will use.
+           dlib::objective_delta_stop_strategy(tol).be_verbose(),  // Adding be_verbose() causes a message to be 
+                                                                    // printed for each iteration of optimization.
+            ft, gradft, sp, lowbound, upbound);
 }
 
 }
