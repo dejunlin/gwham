@@ -23,8 +23,8 @@ typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
 int main(int argc, char* argv[]) {
-  string cmdline("#Usage: gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstart xvgstride xvgend ncolskip\n");
-  if (argc != 15) {
+  string cmdline("#Usage: gwham_gromacs463_umb sysname nrun nwin rcsample rcprint Temperature nbins hv lv tol xvgstart xvgstride xvgend ncolskip fseeds\n");
+  if (argc != 16) {
     cerr << cmdline;
     exit(-1);
   }
@@ -47,6 +47,9 @@ int main(int argc, char* argv[]) {
   const uint xvgstride = atoi(argv[12]); //Only read every stride lines (excluding comment-lines) in the x.xvg files
   const uint xvgend = atoi(argv[13]); //last line to read (excluding comment-lines) in the x.xvg files
   const uint ncolskip = atoi(argv[14]); //skip the 1st ncolskip elements in any line of a x.xvg file
+  const string fseedsstr = string(argv[15]); //provide a file which contains seeding dimensionless free energy of 
+                                             //each state in one line seperated by spaces
+  					     //(could be a file that doesn't exist, in which case the program will just seed the free energy to zero) 
   
   cout << cmdline;
   cout << "# ";
@@ -162,7 +165,14 @@ int main(int argc, char* argv[]) {
   cout << "# NOTE: WHAM iteration might break if the arguments of a exp() evaluation is ";
   cout << "out of the range [" << MINEXPARG << "," << MAXEXPARG << "]" << endl;
 
-  WHAM<RSTXLAMBDAsgl, histogram, narray> wham(record,hists, V, N, tol);
+  //read the seeding free energy from file
+  fileio fio_fseeds(fseedsstr, std::fstream::in, 1, 1, 1, 1);
+  vector<valtype> fseeds(0);
+  if(fio_fseeds.readaline()) {
+    fseeds = fio_fseeds.line2val();
+  }
+
+  WHAM<RSTXLAMBDAsgl, histogram, narray> wham(record,hists, V, N, tol, fseeds);
   vector<valtype> params;
   params.push_back(BoltzmannkJ);
   params.push_back(T);

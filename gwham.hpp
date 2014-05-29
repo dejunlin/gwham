@@ -34,14 +34,16 @@ class WHAM {
          const vector<narray>& g,  
 	 const vector<Hamiltonian<ensemble>* >& V, 
          const vector<vector<uint> >& N, 
-	 const valtype _tol 
+	 const valtype _tol,
+	 const vector<valtype>& fseeds = vector<valtype>(0)
 	);
     //! same as the one above except we assume all elements in g[m][k] are the same for all k given m
     WHAM(const map<coordtype, vector<uint> >& _record, 
          const vector<histogram>& hists,  
 	 const vector<Hamiltonian<ensemble>* >& V, 
          const vector<vector<uint> >& N, 
-	 const valtype _tol 
+	 const valtype _tol, 
+	 const vector<valtype>& fseeds = vector<valtype>(0)
 	);
     //! same as the one above except we further assume each trajectory only visit 1 state
     /** This means that V.size() == hists.size() 
@@ -51,7 +53,8 @@ class WHAM {
          const vector<histogram>& hists,  
 	 const vector<Hamiltonian<ensemble>* >& V, 
          const vector<uint>& N, 
-	 const valtype _tol 
+	 const valtype _tol, 
+	 const vector<valtype>& fseeds = vector<valtype>(0)
 	);
     //! Based on the density of state, calculate a new set of free energies
     void calnewf(vector<valtype>& f, const vector<Hamiltonian<ensemble>* >& V) const;
@@ -89,7 +92,8 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
                                       const vector<narray>& g,  
 	                              const vector<Hamiltonian<ensemble>* >& V, 
                                       const vector<vector<uint> >& N, 
-	                              const double _tol 
+	                              const double _tol, 
+                                      const vector<valtype>& fseeds 
 	                             ):
 				     tol(_tol),
 				     binsize(hists[0].getbinsize()),
@@ -99,6 +103,12 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     f(vector<valtype>(V.size(),0.0)),
 				     DOS(DOStype(hists[0]))
 {
+  if(fseeds.size() == f.size()) {
+    f = fseeds;
+    cout << "# Seeding WHAM iteration with free energies: ";
+    copy(fseeds.begin(), fseeds.end(), ostream_iterator<valtype>(cout, " "));
+    cout << endl;
+  }
   //perform the WHAM iteration
   ulong count = 0;
   vector<double> newf(f);
@@ -115,7 +125,8 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
                                       const vector<histogram>& hists,  
 	                              const vector<Hamiltonian<ensemble>* >& V, 
                                       const vector<vector<uint> >& N, 
-	                              const double _tol 
+	                              const double _tol, 
+                                      const vector<valtype>& fseeds 
 	                             ):
 				     tol(_tol),
 				     binsize(hists[0].getbinsize()),
@@ -125,6 +136,12 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     f(vector<valtype>(V.size(),0.0)),
 				     DOS(DOStype(hists[0]))
 {
+  if(fseeds.size() == f.size()) {
+    f = fseeds;
+    cout << "# Seeding WHAM iteration with free energies: ";
+    copy(fseeds.begin(), fseeds.end(), ostream_iterator<valtype>(cout, " "));
+    cout << endl;
+  }
   //perform the WHAM iteration
   ulong count = 0;
   vector<double> newf(f);
@@ -141,7 +158,8 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
                                       const vector<histogram>& hists,  
 	                              const vector<Hamiltonian<ensemble>* >& V, 
                                       const vector<uint>& N, 
-	                              const double _tol 
+	                              const double _tol, 
+                                      const vector<valtype>& fseeds 
 	                             ):
 				     tol(_tol),
 				     binsize(hists[0].getbinsize()),
@@ -151,6 +169,12 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
 				     f(vector<valtype>(V.size(),0.0)),
 				     DOS(DOStype(hists[0]))
 {
+  if(fseeds.size() == f.size()) {
+    f = fseeds;
+    cout << "# Seeding WHAM iteration with free energies: ";
+    copy(fseeds.begin(), fseeds.end(), ostream_iterator<valtype>(cout, " "));
+    cout << endl;
+  }
   //perform the WHAM iteration
   ulong count = 0;
   vector<double> newf(f);
