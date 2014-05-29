@@ -105,12 +105,8 @@ as those obtained before~\cite{Zhu2012,Chodera2007,Kumar1992}:
 Since $\{f_{i}\}_{i}$ are functions of $\{\Omega_{\mathbf{m}}\}_{\mathbf{m}}$, equation~\ref{eq:WHAM1}
 is a set of nonlinear equations which are usually solved by iteratively updating 
 $\{f_{i}\}_{i}$ and $\{\Omega_{\mathbf{m}}\}_{\mathbf{m}}$ until self-consistency is 
-achieved~\cite{Kumar1992,wham205}. However, as demonstrated in the special case of PMF 
-calculations~\cite{Zhu2012}, it's more efficient to minimize $F$ in terms of $\{f_{i}\}_{i}$ 
-in lieu of $\{\Omega_{\mathbf{m}}\}_{\mathbf{m}}$ because there are less simulations than 
-the number of bins in general and therefore much less computational cost. This improvement of 
-efficiency should be highlighted in cases where $\mathbf{m}$ is high-dimensional, i.e. $d$ is 
-large, where the number of bins grow exponentially as a function of $d$.
+achieved~\cite{Kumar1992,wham205}. We can also show that $F$ is a convex function that 
+has one and only one global minimum.
 
 To proceed, we re-interpret $F$ as a new function of $\{f_{i}\}_{i}$:
 \begin{equation}
@@ -131,8 +127,8 @@ for convenience. It's straightforward to show that
 \frac{\partial F}{\partial g_{i}} = 0 \: \forall i \Leftrightarrow \frac{\partial F}{\partial \Omega_{\mathbf{m}}} \: \forall \mathbf{m}
 \label{eq:Fequiv}
 \end{equation}
-Also, notice that $F(\{g_{i}\}_{i})$ is a convex function of $\{g_{i}\}_{i}$ and thus has one 
-global minimum. To show that, we first give the first and second partial derivatives of $F$:
+To show that $F(\{g_{i}\}_{i})$ is a convex function of $\{g_{i}\}_{i}$ and thus has one 
+global minimum, we first give the first and second partial derivatives of $F$:
 \begin{equation}
 \frac{\partial F}{\partial g_{i}}  = N_{i} (\exp(g_{i}) \sum_{\mathbf{m}}^{} \frac{C_{\mathbf{m}} c_{i,\mathbf{m}} }{z_{\mathbf{m}}} -1)
 \label{eq:dFdg}
@@ -169,29 +165,3 @@ where
 and the last step in equation~\ref{eq:derv1} follows the Cauchy-Schwarz inequality.  
 The twice differentiable function $F$ has positive semidefinite Hessian for all $\{g_{i}\}_{i}$ 
 and thus is convex.
-
-Furthermore, it was claimed that it's more efficient to work with $\frac{\partial F}{\partial \Delta g_{i}}$ 
-~\cite{Zhu2012}, where 
-\begin{equation}
-\Delta g_{i} \equiv g_{i+1}-g_{i} 
-\label{eq:dgi}
-\end{equation}
-We have
-\begin{equation}
-g_{i} = \sum_{j=1}^{i-1} \Delta g_{j} 
-\label{eq:gidgj}
-\end{equation}
-and 
-\begin{align}
-F(\{\Delta g_{i}\}_{i}) &= - \sum_{i=2}^{K} N_{i} \sum_{j=1}^{i-1} \Delta g_{j} - \sum_{\mathbf{m}}^{} C_{\mathbf{m}} \ln \frac{C_{\mathbf{m}}}{z_{\mathbf{m}}} \\
-\frac{\partial F}{\partial \Delta g_{i}} &= \sum_{j=i+1}^{K} \frac{\partial F}{\partial g_{j}} \notag \\
-&= \sum_{j=i+1}^{K} N_{j} (\exp(\sum_{k}^{j-1} \Delta g_{k}) \sum_{\mathbf{m}}^{} \frac{C_{\mathbf{m}} c_{j,\mathbf{m}}}{z_{\mathbf{m}}} - 1) 
-\label{eq:dfddgj}
-\end{align}
-where $z_{\mathbf{m}}$ is now
-\begin{equation}
-z_{m} = \sum_{k}^{} N_{k} c_{k,\mathbf{m}} \exp(\sum_{l=1}^{k-1} \Delta g_{l})
-\label{eq:zdgj}
-\end{equation}
-and we set $g_{1}$ to zero since adding a constant to all $\{g_{i}\}_{i}$ won't change our 
-answer.
