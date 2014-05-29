@@ -283,7 +283,11 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     for(uint k = 0; k < hists.size(); ++k) {
       valtype denum_part = 0.0;
       const valtype exparg = f[k]-V[k]->ener(vals);
-      if(exparg > MAXEXPARG ) { cerr << "exp("<<exparg<<") will overflow!\n"; exit(-1); }
+      if(exparg > MAXEXPARG ) { 
+	cerr << "exp("<<exparg<<") will overflow!\n"; 
+	cerr << "f[" << k << "] = " << f[k] << " V[" << k << "] = " << V[k]->ener(vals) << endl;
+	exit(-1); 
+      }
       else if(exparg < MINEXPARG) { continue; }
       expenergy[k] = exp(exparg);
       denum_part += N[k]*expenergy[k]; //There should be a bin-size term here but it cancels out with the same term in f[k] 

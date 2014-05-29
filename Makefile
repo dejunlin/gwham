@@ -1,6 +1,7 @@
 # Linux flags
+#CC=~/gstlfilt/gfilt
 CC=g++
-CFLAGS= -Wall -W -O3 -I dlib 
+CFLAGS= -W -O3 -I dlib -Wno-unused-variable 
 #Debugging flags
 #CFLAGS= -g  -Wall -W 
 LFLAGS= -lm

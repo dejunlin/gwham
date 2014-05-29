@@ -171,6 +171,11 @@ void WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
 (
   const vector<valtype>& df
 ) {
+  cout << "df optimized from dlib::lbfgs: ";
+  copy(df.begin(), df.end(), ostream_iterator<valtype>(cout, " ")); 
+  cout << endl;
+
+  const map<coordtype, vector<uint> >& record = *(wham->record);
   const vector<histogram>& hists = *(wham->hists);  
   const vector<Hamiltonian<ensemble>* >& V = *(wham->V); 
   const vector<uint>& N = *(wham->N1);
@@ -199,8 +204,11 @@ void WHAM<ensemble,histogram,narray>::LogLikeFunct::operator()
   for ( uint i = 0; i < G; ++i) {
     f[i+1] = f[i] + df[i];
   }
+  cout << "f optimized from dlib::lbfgs: ";
+  copy(f.begin(), f.end(), ostream_iterator<valtype>(cout, " ")); 
+  cout << endl;
   valtype F_part2 = 0.0;
-  wham->DOS(wham->record,hists,V,N,f,F_part2,gradF);
+  wham->DOS(record,hists,V,N,f,F_part2,gradF);
   F = F_part1 + F_part2;
 }
 
@@ -309,7 +317,7 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   //TODO: just use dlib L-BFGS here -- we might eventually implement our own
   //df is our initial guess of delta-F
   vector<valtype> df(f.size()-1,0);
-  optimize_dlib_lbfgs(funct, df, tol);
+  dlibOPT::optimize_dlib_lbfgs(funct, df, tol);
 
   //perform the WHAM iteration
   ulong count = 0;
