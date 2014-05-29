@@ -95,7 +95,7 @@ class WHAM {
      const uint dim;
      //!f[i] is the dimensionless free energy of state i 
      vector<valtype> f;
-     //! Density of state caclulator
+     //! Density of state as well as a functor that caclulates it
      DOStype DOS;
 };
 
