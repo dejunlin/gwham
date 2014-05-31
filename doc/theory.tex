@@ -1,9 +1,31 @@
 \section{Theory} 
-In order to combine the information from multiple systems, we resort to 
-quantities which are conserved across all the systems. One obvious quantity 
-is $\vect{q}$ as defined in equation~\ref{eq:q}. If we know $p_{i}(\vect{q})$, 
-the probability density of $\vect{q}$, we can reformulate equations~\ref{eq:Q} 
-and \ref{eq:O} in terms of $p_{i}(\vect{q})$:
+To solve equation~\ref{eq:O}, we can in principle just sample the 
+configuration space $\mathbf{x}$ by brute forces. However, in the 
+presence of rugged high-dimensional energy surface, it's in general
+extremely difficult to get a converged answer by solving equation~\ref{eq:O} directly, 
+i.e., by sampling the configuration space especially at near room temperature.
+Usually the system would exhibit metastability and get stuck at some local
+energy minima and it could take a very long to escape from them. The general
+idea behind a lot of enhanced sampling methods, such as the generalized 
+ensemble approach or the umbrella sampling method, is to let the system 
+be able to walk up-and-down in the energy surface faster by either
+perturbing the probability of transitioning between energy levels or to 
+modify the energy surface \textit{per se} systematically so that the 
+equilibrium thermodynamics is maintained, which allows us to estimate
+the average in the  right equilibrium ensemble. Generally, these enhanced 
+sampling approach works by either having the system perform random walk 
+at different energy levels or by having different system explore configurations
+at different energy levels. Even though the details of how to carry out 
+the simulations might be different, they're all under a common premise, 
+which is they all need to have a set of quantities which are conserved 
+across all the systems at different energy levels or with different 
+perturbation to the energy surface so that the information from different 
+systems can be combined and still give the right answer.
+
+One obvious quantity is $\vect{q}$ as defined in equation~\ref{eq:q}. 
+If we know $p_{i}(\vect{q})$, the probability density of $\vect{q}$, 
+we can reformulate equations~\ref{eq:Q} and \ref{eq:O} in terms of 
+$p_{i}(\vect{q})$:
 \begin{equation}
 Q_{i} = \intgrln{}{}{p_{i}}{\vect{q}}
 \label{eq:Q_q}
