@@ -12,7 +12,7 @@ be able to walk up-and-down in the energy surface faster by either
 perturbing the probability of transitioning between energy levels or to 
 modify the energy surface \textit{per se} systematically so that the 
 equilibrium thermodynamics is maintained, which allows us to estimate
-the average in the  right equilibrium ensemble. Generally, these enhanced 
+the average in the right equilibrium ensemble. Generally, these enhanced 
 sampling approach works by either having the system perform random walk 
 at different energy levels or by having different system explore configurations
 at different energy levels. Even though the details of how to carry out 
@@ -22,7 +22,7 @@ across all the systems at different energy levels or with different
 perturbation to the energy surface so that the information from different 
 systems can be combined and still give the right answer.
 
-One obvious quantity is $\vect{q}$ as defined in equation~\ref{eq:q}. 
+One obvious quantity is $\vect{q}$ as defined in equation~\ref{eq:q}.
 If we know $p_{i}(\vect{q})$, the probability density of $\vect{q}$, 
 we can reformulate equations~\ref{eq:Q} and \ref{eq:O} in terms of 
 $p_{i}(\vect{q})$:
@@ -49,6 +49,16 @@ is the density of state at $\vect{q}$. $O(\vect{q})$ can be obtained by
   O(\vect{q}) \equiv \frac{\intgrln{}{}{\delta(\vect{q}-\vect{q}(\vect{x}))O}{\vect{x}}}{\Omega(\vect{q})}
 \label{eq:O_q}
 \end{equation}
+Equation~\ref{eq:O_q} can be understood as the weighted average of $O$ as 
+as a function of $\mathbf{q}$ with the weights for each value of $O$ being 
+the number of configurations that gives a certain pair of values of $\mathbf{q}$
+and $O$ at the same time. Note that in this case, the Hamiltonian of the system 
+is completely determined by $\mathbf{q}$. However, we'll show later that 
+$\mathbf{q}$ only needs to be a subset of equation~\ref{eq:q} such that the 
+the corresponding subset of equation~\ref{eq:R} characterizes all the differences
+between any two of the systems. For example, if any two systems in the NPT ensemble 
+are different in temperature only, then the minimal subset of $\mathbf{q}$ we 
+need to consider is the interal potential energy $U$.
 
 WHAM works in the following way. First, we discretize the space of $\vect{q}$ 
 into a $d \equiv \mathrm{dim}(\vect{q})$ -dimensional grid, where each grid point can be 
