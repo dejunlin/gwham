@@ -63,7 +63,7 @@ class WHAM {
     //!Calculate the inconsistency between the i'th consensus histogram and the corresponding raw histogram  
     valtype whamvsrawi(const uint& i, const narray& rho) const;
     //!just loop over WHAM::whamvsrawi for all i
-    vector<valtype> whamvsraw(const narray& rhonorm) const;
+    vector<valtype> whamvsraw(const narray& rho) const;
     //!given coordinate in index space, calculate the corresponding real-space coordinate
     const vector<valtype> coord2val(const coordtype& coord) const;
     //!given coordinate in index space along the specified dimension, calculate the corresponding real-space coordinate
@@ -383,7 +383,7 @@ valtype WHAM<ensemble,histogram,narray>::whamvsrawi(const uint& i, const narray&
 }
 
 template <class ensemble, class histogram, class narray>
-vector<valtype> WHAM<ensemble,histogram,narray>::whamvsraw(const narray& rhonorm) const {
+vector<valtype> WHAM<ensemble,histogram,narray>::whamvsraw(const narray& rho) const {
   const uint K = (*hists).size();
   vector<valtype> eitas;
   for(uint i = 0; i < K; ++i) {
