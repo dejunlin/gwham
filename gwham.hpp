@@ -61,7 +61,7 @@ class WHAM {
     //!calculate PMF in Hamiltonian _V along the dimension in DOS as specified by dim
     narray calrho(const vector<uint>& dim, const Hamiltonian<ensemble>& _V) const;
     //!Calculate the inconsistency between the i'th consensus histogram and the corresponding raw histogram  
-    valtype whamvsrawi(const uint& i, const narray& rhonorm) const;
+    valtype whamvsrawi(const uint& i, const narray& rho) const;
     //!just loop over WHAM::whamvsrawi for all i
     vector<valtype> whamvsraw(const narray& rhonorm) const;
     //!given coordinate in index space, calculate the corresponding real-space coordinate
@@ -362,7 +362,7 @@ narray WHAM<ensemble,histogram,narray>::calrho(const vector<uint>& _dim, const H
 
 
 template <class ensemble, class histogram, class narray>
-valtype WHAM<ensemble,histogram,narray>::whamvsrawi(const uint& i, const narray& rhonorm) const {
+valtype WHAM<ensemble,histogram,narray>::whamvsrawi(const uint& i, const narray& rho) const {
   const histogram hist = (*hists)[i];
   const valtype sum = hist.sum();
   const valtype Qinv = exp(f[i]); //this is the inverse of the partition function 
