@@ -149,7 +149,16 @@ int main(int argc, char* argv[]) {
     for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}
     printf("%30.15lf%30.15lf\n",pmf,rhonorm);
   }
-  
+  //perform WHAM inconsistency test
+  vector<valtype> eitas = wham.whamvsraw(rho);
+  printf("#%10s%30s%30s\n", "Window", "Vals", "Eita");
+  for(uint i = 0; i < eitas.size(); ++i) {
+    printf("%10d", i);
+    const vector<valtype> rstcenter = wincentrs[i];
+    for(uint k = 0; k < rstcenter.size(); ++k) { printf("%30lf", rstcenter[k]); }
+    printf("%30lf\n", eitas[i]);
+  }
+
   cout << "# WHAM - Analytic " << endl;
   histogram dpmf_hist(1,vector<uint>(1,100),vector<valtype>(1,maxdpmf),vector<valtype>(1,mindpmf));
   for(uint i = 0; i < dpmf.size(); ++i) {
