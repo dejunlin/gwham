@@ -197,8 +197,6 @@ int main(int argc, char* argv[]) {
     for(uint i = 0; i < bin.size(); ++i) { printf("%10d",bin[i]);}
     for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}
     printf("%30.15lf%30.15lf\n",pmf,rhonorm);
-    //Normalize rho for latter analysis
-    it->second = rhonorm;
   }
   //calculate the inconsistency between the consensus histogram and the raw historam
   const vector<valtype> eitas = wham.whamvsraw(rho);
