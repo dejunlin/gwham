@@ -104,6 +104,7 @@ class RSTXLAMBDAsgl : public virtual RST, public virtual LAMBDAsgl {
     RSTXLAMBDAsgl(const vector<valtype>& params);
     //! This assume that elements of vals are ordered so that the first N are for RST while LAMBDAsgl::i is the index of the element in vals
     valtype ener(const vector<valtype>& vals) const;
+    vector<valtype> getRSTparams() const;
     vector<valtype> getparams() const;
   private:
 };

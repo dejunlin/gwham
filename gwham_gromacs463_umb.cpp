@@ -197,6 +197,18 @@ int main(int argc, char* argv[]) {
     for(uint i = 0; i < bin.size(); ++i) { printf("%10d",bin[i]);}
     for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}
     printf("%30.15lf%30.15lf\n",pmf,rhonorm);
+    //Normalize rho for latter analysis
+    it->second = rhonorm;
   }
-
+  //calculate the inconsistency between the consensus histogram and the raw historam
+  const vector<valtype> eitas = wham.whamvsraw(rho);
+  printf("%10s%30s%30s\n", "Window", "Center", "Eita");
+  for(uint i = 0; i < eitas.size(); ++i) {
+    const vector<valtype> rstparams = V[i]->getens().getRSTparams();
+    const vector<valtype> rstcenter(rstparams.end()-ndim, rstparams.end());
+    printf("%10d",i);
+    for(uint k = 0; k < ndim; ++k) { printf("%30lf", rstcenter[k]); }
+    printf("%30lf\n", eitas[i]);
+  }
+  
 }

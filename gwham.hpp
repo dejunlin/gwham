@@ -59,7 +59,11 @@ class WHAM {
     //! Based on the density of state, calculate a new set of free energies
     void calnewf(vector<valtype>& f, const vector<Hamiltonian<ensemble>* >& _V) const;
     //!calculate PMF in Hamiltonian _V along the dimension in DOS as specified by dim
-    narray calrho(const vector<uint>& dim, const Hamiltonian<ensemble>& _V) const; 
+    narray calrho(const vector<uint>& dim, const Hamiltonian<ensemble>& _V) const;
+    //!Calculate the inconsistency between the i'th consensus histogram and the corresponding raw histogram  
+    valtype whamvsrawi(const uint& i, const narray& rhonorm) const;
+    //!just loop over WHAM::whamvsrawi for all i
+    vector<valtype> whamvsraw(const narray& rhonorm) const;
     //!given coordinate in index space, calculate the corresponding real-space coordinate
     const vector<valtype> coord2val(const coordtype& coord) const;
     //!given coordinate in index space along the specified dimension, calculate the corresponding real-space coordinate
@@ -354,6 +358,38 @@ narray WHAM<ensemble,histogram,narray>::calrho(const vector<uint>& _dim, const H
     }
   }
   return rho;
+}
+
+
+template <class ensemble, class histogram, class narray>
+valtype WHAM<ensemble,histogram,narray>::whamvsrawi(const uint& i, const narray& rhonorm) const {
+  const histogram hist = (*hists)[i];
+  const valtype sum = hist.sum();
+  const valtype Qinv = exp(f[i]); //this is the inverse of the partition function 
+  const Hamiltonian<ensemble>* const Vi = (*V)[i];
+  typename histogram::const_iterator it;
+  valtype eita = 0; //eita in equation 41 from reference DOI: 10.1002/jcc.21989
+  for(it = hist.begin(); it != hist.end(); ++it) {
+    //this is the raw normalized histogram from i'th simulation
+    const valtype praw = it->second/sum;
+    //next we calculate the consensus histogram from the WHAM distribution
+    const coordtype coord = it->first;
+    const vector<valtype> vals = hist.coord2val(coord);
+    const valtype pwham = Qinv * exp(-Vi->ener(vals)) * rhonorm[coord];
+    //then we calculate eita, the relative entropy between praw and pwham
+    eita += praw * log(praw/pwham);
+  }
+  return eita;
+}
+
+template <class ensemble, class histogram, class narray>
+vector<valtype> WHAM<ensemble,histogram,narray>::whamvsraw(const narray& rhonorm) const {
+  const uint K = (*hists).size();
+  vector<valtype> eitas;
+  for(uint i = 0; i < K; ++i) {
+    eitas.push_back(whamvsrawi(i, rhonorm));
+  }
+  return eitas;
 }
 
 template <class ensemble, class histogram, class narray>

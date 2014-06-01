@@ -93,6 +93,9 @@ class gnarray {
     void print(const Telem& norm) const;
     //!Output a serialized array of vals in canonical order
     vector<vector<Tval> > canonical_valseries() const; 
+    //!Sum of all the elments
+    Telem sum() const;
+
   private:
     map<Tcoord, Telem> narr;
     //!number of dimension
@@ -333,6 +336,15 @@ vector<vector<Tval> > gnarray<Tcoord,Telem,Tval>::canonical_valseries() const {
     vals.push_back(val);
   }
   return vals;
+}
+
+template<class Tcoord, class Telem, class Tval>
+Telem gnarray<Tcoord,Telem,Tval>::sum() const {
+  Telem ans = 0;
+  for(const_iterator it = narr.begin(); it != narr.end(); ++it) {
+    ans += it->second;
+  }
+  return ans;
 }
 
 template<class Tcoord, class Telem, class Tval>

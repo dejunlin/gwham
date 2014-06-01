@@ -302,8 +302,12 @@ valtype RSTXLAMBDAsgl::ener(const vector<valtype>& vals) const {
   return V;
 }
 
+vector<valtype> RSTXLAMBDAsgl::getRSTparams() const {
+  return RST::getparams();
+}
+
 vector<valtype> RSTXLAMBDAsgl::getparams() const {
-  vector<valtype> RSTparams = RST::getparams();
+  vector<valtype> RSTparams = getRSTparams();
   vector<valtype> LAMBDAsglparams = LAMBDAsgl::getparams();
   vector<valtype> params(RSTparams);
   params.insert(params.end(),LAMBDAsglparams.begin(),LAMBDAsglparams.end());
