@@ -375,7 +375,7 @@ valtype WHAM<ensemble,histogram,narray>::whamvsrawi(const uint& i, const narray&
     //next we calculate the consensus histogram from the WHAM distribution
     const coordtype coord = it->first;
     const vector<valtype> vals = hist.coord2val(coord);
-    const valtype pwham = Qinv * exp(-Vi->ener(vals)) * rhonorm[coord];
+    const valtype pwham = Qinv * exp(-Vi->ener(vals)) * rho[coord];
     //then we calculate eita, the relative entropy between praw and pwham
     eita += praw * log(praw/pwham);
   }
@@ -387,7 +387,7 @@ vector<valtype> WHAM<ensemble,histogram,narray>::whamvsraw(const narray& rho) co
   const uint K = (*hists).size();
   vector<valtype> eitas;
   for(uint i = 0; i < K; ++i) {
-    eitas.push_back(whamvsrawi(i, rhonorm));
+    eitas.push_back(whamvsrawi(i, rho));
   }
   return eitas;
 }
