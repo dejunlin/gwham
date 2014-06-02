@@ -23,13 +23,17 @@ SRCS=ensemble.cpp  gmxmdpio.cpp fileio.cpp  gmxpullpot.cpp  gwham_gromacs463_umb
 OBJSGMX463UMB=ensemble.o  gmxmdpio.o fileio.o  gmxpullpot.o  gwham_gromacs463_umb.o 
 OBJSGMX463UMBFB=ensemble.o  gmxmdpio.o fileio.o  gmxpullpot.o  gwham_gromacs463_umbfb.o 
 OBJSMBARGMX463UMB=ensemble.o  gmxmdpio.o fileio.o  gmxpullpot.o  gmbar_gromacs463_umb.o gmbar.o
+OBJSUMB=ensemble.o fileio.o gwham_umb.o 
 OBJSMC=ensemble.o mc.o  
 OBJSGMBAR=gmbar.o 
 HEADER_FILES=densityofstate.hpp  ensemble.hpp  fileio.hpp  fileio_utils.hpp  gmxmdpio.hpp  gmxpullpot.hpp  gmxxvgio.hpp  gnarray.hpp  gwham.hpp  hamiltonian.hpp  typedefs.hpp mc.hpp gmbar.hpp trjsubtrj.hpp
-all: gwham_gromacs463_umb gwham_gromacs463_umbfb mc gmbar_gromacs463_umb 
+all: gwham_gromacs463_umb gwham_gromacs463_umbfb mc gmbar_gromacs463_umb gwham_umb 
 
 ran2.o: ran2.c
 	$(CC) $(CFLAGS) -c ran2.c
+
+gwham_umb.o:  gwham.hpp densityofstate.hpp gwham_umb.cpp hamiltonian.hpp fileio.hpp fileio_utils.hpp gnarray.hpp typedefs.hpp ensemble.o
+	$(CC) $(CFLAGS) -c gwham_umb.cpp
 
 gwham_gromacs463_umb.o:  gwham.hpp densityofstate.hpp gwham_gromacs463_umb.cpp hamiltonian.hpp gmxxvgio.hpp fileio.hpp fileio_utils.hpp gnarray.hpp typedefs.hpp ensemble.o gmxmdpio.o 
 	$(CC) $(CFLAGS) -c gwham_gromacs463_umb.cpp
@@ -67,6 +71,9 @@ gwham_gromacs463_umbfb : $(OBJSGMX463UMBFB)
 gmbar_gromacs463_umb : $(OBJSMBARGMX463UMB) 
 	$(CC) $(CFLAGS) -o gmbar_gromacs463_umb $(OBJSMBARGMX463UMB) $(LFLAGS) 
 
+gwham_umb : $(OBJSUMB) 
+	$(CC) $(CFLAGS) -o gwham_umb $(OBJSUMB) $(LFLAGS) 
+
 mc : $(OBJSMC) 
 	$(CC) $(CFLAGS) -o mc $(OBJSMC) $(LFLAGS)
 
@@ -77,7 +84,7 @@ depend:
 	makedepend -- $(CFLAGS) -- $(SRCS)
 
 clean:
-	rm -f gwham_gromacs463_umbfb gwham_gromacs463_umb gmbar_gromacs463_umbfb mc *.o .*.swp *~
+	rm -f gwham_umb gwham_gromacs463_umbfb gwham_gromacs463_umb gmbar_gromacs463_umbfb mc *.o .*.swp *~
 
 remake:
 	make clean

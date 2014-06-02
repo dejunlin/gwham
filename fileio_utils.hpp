@@ -28,4 +28,10 @@ void parser(vector<Tp>& output, const string& str, string delims=" \t") {
 	delete[] str_c;
 }
 
+template <class Tp> 
+void parser(vector<Tp>& output, const vector<string>& input) {
+  for(uint i = 0; i < input.size(); ++i) {
+    output.push_back(atof(input[i].c_str()));
+  }
+}
 #endif
