@@ -126,6 +126,12 @@ vector<string> fileio::line2str() const {
   return ans;
 }
 
+vector<string> fileio::line2str(const string& delims) const {
+  vector<string> ans;
+  parser<string>(ans, line, delims);
+  return ans;
+}
+
 const vector<string>& fileio::getlines() const { return lines; }
 
 void fileio::resetlc() { lc = 0; }

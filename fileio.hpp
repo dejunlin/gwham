@@ -23,8 +23,10 @@ class fileio {
     bool fopen(const string& _fname, const ios_base::openmode& mode);
     //! break line into vector of valtype 
     vector<valtype> line2val() const;
-    //! break line into vector of string 
+    //! break line into vector of string using spaces as deliminator 
     vector<string> line2str() const;
+    //! break line into vector of string using specified deliminator 
+    vector<string> line2str(const string& delims) const;
     //! return fileio::lines for read-only
     const vector<string>& getlines() const;
     //! reset lc to 0
