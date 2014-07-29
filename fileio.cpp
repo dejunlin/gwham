@@ -88,10 +88,17 @@ bool fileio::fopen() {
   }
 }
 
+bool fileio::emptyline() const {
+  vector<string> t; 
+  parser(t, line);
+  if(t.size() == 0) { return true; }
+  else { return false; }
+}
+
 bool fileio::readaline() {
   line.clear();
   while(getline(fs, line)) {
-    if(line[0] == '@' || line[0] == '#' || line[0] == ';' || line.empty()) { continue; }
+    if(line[0] == '@' || line[0] == '#' || line[0] == ';' || line.empty() || emptyline()) { continue; }
     ++lc;
     if(lc < lb) { line.clear(); continue; }
     if(lc % ls) { line.clear(); continue; }

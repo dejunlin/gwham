@@ -13,6 +13,8 @@ class fileio {
     fileio(const string& _fname, const ios_base::openmode& mode, const bool& perm, const linecounter _lb, const linecounter _ls, const linecounter _le);
     fileio(const ios_base::openmode& mode, const bool& perm, const linecounter _lb, const linecounter _ls, const linecounter _le);
     fileio(const fileio& _fio);
+    //! if fileio::line contains only whitespaces
+    bool emptyline() const;
     //! read one line at a time and cache it into fileio::line 
     bool readaline(); 
     //! read all lines and cached them into fileio::lines
