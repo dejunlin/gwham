@@ -7,36 +7,11 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <iterator>
+#include <typeinfo>
 #include "exception.hpp"
 
 using namespace std;
-
-template <class Tp> 
-void parser(vector<Tp>& output, const string& str, string delims=" \t") throw(FILEIO_Exception) {
-	char * str_c = new char[str.size()+1];
-	str_c[str.size()] = '\0';
-	memcpy(str_c,str.c_str(),str.size());
-
-	char * pch = strtok(str_c,delims.c_str());
-	while(pch !=NULL) {
-		istringstream iss(pch);
-		Tp tok;
-		if(!(iss>>tok)) {
-		  delete[] str_c;
-		  throw(FILEIO_Exception("Error parsing string: '" + str + "'"));
-		}
-		output.push_back(tok);
-		pch = strtok(NULL,delims.c_str());
-	}
-	delete[] str_c;
-}
-
-template <class Tp> 
-void parser(vector<Tp>& output, const vector<string>& input) {
-  for(uint i = 0; i < input.size(); ++i) {
-    output.push_back(atof(input[i].c_str()));
-  }
-}
 
 template <class T>
 string tostr(const T& input) {
@@ -44,6 +19,40 @@ string tostr(const T& input) {
   ss << input;
   return ss.str();
 }
+
+template <class Tp> 
+void strconverter(vector<Tp>& output, const vector<string>& input) throw(FILEIO_Exception)  {
+  for(uint i = 0; i < input.size(); ++i) {
+    istringstream iss(input[i]);
+    vector<Tp> tmp((istream_iterator<Tp>(iss)), istream_iterator<Tp>());
+    if(tmp.size() == 0) {
+      throw(FILEIO_Exception("Failed converting string at: '" + input[i] + "' to type '" + typeid(Tp).name() + "'"));
+    } else if(tmp.size() > 1) {
+      throw(FILEIO_Exception("Convertion of string at: '" + input[i] + "' to type '" + typeid(Tp).name() + "' will result in " + tostr(tmp.size()) + " elements (probably due to the presence of whitespaces)"));
+    }
+    output.push_back(tmp[0]);
+  }
+}
+
+//split a string into an array by delims
+template <class Tp> 
+void parser(vector<Tp>& output, const string& str, string delims=" \t") throw(FILEIO_Exception) {
+  //first split str into a array of std::string
+  vector<string> tmp;
+  parser<string>(tmp, str, delims);
+
+  //then parse each element into output
+  try {
+    strconverter(output, tmp);
+  } catch(FILEIO_Exception& fioex) {
+    fioex.prepend("Error parsing string: '" + str + "' into a vector of type '" + typeid(Tp).name() + "' ");
+    throw fioex;
+  }
+}
+
+//specialized parser for array of string -- NOTE that delims can still be defaulted to the one in the general template
+template <>
+void parser<string>(vector<string>& output, const string& str, string delims) throw(FILEIO_Exception);
 
 //case-sensitive comparison; NOTE std::string::compare() return 0 if and only if the two string match
 template <class T>
