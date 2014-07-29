@@ -15,13 +15,15 @@ class General_Exception : public std::exception {
     explicit General_Exception() : msg("genearl execption") {};
     virtual ~General_Exception() throw() {};
     virtual const char* what() const throw() { return msg.c_str(); }
+    void append(const string& addmsg) { msg += addmsg; }
+    void prepend(const string& addmsg) { msg = addmsg + msg; }
   protected:
-    const string msg;
+    string msg;
 };
 
 class FILEIO_Exception : public General_Exception {
   public:
-    FILEIO_Exception(const string& _msg) : General_Exception("FILEIO exception: " + _msg) {}; 
+    FILEIO_Exception(const string& _msg) : General_Exception("FILEIO exception: " + _msg) {};
 };
 
 class GMXMDP_Exception : public General_Exception {
