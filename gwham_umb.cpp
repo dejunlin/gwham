@@ -103,8 +103,8 @@ int main(int argc, char* argv[]) {
 
     //Set up the hamiltonian parameters
     vector<valtype> rstcenters, rstforces;
-    parser<valtype>(rstcenters, vector<string>(line.begin()+1, line.begin()+1+ndim));
-    parser<valtype>(rstforces, vector<string>(line.begin()+1+ndim, line.begin()+1+2*ndim));
+    strconverter<valtype>(rstcenters, vector<string>(line.begin()+1, line.begin()+1+ndim));
+    strconverter<valtype>(rstforces, vector<string>(line.begin()+1+ndim, line.begin()+1+2*ndim));
     vector<valtype> params;
     params.push_back(Boltzmannkcal);
     params.push_back(T);
