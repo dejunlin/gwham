@@ -97,7 +97,7 @@ bool fileio::fopen() {
 }
 
 bool fileio::emptyline() const {
-  return !matchkey(trimltcm(line, comments, whitespaces), ""); 
+  return matchkey(trimltcm(line, comments, whitespaces), ""); 
 }
 
 bool fileio::readaline() {
@@ -145,5 +145,6 @@ vector<string> fileio::line2str(const string& delims) const {
 }
 
 const vector<string>& fileio::getlines() const { return lines; }
+const string& fileio::getln() const { return line; }
 
 void fileio::resetlc() { lc = 0; }

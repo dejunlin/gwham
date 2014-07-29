@@ -29,6 +29,8 @@ class fileio {
     vector<string> line2str() const;
     //! break line into vector of string using specified deliminator 
     vector<string> line2str(const string& delims) const;
+    //! return fileio::line for read-only
+    const string& getln() const;
     //! return fileio::lines for read-only
     const vector<string>& getlines() const;
     //! reset lc to 0
