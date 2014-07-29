@@ -20,6 +20,15 @@ string tostr(const T& input) {
   return ss.str();
 }
 
+//trim any leading and/or trailing 'lts' from input
+string trimlt(const string& input, const string& lts=" \t");
+
+//trim off trailing comments from input
+string trimcm(const string& input, const string& cm=";#@");
+
+//trim off both comments and whitespaces junks
+string trimltcm(const string& input, const string& cm=";#@", const string& lts=" \t"); 
+
 template <class Tp> 
 void strconverter(vector<Tp>& output, const vector<string>& input) throw(FILEIO_Exception)  {
   for(uint i = 0; i < input.size(); ++i) {
@@ -61,24 +70,37 @@ bool matchkey(const string& entry, const T& key) {
   return entry.compare(keystr) ? false : true; 
 };
 
-//case-insensitive comparison
+//same as matchkey() except that any trailing comments and leading/trailing whitespaces will be ignored
+template <class T>
+bool nocmmatchkey(const string& entry, const T& key, const string& cm=";#@") {
+  return matchkey(trimltcm(entry, cm), key);
+};
+
+
+//case-insensitive comparison 
 template <class T>
 bool cmatchkey(const string& entry, const T& key) {
   const string& keystr = tostr(key);
   return strcasecmp(entry.c_str(), keystr.c_str()) ? false : true; 
 };
 
+//same as cmatchkey except that any trailing comments and leading/trailing whitespaces will be ignored
 template <class T>
-void setsc(const string& entry, T& output) {
-  vector<T> outvec;
-  parser(outvec, entry);
-  output = outvec[0]; 
+bool nocmcmatchkey(const string& entry, const T& key, const string& cm=";#@") {
+  return cmatchkey(trimltcm(entry, cm), key);
 };
 
 template <class T>
-void setvec(const string& entry, vector<T>& output) throw(FILEIO_Exception) { 
-  try { parser(output, entry); } 
-  catch(FILEIO_Exception& fioex) { throw fioex; } 
+void setsc(const string& entry, T& output) {
+  stringstream ss(entry);
+  if(!(ss >> output)) {
+    throw(FILEIO_Exception("Error parsing string '" + entry + "' into type '" + typeid(T).name() + "'"));
+  }
+};
+
+template <class T>
+void setvec(const string& entry, vector<T>& output) {
+  parser(output, entry); 
 };
 
 #endif

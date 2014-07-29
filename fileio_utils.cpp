@@ -32,3 +32,22 @@ void parser<string>(vector<string>& output, const string& str, string delims) th
   }
   delete[] str_c;
 }
+
+string trimlt(const string& input, const string& lts) {
+  const size_t strbegin = input.find_first_not_of(lts);
+  if(strbegin == string::npos) { return ""; }
+  const size_t strend = input.find_last_not_of(lts);
+  const size_t strrange = strend - strbegin + 1;
+  return input.substr(strbegin, strrange);
+}
+
+string trimcm(const string& input, const string& cm) {
+  const size_t strend = input.find_first_of(cm) - 1;
+  if(strend == string::npos) { return ""; }
+  const size_t strrange = strend + 1;
+  return input.substr(0, strrange);
+}
+
+string trimltcm(const string& input, const string& cm, const string& lts) {
+  return trimlt(trimcm(input, cm), lts);
+}
