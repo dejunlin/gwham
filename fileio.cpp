@@ -10,10 +10,12 @@
 fileio::fileio(
   const string& _fname,
   const ios_base::openmode& mode, 
-  const bool& perm = true, 
-  const linecounter _lb=0, 
-  const linecounter _ls=1, 
-  const linecounter _le=MAXNLINE) :
+  const bool& perm, 
+  const linecounter _lb, 
+  const linecounter _ls, 
+  const linecounter _le,
+  const string& cm,
+  const string& ws) :
   fname(_fname),
   iomode(mode),
   ifperm(perm),
@@ -22,17 +24,21 @@ fileio::fileio(
   le(_le),
   lc(0),
   line(string()),
-  lines(vector<string>(0))
+  lines(vector<string>(0)),
+  whitespaces(ws),
+  comments(cm)
 {
   fopen();
 }
 
 fileio::fileio(
   const ios_base::openmode& mode, 
-  const bool& perm = true, 
-  const linecounter _lb=0, 
-  const linecounter _ls=1, 
-  const linecounter _le=MAXNLINE) :
+  const bool& perm, 
+  const linecounter _lb, 
+  const linecounter _ls, 
+  const linecounter _le,
+  const string& cm,
+  const string& ws) :
   fname(string()),
   iomode(mode),
   ifperm(perm),
@@ -41,7 +47,9 @@ fileio::fileio(
   le(_le),
   lc(0),
   line(string()),
-  lines(vector<string>(0))
+  lines(vector<string>(0)),
+  whitespaces(ws),
+  comments(cm)
 {
 }
 
@@ -89,16 +97,13 @@ bool fileio::fopen() {
 }
 
 bool fileio::emptyline() const {
-  vector<string> t; 
-  parser(t, line);
-  if(t.size() == 0) { return true; }
-  else { return false; }
+  return !matchkey(trimltcm(line, comments, whitespaces), ""); 
 }
 
 bool fileio::readaline() {
   line.clear();
   while(getline(fs, line)) {
-    if(line[0] == '@' || line[0] == '#' || line[0] == ';' || line.empty() || emptyline()) { continue; }
+    if(emptyline()) { continue; }
     ++lc;
     if(lc < lb) { line.clear(); continue; }
     if(lc % ls) { line.clear(); continue; }
@@ -111,7 +116,7 @@ bool fileio::readaline() {
 void fileio::readall() {
   line.clear();
   while(getline(fs, line)) {
-    if(line[0] == '@' || line[0] == '#' || line[0] == ';' || line.empty()) { continue; }
+    if(emptyline()) { continue; }
     ++lc;
     if(lc < lb) { continue; }
     if(lc % ls) { continue; }

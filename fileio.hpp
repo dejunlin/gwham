@@ -10,8 +10,8 @@ using namespace std;
 
 class fileio {
   public:
-    fileio(const string& _fname, const ios_base::openmode& mode, const bool& perm, const linecounter _lb, const linecounter _ls, const linecounter _le);
-    fileio(const ios_base::openmode& mode, const bool& perm, const linecounter _lb, const linecounter _ls, const linecounter _le);
+    fileio(const string& _fname, const ios_base::openmode& mode, const bool& perm=true, const linecounter _lb=0, const linecounter _ls=1, const linecounter _le=MAXNLINE, const string& cm="#@;", const string& ws=" \t\n\v\f\r");
+    fileio(const ios_base::openmode& mode, const bool& perm=true, const linecounter _lb=0, const linecounter _ls=1, const linecounter _le=MAXNLINE, const string& cm="#@;", const string& ws=" \t\n\v\f\r");
     fileio(const fileio& _fio);
     //! if fileio::line contains only whitespaces
     bool emptyline() const;
@@ -50,6 +50,8 @@ class fileio {
      */
     bool fopen();
     fstream fs; //fstream handle
+    const string whitespaces;
+    const string comments;
 };
 
 #endif
