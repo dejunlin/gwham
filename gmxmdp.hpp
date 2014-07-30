@@ -48,6 +48,43 @@ class GMXMDP
     THamiltonian genH() const;
 
   protected:
+
+    /*
+     * =====================================================================================
+     *        Class:  GENERIC
+     *  Description:  Generic parameters
+     * =====================================================================================
+     */
+    class GENERIC
+    {
+      public:
+	/* ====================  LIFECYCLE     ======================================= */
+	GENERIC ();                             /* constructor */
+
+	/* ====================  ACCESSORS     ======================================= */
+        void print() const; /*  print out all the parameters read */
+
+	/* ====================  MUTATORS      ======================================= */
+
+	/* ====================  OPERATORS     ======================================= */
+	//parse the generic parameters
+        bool operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception);
+
+      protected:
+	/* ====================  METHODS       ======================================= */
+
+	/* ====================  DATA MEMBERS  ======================================= */
+	//reference temperature and pressure NOTE these parameters might not be relevant
+	//to the WHAM calculation since some FEP parameters might overwrite these
+	double T, P;
+
+      private:
+	/* ====================  METHODS       ======================================= */
+
+	/* ====================  DATA MEMBERS  ======================================= */
+
+    } generic; /* -----  end of class GENERIC  ----- */
+
     
     /*
      * =====================================================================================
@@ -70,10 +107,11 @@ class GMXMDP
 	//parse the mdp options for FEP
         bool operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception);
 	/* ====================  DATA MEMBERS  ======================================= */
-	vector<double> Lbond, Lmass, Lvdw, Lcoul, Lrst, Lcnt1, Lcnt2, Lcnt3;
-	int nstdhdl;
+	vector<double> Lbond, Lmass, Lvdw, Lcoul, Lrst, Ltemp, Lcnt1, Lcnt2, Lcnt3;
+	int nstdhdl, nstexpanded;
 	int Linit;
 	enum FEPType {Yes, Expanded, NFEPTypes} fepT;
+	double Tmc;
 
       protected:
 	/* ====================  METHODS       ======================================= */
@@ -223,7 +261,7 @@ GMXMDP<THamiltonian>::GMXMDP(const string& fname):
     const string& opt = trimltcm(tmpstr[0], ";", " \t");
     const string& optval = trimltcm(tmpstr[1], ";", " \t");
     try {
-      const bool p = fep(opt, optval) || pull(opt, optval);
+      const bool p = generic(opt, optval) || fep(opt, optval) || pull(opt, optval);
     } catch(GMXMDP_Exception& gmxmdpex) {
       cerr << "Error understanding mdp file: " << fname << ": " << gmxmdpex.what() << endl;
       terminate();
@@ -236,8 +274,34 @@ GMXMDP<THamiltonian>::GMXMDP(const string& fname):
 
 template < class THamiltonian >
 void GMXMDP<THamiltonian>::print() const {
+  generic.print();
   fep.print();
   pull.print();
+}
+
+template < class THamiltonian >
+GMXMDP<THamiltonian>::GENERIC::GENERIC() :
+  T(-1),
+  P(-1)
+{
+}
+
+template < class THamiltonian >
+void GMXMDP<THamiltonian>::GENERIC::print() const {
+  printf("#%20s = %-10.5f\n", "Temperature", T);
+  printf("#%20s = %-10.5f\n", "Pressure", P);
+}
+
+template < class THamiltonian >
+bool GMXMDP<THamiltonian>::GENERIC::operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception) {
+  if(nocmmatchkey(opt, "ref-t") || nocmmatchkey(opt, "ref_t")) {
+    setsc(optval, T);
+  } else if(nocmmatchkey(opt, "ref-p") || nocmmatchkey(opt, "ref_p")) {
+    setsc(optval, P);
+  } else {
+    return false;
+  }
+  return true;
 }
 
 template < class THamiltonian >
@@ -247,12 +311,15 @@ GMXMDP<THamiltonian>::FEP::FEP() :
    Lvdw(vector<double>(0, 0.0)),
    Lcoul(vector<double>(0, 0.0)),
    Lrst(vector<double>(0, 0.0)),
+   Ltemp(vector<double>(0, 0.0)),
    Lcnt1(vector<double>(0, 0.0)),
    Lcnt2(vector<double>(0, 0.0)),
    Lcnt3(vector<double>(0, 0.0)),
    nstdhdl(-1),
+   nstexpanded(-1),
    Linit(-1),
-   fepT(NFEPTypes)
+   fepT(NFEPTypes),
+   Tmc(-1)
 {
 }
 
@@ -274,6 +341,9 @@ void GMXMDP<THamiltonian>::FEP::print() const {
   printf("#%20s = ", "rst-lambdas");
   copy(Lrst.begin(), Lrst.end(), ostream_iterator<double>(cout, " "));
   cout << endl;
+  printf("#%20s = ", "temperature-lambdas");
+  copy(Ltemp.begin(), Ltemp.end(), ostream_iterator<double>(cout, " "));
+  cout << endl;
   printf("#%20s = ", "cnt1-lambdas");
   copy(Lcnt1.begin(), Lcnt1.end(), ostream_iterator<double>(cout, " "));
   cout << endl;
@@ -283,6 +353,9 @@ void GMXMDP<THamiltonian>::FEP::print() const {
   printf("#%20s = ", "cnt3-lambdas");
   copy(Lcnt3.begin(), Lcnt3.end(), ostream_iterator<double>(cout, " "));
   cout << endl;
+  printf("#  %20s = %-5d\n", "nstdhdl", nstdhdl);
+  printf("#  %20s = %-5d\n", "nstexpanded", nstexpanded);
+  printf("#  %20s = %-10.5lf\n", "mc-temperature", Tmc);
 }
 
 template < class THamiltonian >
@@ -306,6 +379,8 @@ bool GMXMDP<THamiltonian>::FEP::operator()(const string& opt, const string& optv
     setvec(optval, Lcoul);
   } else if(nocmmatchkey(opt, "restraint-lambdas")) {
     setvec(optval, Lrst);
+  } else if(nocmmatchkey(opt, "temperature-lambdas")) {
+    setvec(optval, Ltemp);
   } else if(nocmmatchkey(opt, "umbrella-contact1-lambdas")) {
     setvec(optval, Lcnt1);
   } else if(nocmmatchkey(opt, "umbrella-contact2-lambdas")) {
@@ -316,6 +391,10 @@ bool GMXMDP<THamiltonian>::FEP::operator()(const string& opt, const string& optv
     setsc(optval, Linit);
   } else if(nocmmatchkey(opt, "nstdhdl")) {
     setsc(optval, nstdhdl);
+  } else if(nocmmatchkey(opt, "nstexpanded")) {
+    setsc(optval, nstexpanded);
+  } else if(nocmmatchkey(opt, "mc-temperature")) {
+    setsc(optval, Tmc);
   } else {
     return false;
   }
@@ -513,9 +592,9 @@ bool GMXMDP<THamiltonian>::PULL::PULLCNTGRP::operator()(const string& opt, const
     setsc(optval, k);
   } else if(nocmmatchkey(opt, cntgrpnm + "_kB")) {
     setsc(optval, kB);
-  } else if(nocmmatchkey(opt, cntgrpnm + "_nc")) {
+  } else if(nocmmatchkey(opt, cntgrpnm + "_nc0")) {
     setsc(optval, nc);
-  } else if(nocmmatchkey(opt, cntgrpnm + "_ncB")) {
+  } else if(nocmmatchkey(opt, cntgrpnm + "_nc0B")) {
     setsc(optval, ncB);
   } else {
     return false;
