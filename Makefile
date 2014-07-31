@@ -19,14 +19,14 @@ LFLAGS= -lm
 #CFLAGS = -fast -arch host -tune host
 #LFLAGS = -fast -non_shared -om -WL,-om_no_inst_sched -lm
 
-SRCS=ensemble.cpp  gmxmdpio.cpp fileio.cpp  gmxpullpot.cpp  gwham_gromacs463_umb.cpp mc.cpp ran2.c gmbar.cpp gmbar_gromacs463_umb.cpp
-OBJSGMX463UMB=ensemble.o  gmxmdpio.o fileio_utils.o fileio.o  gmxpullpot.o  gwham_gromacs463_umb.o 
-OBJSGMX463UMBFB=ensemble.o  gmxmdpio.o fileio_utils.o fileio.o  gmxpullpot.o  gwham_gromacs463_umbfb.o 
-OBJSMBARGMX463UMB=ensemble.o  gmxmdpio.o fileio_utils.o fileio.o  gmxpullpot.o  gmbar_gromacs463_umb.o gmbar.o
+SRCS=ensemble.cpp gmxmdp.hpp gmxmdpio.cpp fileio.cpp  gmxpullpot.cpp  gwham_gromacs463_umb.cpp mc.cpp ran2.c gmbar.cpp gmbar_gromacs463_umb.cpp
+OBJSGMX463UMB=ensemble.o  gmxmdp.o gmxmdpio.o fileio_utils.o fileio.o  gmxpullpot.o  gwham_gromacs463_umb.o 
+OBJSGMX463UMBFB=ensemble.o  gmxmdp.o gmxmdpio.o fileio_utils.o fileio.o  gmxpullpot.o  gwham_gromacs463_umbfb.o 
+OBJSMBARGMX463UMB=ensemble.o  gmxmdp.o gmxmdpio.o fileio_utils.o fileio.o  gmxpullpot.o  gmbar_gromacs463_umb.o gmbar.o
 OBJSUMB=ensemble.o fileio_utils.o fileio.o gwham_umb.o 
 OBJSMC=ensemble.o mc.o fileio_utils.o
 OBJSGMBAR=gmbar.o 
-HEADER_FILES=densityofstate.hpp  ensemble.hpp  fileio.hpp  fileio_utils.hpp  gmxmdpio.hpp  gmxpullpot.hpp  gmxxvgio.hpp  gnarray.hpp  gwham.hpp  hamiltonian.hpp  typedefs.hpp mc.hpp gmbar.hpp trjsubtrj.hpp
+HEADER_FILES=densityofstate.hpp  ensemble.hpp  fileio.hpp  fileio_utils.hpp mdp.hpp gmxmdp.hpp gmxmdpio.hpp  gmxpullpot.hpp  gmxxvgio.hpp  gnarray.hpp  gwham.hpp  hamiltonian.hpp  typedefs.hpp mc.hpp gmbar.hpp trjsubtrj.hpp
 all: gwham_gromacs463_umb gwham_gromacs463_umbfb mc gmbar_gromacs463_umb gwham_umb 
 
 ran2.o: ran2.c
@@ -63,7 +63,10 @@ fileio.o: fileio_utils.hpp fileio_utils.cpp fileio.hpp fileio.cpp
 	$(CC) $(CFLAGS) -c fileio.cpp 
 
 gmxmdpio.o: fileio_utils.o fileio.o gmxmdpio.hpp gmxmdpio.cpp 
-	$(CC) $(CFLAGS) -c gmxmdpio.cpp 
+	$(CC) $(CFLAGS) -c gmxmdpio.cpp
+
+gmxmdp.o: fileio_utils.o fileio.o mdp.hpp gmxmdp.hpp gmxmdp.cpp
+	$(CC) $(CFLAGS) -c gmxmdp.cpp
 
 gwham_gromacs463_umb : $(OBJSGMX463UMB) 
 	$(CC) $(CFLAGS) -o gwham_gromacs463_umb $(OBJSGMX463UMB) $(LFLAGS) 
