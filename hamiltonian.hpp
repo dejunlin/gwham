@@ -7,35 +7,41 @@ class Hamiltonian {
   public:
     Hamiltonian();
     Hamiltonian(const vector<double>& _params); 
-    Hamiltonian(const Hamiltonian<ensemble>& H); 
+    Hamiltonian(const Hamiltonian<ensemble>& H);
+    ~Hamiltonian();
     valtype ener(const vector<valtype>& vals) const; //take a set of conserved quantity and return the energy
-    ensemble getens() const;
+    const ensemble* getens() const;
   private:
-    const ensemble ens;
+    const ensemble* const ens;
 };
 
 template <class ensemble>
 Hamiltonian<ensemble>::Hamiltonian():
-  ens(ensemble())
+  ens(new ensemble())
   {}
 
 template <class ensemble>
 Hamiltonian<ensemble>::Hamiltonian(const vector<valtype>& _params):
-  ens(ensemble(_params))
+  ens(new ensemble(_params))
   {}
 
 template <class ensemble>
 Hamiltonian<ensemble>::Hamiltonian(const Hamiltonian<ensemble>& H):
-  ens(H.getens())
+  ens(H.getens()) //TODO: we want a deep copy here by have ens return a list of parameters
   {}
 
-template <class ensemble>
-double Hamiltonian<ensemble>::ener(const vector<valtype>& vals) const {
-  return ens.ener(vals); 
+  template <class ensemble>
+Hamiltonian<ensemble>::~Hamiltonian() {
+  delete ens;
 }
 
 template <class ensemble>
-ensemble Hamiltonian<ensemble>::getens() const {
+double Hamiltonian<ensemble>::ener(const vector<valtype>& vals) const {
+  return ens->ener(vals); 
+}
+
+template <class ensemble>
+const ensemble* Hamiltonian<ensemble>::getens() const {
   return ens; 
 }
 #endif

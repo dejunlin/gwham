@@ -106,8 +106,8 @@ int main(int argc, char* argv[]) {
   
   //Check if all windows have the same temperature, if not, just quit
   for(uint i = 0; i < V.size(); ++i) {
-    const RSTXLAMBDAsgl ens = V[i]->getens();
-    const valtype ensT = (ens.getparams())[1];
+    const RSTXLAMBDAsgl* const ens = V[i]->getens();
+    const valtype ensT = (ens->getparams())[1];
     if( ensT != T ) {
       cerr << "The " << i+1 << "'th ensemble is in temperature " << ensT << " other than the one specified in command line: " << T << endl;
       exit(-1);

@@ -224,7 +224,7 @@ void WHAM<ensemble,histogram,narray>::calnewf(vector<valtype>& newf, const vecto
     double expmf = 0.0;
     /*cout <<"#calnewf: state ensemble_params" << endl;
     cout << "#" << l << " ";
-    const vector<valtype> params = _V[l]->getens().getparams();
+    const vector<valtype> params = _V[l]->getens()->getparams();
     copy(params.begin(),params.end(),ostream_iterator<valtype>(cout," ")); cout << endl;
     cout <<"#calnewf: vals ener" << endl;*/
 

@@ -15,6 +15,7 @@ class Ensemble {
 							   //many terms they need and there's no guarantee that the user must 
 							   //specify the right parameters anyway. 
 							   //You need to make sure the API provides the bound-check
+    virtual ~Ensemble() {};
   protected:
     const valtype kB; //Boltzmann factor in whatever energy unit the user supplies
 };
@@ -25,6 +26,7 @@ class NVT : public virtual Ensemble {
     NVT(const vector<valtype>& params);
     valtype ener(const vector<valtype>& vals) const; //vals[0] -- the fundamental hamiltonian
     valtype ener(const valtype& pot) const; //vals[0] -- the fundamental hamiltonian
+    virtual ~NVT() {};
   protected:
     const valtype T; //temperature
 };
@@ -35,6 +37,7 @@ class NPT : public virtual NVT {
     NPT(const vector<valtype>& params);
     valtype ener(const vector<valtype>& vals) const; //vals[0] -- the fundamental hamiltonian
                                                //vals[1] -- the volume
+    virtual ~NPT() {};
   protected:
     const valtype P; //pressure
 };
@@ -46,7 +49,8 @@ class LAMBDA : public virtual Ensemble {
     LAMBDA();
     LAMBDA(const valtype _kB, const valtype _T, const vector<valtype>& _L);
     LAMBDA(const vector<valtype>& params);
-    valtype ener(const vector<valtype>& vals) const; 
+    valtype ener(const vector<valtype>& vals) const;
+    virtual ~LAMBDA() {};
   protected:
     const valtype T; //temperature
     const vector<valtype> L; //Lambda parameters
@@ -60,6 +64,7 @@ class LAMBDAsgl : public virtual Ensemble {
     LAMBDAsgl(const vector<valtype>& params);
     valtype ener(const vector<valtype>& vals) const; 
     vector<valtype> getparams() const;
+    virtual ~LAMBDAsgl() {};
   protected:
     const valtype T; //temperature
     const valtype L; //Lambda parameters
@@ -74,6 +79,7 @@ class RST : public virtual Ensemble {
     RST(const vector<valtype>& params);
     valtype ener(const vector<valtype>& vals) const;
     vector<valtype> getparams() const;
+    virtual ~RST() {};
   protected:
     const valtype T;
     const vector<valtype> k;
@@ -88,6 +94,7 @@ class RST_fb : public virtual Ensemble {
     RST_fb(const vector<valtype>& params);
     valtype ener(const vector<valtype>& vals) const;
     vector<valtype> getparams() const;
+    virtual ~RST_fb() {};
   protected:
     const valtype T;
     const vector<valtype> k0;
@@ -106,6 +113,7 @@ class RSTXLAMBDAsgl : public virtual RST, public virtual LAMBDAsgl {
     valtype ener(const vector<valtype>& vals) const;
     vector<valtype> getRSTparams() const;
     vector<valtype> getparams() const;
+    virtual ~RSTXLAMBDAsgl() {};
   private:
 };
 
@@ -117,6 +125,7 @@ class RST_fbXLAMBDAsgl : public virtual RST_fb, public virtual LAMBDAsgl {
     //! This assume that elements of vals are ordered so that the first N are for RST_fb while LAMBDAsgl::i is the index of the element in vals
     valtype ener(const vector<valtype>& vals) const;
     vector<valtype> getparams() const;
+    virtual ~RST_fbXLAMBDAsgl() {};
   private:
 };
 
@@ -125,6 +134,7 @@ class NVTL : public virtual NVT {
     NVTL(const valtype _kB, const valtype _T, const vector<valtype>& _L);
     NVTL(const vector<valtype>& params);
     valtype ener(const vector<valtype>& vals) const; 
+    virtual ~NVTL() {};
   protected:
     const vector<valtype> L; //Lambda parameters
 };
@@ -134,6 +144,7 @@ class NPTL : public virtual NPT, public virtual NVTL {
     NPTL(const valtype _kB, const valtype _T, const valtype _P, const vector<valtype>& _L);
     NPTL(const vector<valtype>& params);
     valtype ener(const vector<valtype>& vals) const;
+    virtual ~NPTL() {};
 };
 
 #endif

@@ -207,7 +207,7 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     for(uint k = 0; k < hists.size(); ++k) {
       /*cout <<"#DOS: state ensemble_params vals ener" << endl;
       cout << k << " ";
-      const vector<valtype> params = V[k]->getens().getparams();
+      const vector<valtype> params = V[k]->getens()->getparams();
       copy(params.begin(),params.end(),ostream_iterator<valtype>(cout," "));
       copy(vals.begin(),vals.end(),ostream_iterator<valtype>(cout," "));
       cout << V[k]->ener(vals) << endl;*/

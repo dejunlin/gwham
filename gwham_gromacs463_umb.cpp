@@ -108,8 +108,8 @@ int main(int argc, char* argv[]) {
   
   //Check if all windows have the same temperature, if not, just quit
   for(uint i = 0; i < V.size(); ++i) {
-    const RSTXLAMBDAsgl ens = V[i]->getens();
-    const valtype ensT = (ens.getparams())[1];
+    const RSTXLAMBDAsgl* const ens = V[i]->getens();
+    const valtype ensT = (ens->getparams())[1];
     if( ensT != T ) {
       cerr << "The " << i+1 << "'th ensemble is in temperature " << ensT << " other than the one specified in command line: " << T << endl;
       exit(-1);
@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
   printf("#WHAM inconsistency test\n");
   printf("#%10s%30s%30s\n", "Window", "Center", "Eita");
   for(uint i = 0; i < eitas.size(); ++i) {
-    const vector<valtype> rstparams = V[i]->getens().getRSTparams();
+    const vector<valtype> rstparams = V[i]->getens()->getRSTparams();
     const vector<valtype> rstcenter(rstparams.end()-ndim, rstparams.end());
     printf("%10d",i);
     for(uint k = 0; k < ndim; ++k) { printf("%30lf", rstcenter[k]); }
