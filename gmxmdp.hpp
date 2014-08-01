@@ -43,16 +43,7 @@ class GMXMDP : public MDP
 
     /* ====================  ACCESSORS     ======================================= */
     virtual void print() const; /*  print out all the parameters read */
-    virtual uint cmp(const MDP& mdp) const throw(GMXMDP_Exception); /*  compare with another mdp object */
-    virtual bool hasTemperature() const; /*  if has temperature */
-    virtual bool hasPressure() const; /*  if has pressure */
-    virtual bool hasLambda() const; /*  if has Lambdas */
-    virtual bool hasRestraint() const; /*  if has restraint */
-    virtual valtype getTemperature() const; /*  get temperature */
-    virtual valtype getPressure() const; /*  get pressure */
-    virtual vector<valtype> getFEPLambda() const; /*  get FEPLambdas */
-    virtual string getRestraintType() const; /*  get the type of restraint */
-    virtual vector<valtype> getRestraint() const; /*  get restraint */
+    virtual uint cmp(const MDP& mdp) const throw(MDP_Exception); /*  compare with another mdp object */
 
     /* ====================  MUTATORS      ======================================= */
 
@@ -79,7 +70,7 @@ class GMXMDP : public MDP
 
 	/* ====================  OPERATORS     ======================================= */
         //parse the generic parameters
-        virtual bool operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception);
+        virtual bool operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception);
 
       protected:
 	/* ====================  METHODS       ======================================= */
@@ -91,7 +82,7 @@ class GMXMDP : public MDP
 
 	/* ====================  DATA MEMBERS  ======================================= */
 
-    } generic; /* -----  end of class GMXGENERIC  ----- */
+    }; /* -----  end of class GMXGENERIC  ----- */
 
     
     /*
@@ -114,12 +105,10 @@ class GMXMDP : public MDP
 
 	/* ====================  OPERATORS     ======================================= */
 	//parse the mdp options for FEP
-        virtual bool operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception);
+        virtual bool operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception);
 	/* ====================  DATA MEMBERS  ======================================= */
 	vector<valtype> Lcnt1, Lcnt2, Lcnt3;
 	int nstdhdl, nstexpanded;
-	int Linit;
-	enum FEPType {Yes, Expanded, NFEPTypes} fepT;
 	valtype Tmc;
 
       protected:
@@ -132,7 +121,7 @@ class GMXMDP : public MDP
 
 	/* ====================  DATA MEMBERS  ======================================= */
 
-    } fep; /* -----  end of class FEP  ----- */
+    }; /* -----  end of class FEP  ----- */
 
     
     /*
@@ -143,27 +132,28 @@ class GMXMDP : public MDP
      */
     class GMXPULL : public PULL
     {
+      protected:
+	enum PullType {Umbrella, Umbrella-flat-bottom, Constraint, ConstantForce, Contact, NPullTypes} pullT;
+	enum PullGeom {Distance, Direction, DirectionPeriodic, Cylinder, Position, NGeomTypes} geomT;
       public:
 	/* ====================  LIFECYCLE     ======================================= */
 	GMXPULL ();                             /* constructor */
 
 	/* ====================  ACCESSORS     ======================================= */
         virtual void print() const; /*  print out all the parameters read */
+	PullType getPT() const; 
 
 	/* ====================  MUTATORS      ======================================= */
 
 	/* ====================  OPERATORS     ======================================= */
 	//parse the mdp options for pull
-        virtual bool operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception);
+        virtual bool operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception);
 	/* ====================  DATA MEMBERS  ======================================= */
-	enum PullType {Umbrella, Constraint, ConstantForce, Contact, NPullTypes} pullT;
-	enum PullGeom {Distance, Direction, DirectionPeriodic, Cylinder, Position, NGeomTypes} geomT;
-	int nstx, nstf;
-	uint ncntgrps;
+	int nstx, nstf; /* output frequency in steps for RC and forces*/
 	/*
 	 * =====================================================================================
 	 *        Class:  PULLGRP
-	 *  Description:  pull-group parameters
+	 *  Description:  regular gromacs pull-group parameters
 	 * =====================================================================================
 	 */
 	class GMXPULLGRP : public PULLGRP
@@ -179,13 +169,14 @@ class GMXMDP : public MDP
 
 	    /* ====================  OPERATORS     ======================================= */
 	    //parse the mdp options for pull-group
-            virtual bool operator()(const string& opt, const string& optval, const string& i) throw(GMXMDP_Exception, FILEIO_Exception);
+            virtual bool operator()(const string& opt, const string& optval, const string& i) throw(MDP_Exception, FILEIO_Exception);
 
 	  protected:
 	    /* ====================  METHODS       ======================================= */
 
 	    /* ====================  DATA MEMBERS  ======================================= */
-	    vector<valtype> vec;
+	    vector<valtype> vec, init, initB;
+	    valtype rate, k, kB;
 
 	  private:
 	    /* ====================  METHODS       ======================================= */
@@ -193,43 +184,39 @@ class GMXMDP : public MDP
 	    /* ====================  DATA MEMBERS  ======================================= */
 
 	}; /* -----  end of class PULLGRP  ----- */
-	vector<GMXPULLGRP> pullgrps;
 
 	/*
 	 * =====================================================================================
-	 *        Class:  PULLCNTGRP
-	 *  Description:  contact-group parameters
+	 *        Class:  GMXPULLCNTGRP
+	 *  Description:  gromacs contact-group parameters (my own hack-up)
 	 * =====================================================================================
 	 */
-	class PULLCNTGRP
+	class GMXPULLCNTGRP : public PULLGRP
 	{
 	  public:
 	    /* ====================  LIFECYCLE     ======================================= */
-	    PULLCNTGRP ();                             /* constructor */
+	    GMXPULLCNTGRP ();                             /* constructor */
 
 	    /* ====================  ACCESSORS     ======================================= */
-            void print() const; /*  print out all the parameters read */
+            virtual void print() const; /*  print out all the parameters read */
 
 	    /* ====================  MUTATORS      ======================================= */
 
 	    /* ====================  OPERATORS     ======================================= */
 	    //parse the mdp options for contact-group
-            bool operator()(const string& opt, const string& optval, const string& i) throw(GMXMDP_Exception, FILEIO_Exception);
+            virtual bool operator()(const string& opt, const string& optval, const string& i) throw(MDP_Exception, FILEIO_Exception);
 
 	  protected:
 	    /* ====================  METHODS       ======================================= */
 
 	    /* ====================  DATA MEMBERS  ======================================= */
-	    valtype rate, nc, ncB, k, kB;
 
 	  private:
 	    /* ====================  METHODS       ======================================= */
 
 	    /* ====================  DATA MEMBERS  ======================================= */
 
-	}; /* -----  end of class PULLCNTGRP  ----- */
-	vector<PULLCNTGRP> pullcntgrps;
-
+	}; /* -----  end of class GMXPULLCNTGRP  ----- */
 
       protected:
 	/* ====================  METHODS       ======================================= */
@@ -241,7 +228,7 @@ class GMXMDP : public MDP
 
 	/* ====================  DATA MEMBERS  ======================================= */
 
-    } pull; /* -----  end of class PULL  ----- */
+    }; /* -----  end of class PULL  ----- */
 
 
     /* ====================  METHODS       ======================================= */

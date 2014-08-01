@@ -35,32 +35,7 @@ enum Qt {Temperature, Pressure, Lambdas, Restraints};
 
 class MDP
 {
-  public:
-    /* ====================  LIFECYCLE     ======================================= */
-    MDP () {};                             /* constructor */
-
-    /* ====================  ACCESSORS     ======================================= */
-    virtual void print() const = 0; /*  print out all the parameters read */
-    virtual uint cmp(const MDP& mdp) const = 0; /*  compare with another mdp object */
-    virtual bool hasTemperature() const = 0; /*  if has temperature */
-    virtual bool hasPressure() const = 0; /*  if has pressure */
-    virtual bool hasLambda() const = 0; /*  if has Lambdas */
-    virtual bool hasRestraint() const = 0; /*  if has restraint */
-    virtual valtype getTemperature() const = 0; /*  get temperature */
-    virtual valtype getPressure() const = 0; /*  get pressure */
-    virtual vector<valtype> getFEPLambda() const = 0; /*  get FEPLambdas */
-    virtual string getRestraintType() const = 0; /*  get the type of restraint */
-    virtual vector<valtype> getRestraint() const = 0; /*  get restraint */
-
-    /* ====================  MUTATORS      ======================================= */
-
-    /* ====================  OPERATORS     ======================================= */
-
   protected:
-    /* ====================  METHODS       ======================================= */
-
-    /* ====================  DATA MEMBERS  ======================================= */
-    
     /*
      * =====================================================================================
      *        Class:  GENERIC
@@ -71,12 +46,15 @@ class MDP
     {
       public:
         /* ====================  LIFECYCLE     ======================================= */
-        GENERIC () {};                             /* constructor */
+        GENERIC () :
+          T(-1),
+          P(-1)
+	  {};                             /* constructor */
     
         /* ====================  ACCESSORS     ======================================= */
         virtual void print() const = 0; /*  print out all the parameters read */
-        virtual valtype getT() const { return T; }; 
-        virtual valtype getP() const { return P; }; 
+        valtype getT() const { return T; }; 
+        valtype getP() const { return P; }; 
     
         /* ====================  MUTATORS      ======================================= */
     
@@ -107,11 +85,24 @@ class MDP
     class FEP
     {
       public:
+	enum FEPType {Yes, Expanded, NFEPTypes};
+
+      public:
 	/* ====================  LIFECYCLE     ======================================= */
-	FEP () {};                             /* constructor */
+	FEP () : 
+	  fepT(NFEPTypes),  
+          Lbond(vector<valtype>(0, 0.0)),
+          Lmass(vector<valtype>(0, 0.0)),
+          Lvdw(vector<valtype>(0, 0.0)),
+          Lcoul(vector<valtype>(0, 0.0)),
+          Lrst(vector<valtype>(0, 0.0)),
+          Ltemp(vector<valtype>(0, 0.0)),
+          Linit(-1)
+          {};                             /* constructor */
 
 	/* ====================  ACCESSORS     ======================================= */
         void print() const = 0; /*  print out all the parameters read */
+	virtual FEPType getFEPT() const { return fepT; }
 	virtual vector<valtype> getL() const {
 	  vector<valtype> allL(Lbond.begin(), Lbond.end());
 	  allL.insert(allL.end(), Lmass.begin(), Lmass.end());
@@ -135,6 +126,7 @@ class MDP
 	/* ====================  METHODS       ======================================= */
 
 	/* ====================  DATA MEMBERS  ======================================= */
+	FEPType fepT;
 
       private:
 	/* ====================  METHODS       ======================================= */
@@ -142,7 +134,7 @@ class MDP
 	/* ====================  DATA MEMBERS  ======================================= */
 
     }; /* -----  end of class FEP  ----- */
-
+    
     /*
      * =====================================================================================
      *        Class:  PULL
@@ -153,16 +145,28 @@ class MDP
     {
       public:
 	/* ====================  LIFECYCLE     ======================================= */
-	PULL () {};                             /* constructor */
+	PULL () : 
+	  dim(0),  
+	  npgrps(0),
+	  ppullgrps(vector<PULLGRP*>(npgrps, NULL))
+	  {};                             /* constructor */
+
+	virtual ~PULL() {
+	  for(uint i = 0; i < ppullgrps.size(); ++i) {
+	    delete ppullgrps[i];
+	  }
+	}
 
 	/* ====================  ACCESSORS     ======================================= */
-        void print() const = 0; /*  print out all the parameters read */
+        virtual void print() const = 0; /*  print out all the parameters read */
+	uint getNPG() const { return npgrps; }
+	const vector<PULLGRP*>& getPPGRPS() const { return ppullgrps; }
 
 	/* ====================  MUTATORS      ======================================= */
 
 	/* ====================  OPERATORS     ======================================= */
 	//parse the mdp options for pull
-        bool operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception) = 0;
+        virtual bool operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception) = 0;
 	/* ====================  DATA MEMBERS  ======================================= */
 	//bit mask of the pulled dimension in left-to-right order (e.g., 001 <=> Y N N, meaning only x dimention is pulled)
 	short dim;
@@ -176,13 +180,27 @@ class MDP
 	class PULLGRP
 	{
 	  public:
+	    enum RestraintType { Quad, QuadFlat, NRestraintTypes };
+
+	  public:
 	    /* ====================  LIFECYCLE     ======================================= */
-	    PULLGRP () {};                             /* constructor */
+	    PULLGRP () :
+	      rstT(NRestraintTypes),
+              rate(0.0),
+	      rstfunct(NULL)
+	      {};                             /* constructor */
+
+	    virtual ~PULLGRP() {
+	      if(rstfunct) { delete rstfunct; }
+	    }
 
 	    /* ====================  ACCESSORS     ======================================= */
             virtual void print() const = 0; /*  print out all the parameters read */
+	    RestraintType getRSTT() const { return rstT; }
+	    const Functor<valtype, valtype>* getRSTF() const { return rstfunct; }
 
 	    /* ====================  MUTATORS      ======================================= */
+	    void setRSTT(const RestraintType& _rstT) { rstT = _rstT; }
 
 	    /* ====================  OPERATORS     ======================================= */
 	    //parse the mdp options for pull-group
@@ -192,13 +210,15 @@ class MDP
 	    /* ====================  METHODS       ======================================= */
 
 	    /* ====================  DATA MEMBERS  ======================================= */
-	    vector<valtype> init, initB;
-	    valtype rate, k, kB;
+	    RestraintType rstT;
+	    valtype rate;
+	    const Functor<valtype, valtype>* rstfunct;
 
 	  private:
 	    /* ====================  METHODS       ======================================= */
 
 	    /* ====================  DATA MEMBERS  ======================================= */
+
 
 	}; /* -----  end of class PULLGRP  ----- */
 
@@ -206,6 +226,7 @@ class MDP
 	/* ====================  METHODS       ======================================= */
 
 	/* ====================  DATA MEMBERS  ======================================= */
+	vector<PULLGRP*> ppullgrps;
 
       private:
 	/* ====================  METHODS       ======================================= */
@@ -213,6 +234,92 @@ class MDP
 	/* ====================  DATA MEMBERS  ======================================= */
 
     }; /* -----  end of class PULL  ----- */
+
+  public:
+    /* ====================  LIFECYCLE     ======================================= */
+    MDP () : 
+      pgeneric(NULL), 
+      pfep(NULL), 
+      ppull(NULL) 
+      {};                             /* constructor */
+
+    virtual ~MDP() { 
+      if(pgeneric) delete pgeneric;
+      if(pfep) delete pfep;
+      if(ppull) delete ppull;
+    }
+
+    /* ====================  ACCESSORS     ======================================= */
+    virtual void print() const = 0; /*  print out all the parameters read */
+    virtual uint cmp(const MDP& mdp) const throw (MDP_Exception) {
+      uint QtMask = 0;
+      if( mdp.hasTemperature != this->hasTemperature() ) {
+	throw(MDP_Exception("Comparing a constant-T MDP with a nonconstant-T MDP"));
+      } else if( mdp.hasPressure() !=  this->hasPressure() ) {
+	throw(MDP_Exception("Comparing a constant-P MDP with a nonconstant-P MDP"));
+      } else if( mdp.hasFEPLambda() !=  this->hasFEPLambda() ) {
+	throw(MDP_Exception("Comparing a FEP MDP with a non-FEP MDP"));
+      } else if( mdp.getFEPType() !=  this->getFEPType() ) {
+	throw(MDP_Exception("Comparing a MDP of FEP Type '" + tostr(mdp.getFEPType()) + "' to another of FEP type '" + tostr(this->getFEPType()) + "'"));
+      } else if( mdp.getFEPLambda().size() !=  this->getFEPLambda().size() ) {
+	throw(MDP_Exception("Comparing two MDP's of incompatible FEP Lambdas (of different dimensions)"));
+      } else if( mdp.hasRestraint() !=  this->hasRestraint() ) {
+	throw(MDP_Exception("Comparing a Restrained MDP with a non-Restrained MDP"));
+      } else if( mdp.getRestraintType().size() !=  this->getRestraintType().size() ) {
+	throw(MDP_Exception("Comparing two Restrained MDP's of incompatible restraint types (of different dimensions)"));
+      } else {
+	QtMask |= uint(mdp.getTemperature() != this->getTemperature()) << Temperature;
+	QtMask |= uint(mdp.getPressure() != this->getPressure()) << Pressure;
+	QtMask |= uint(mdp.getFEPLambda() != this->getFEPLambda()) << FEPLambda;
+	vector<const Functor<valtype, valtype>* > myfuncts = this->getRestraintFunctor();
+	vector<const Functor<valtype, valtype>* > theirfuncts = mdp.getRestraintFunctor();
+	for(uint i = 0; i < myfuncts.size(); ++i) {
+	  if(*myfuncts[i] != *theirfuncts[i]) { QtMask |= 1 << Restraints; break; }
+	}
+      }
+      return QtMask;
+    }; /*  compare with another mdp object */
+
+    bool hasTemperature() const { return pgeneric->getT() > 0; }; 
+    bool hasPressure() const { return pgeneric->getP() > 0; };; 
+    bool hasFEPLambda() const { return pfep->getFEPT() != NFEPTypes; }; 
+    bool hasRestraint() const { return ppull->getNPG() != 0; }; 
+
+    valtype getTemperature() const { return pgeneric->getT(); }; 
+    valtype getPressure() const { return pgeneric->getP(); };
+    FEP::FEPType getFEPType() const { return pfep->getFEPT() };
+    vector<valtype> getFEPLambda() const  { return pfep->getL() };
+
+    typedef PULL::PULLGRP::RestraintType RSTType;
+    vector<RSTType> getRestraintType() {
+      const vector<PULLGRP*>& ppgrps = ppull->getPPGRPS();
+      vector<RSTType> rsts;
+      for(uint i = 0; i < ppgrps.size(); ++i) {
+	rsts.push_back(ppgrps[i]->getRSTT());
+      }
+      return rsts;
+    };
+
+    vector<const Functor<valtype, valtype>* > getRestraintFunctor() {
+      const vector<PULLGRP*>& ppgrps = ppull->getPPGRPS();
+      vector<const Functor<valtype, valtype>* > rstfuncts;
+      for(uint i = 0; i < ppgrps.size(); ++i) {
+	rstfuncts.push_back(ppgrps[i]->getRSTF());
+      }
+      return rstfuncts;
+    };
+
+    /* ====================  MUTATORS      ======================================= */
+
+    /* ====================  OPERATORS     ======================================= */
+
+  protected:
+    /* ====================  METHODS       ======================================= */
+
+    /* ====================  DATA MEMBERS  ======================================= */
+    GENERIC* pgeneric;
+    FEP* pfep;
+    PULL* ppull;
 
   private:
     /* ====================  METHODS       ======================================= */

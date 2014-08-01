@@ -16,19 +16,22 @@
  * =====================================================================================
  */
 #include "gmxmdp.hpp"
+#include "typedefs.hpp"
 
 GMXMDP::GMXMDP(const string& fname):
-  fep(GMXFEP()),
-  pull(GMXPULL())
 {
+  pgeneric = new GMXGENERIC;
+  pfep = new GMXFEP;
+  ppull = new GMXPULL;
+
   fileio fio(fname, fstream::in, 1, 0, 1, MAXNLINE, ";");
   while(fio.readaline()) {
     const vector<string> tmpstr = fio.line2str("=");
     const string& opt = trimltcm(tmpstr[0], ";", " \t");
     const string& optval = trimltcm(tmpstr[1], ";", " \t");
     try {
-      generic(opt, optval) || fep(opt, optval) || pull(opt, optval);
-    } catch(GMXMDP_Exception& gmxmdpex) {
+      (*pgeneric)(opt, optval) || (*pfep)(opt, optval) || (*pull)(opt, optval);
+    } catch(MDP_Exception& gmxmdpex) {
       cerr << "Error understanding mdp file: " << fname << ": " << gmxmdpex.what() << endl;
       terminate();
     } catch(FILEIO_Exception& fioex) {
@@ -39,41 +42,15 @@ GMXMDP::GMXMDP(const string& fname):
 }
 
 void GMXMDP::print() const {
-  generic.print();
-  fep.print();
-  pull.print();
+  pgeneric->print();
+  pfep->print();
+  ppull->print();
 }
 
-uint GMXMDP::cmp(const MDP& mdp) const throw(GMXMDP_Exception) {
-}
-
-bool GMXMDP::hasTemperature() const {
-  return (this->getTemperature() != -1);
-}
-
-bool GMXMDP::hasPressure() const {
-  return (this->getPressure() != -1);
-}
-
-bool GMXMDP::hasFEPLambda() const {
-  return (this->getFEPLambda().size() != 0);
-}
-
-bool GMXMDP::hasRestraint() const {
-  return (this->getRestraint().size() != 0);
-}
-
-valtype GMXMDP::getTemperature() const {
-  return generic.getT();
-}
-
-valtype GMXMDP::getPressure() const {
-  return generic.getP();
+uint GMXMDP::cmp(const MDP& mdp) const throw(MDP_Exception) {
 }
 
 GMXMDP::GMXGENERIC::GMXGENERIC() :
-  T(-1),
-  P(-1)
 {
 }
 
@@ -82,7 +59,7 @@ void GMXMDP::GMXGENERIC::print() const {
   printf("#%20s = %-10.5f\n", "Pressure", P);
 }
 
-bool GMXMDP::GMXGENERIC::operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception) {
+bool GMXMDP::GMXGENERIC::operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception) {
   if(nocmmatchkey(opt, "ref-t") || nocmmatchkey(opt, "ref_t")) {
     setsc(optval, T);
   } else if(nocmmatchkey(opt, "ref-p") || nocmmatchkey(opt, "ref_p")) {
@@ -94,19 +71,11 @@ bool GMXMDP::GMXGENERIC::operator()(const string& opt, const string& optval) thr
 }
 
 GMXMDP::GMXFEP::GMXFEP() :
-   Lbond(vector<double>(0, 0.0)),
-   Lmass(vector<double>(0, 0.0)),
-   Lvdw(vector<double>(0, 0.0)),
-   Lcoul(vector<double>(0, 0.0)),
-   Lrst(vector<double>(0, 0.0)),
-   Ltemp(vector<double>(0, 0.0)),
-   Lcnt1(vector<double>(0, 0.0)),
-   Lcnt2(vector<double>(0, 0.0)),
-   Lcnt3(vector<double>(0, 0.0)),
+   Lcnt1(vector<valtype>(0, 0.0)),
+   Lcnt2(vector<valtype>(0, 0.0)),
+   Lcnt3(vector<valtype>(0, 0.0)),
    nstdhdl(-1),
    nstexpanded(-1),
-   Linit(-1),
-   fepT(NGMXFEPTypes),
    Tmc(-1)
 {
 }
@@ -114,31 +83,31 @@ GMXMDP::GMXFEP::GMXFEP() :
 void GMXMDP::GMXFEP::print() const {
   printf("#%20s = %-5d\n", "free-energy", fepT);
   printf("#%20s = ", "bonded-lambdas");
-  copy(Lbond.begin(), Lbond.end(), ostream_iterator<double>(cout, " "));
+  copy(Lbond.begin(), Lbond.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#%20s = ", "mass-lambdas");
-  copy(Lmass.begin(), Lmass.end(), ostream_iterator<double>(cout, " "));
+  copy(Lmass.begin(), Lmass.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#%20s = ", "vdw-lambdas");
-  copy(Lvdw.begin(), Lvdw.end(), ostream_iterator<double>(cout, " "));
+  copy(Lvdw.begin(), Lvdw.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#%20s = ", "coul-lambdas");
-  copy(Lcoul.begin(), Lcoul.end(), ostream_iterator<double>(cout, " "));
+  copy(Lcoul.begin(), Lcoul.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#%20s = ", "rst-lambdas");
-  copy(Lrst.begin(), Lrst.end(), ostream_iterator<double>(cout, " "));
+  copy(Lrst.begin(), Lrst.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#%20s = ", "temperature-lambdas");
-  copy(Ltemp.begin(), Ltemp.end(), ostream_iterator<double>(cout, " "));
+  copy(Ltemp.begin(), Ltemp.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#%20s = ", "cnt1-lambdas");
-  copy(Lcnt1.begin(), Lcnt1.end(), ostream_iterator<double>(cout, " "));
+  copy(Lcnt1.begin(), Lcnt1.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#%20s = ", "cnt2-lambdas");
-  copy(Lcnt2.begin(), Lcnt2.end(), ostream_iterator<double>(cout, " "));
+  copy(Lcnt2.begin(), Lcnt2.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#%20s = ", "cnt3-lambdas");
-  copy(Lcnt3.begin(), Lcnt3.end(), ostream_iterator<double>(cout, " "));
+  copy(Lcnt3.begin(), Lcnt3.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#  %20s = %-5d\n", "nstdhdl", nstdhdl);
   printf("#  %20s = %-5d\n", "nstexpanded", nstexpanded);
@@ -154,7 +123,7 @@ vector<valtype> GMXFEP::getL() const {
   return allL;
 }
 
-bool GMXMDP::GMXFEP::operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception)
+bool GMXMDP::GMXFEP::operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception)
 {
   if(nocmmatchkey(opt, "free-energy")) {
     if(nocmmatchkey(optval,"yes")) {
@@ -162,7 +131,7 @@ bool GMXMDP::GMXFEP::operator()(const string& opt, const string& optval) throw(G
     } else if(nocmmatchkey(optval, "expanded")) {
 	fepT = Expanded;
     } else {
-      throw(GMXMDP_Exception("Unknown GMXFEP type: " + optval));
+      throw(MDP_Exception("Unknown GMXFEP type: " + optval));
     }
   } else if(nocmmatchkey(opt, "bonded-lambdas")) {
     setvec(optval, Lbond);
@@ -199,13 +168,8 @@ bool GMXMDP::GMXFEP::operator()(const string& opt, const string& optval) throw(G
 GMXMDP::GMXPULL::GMXPULL() :
   pullT(NPullTypes),
   geomT(NGeomTypes),
-  dim(0),
   nstx(-1),
   nstf(-1),
-  npgrps(0),
-  ncntgrps(0),
-  pullgrps(vector<GMXPULLGRP>(npgrps, GMXPULLGRP())),
-  pullcntgrps(vector<PULLCNTGRP>(ncntgrps, PULLCNTGRP()))
 {
 }
 
@@ -230,11 +194,13 @@ void GMXMDP::GMXPULL::print() const {
   }
 }
 
-bool GMXMDP::GMXPULL::operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception)
+bool GMXMDP::GMXPULL::operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception)
 {
   if(nocmmatchkey(opt, "pull")) {
     if(nocmmatchkey(optval,"umbrella")) {
       pullT = Umbrella; 
+    } else if(nocmmatchkey(optval, "umbrella-flat-bottom")) {
+      pullT = Umbrella-flat-bottom;
     } else if(nocmmatchkey(optval, "constraint")) {
       pullT = Constraint;
     } else if(nocmmatchkey(optval, "constant-force")) {
@@ -242,7 +208,7 @@ bool GMXMDP::GMXPULL::operator()(const string& opt, const string& optval) throw(
     } else if(nocmmatchkey(optval, "contact")) {
       pullT = Contact;
     } else {
-      throw(GMXMDP_Exception("Unknown Pull type: '" + optval + "'"));
+      throw(MDP_Exception("Unknown Pull type: '" + optval + "'"));
     }
   } else if(nocmmatchkey(opt, "pull_geometry") || nocmmatchkey(opt, "pull-geometry")) {
     if(nocmmatchkey(optval,"distance")) {
@@ -256,12 +222,12 @@ bool GMXMDP::GMXPULL::operator()(const string& opt, const string& optval) throw(
     } else if(nocmmatchkey(optval, "position")) {
       geomT = Position; 
     } else {
-      throw(GMXMDP_Exception("Unknown Pull-geometry type: '" + optval + "'"));
+      throw(MDP_Exception("Unknown Pull-geometry type: '" + optval + "'"));
     }
   } else if(nocmmatchkey(opt, "pull_dim") || nocmmatchkey(opt, "pull-dim")) {
     vector<string> dims;
     setvec(optval, dims);
-    if(dims.size() != 3) { throw(GMXMDP_Exception("pull dimension must be <= 3 but we got: " + tostr(dims.size()))); }
+    if(dims.size() != 3) { throw(MDP_Exception("pull dimension must be <= 3 but we got: " + tostr(dims.size()))); }
     for(uint i = 0; i < 3; ++i) {
       if(nocmcmatchkey(dims[i], "Y")) {
 	dim |= 1 << i;
@@ -269,7 +235,7 @@ bool GMXMDP::GMXPULL::operator()(const string& opt, const string& optval) throw(
 	const short mask = numeric_limits<short>::max() ^ (1 << i) ;
 	dim &= mask;
       } else {
-        throw(GMXMDP_Exception("Unknown Pull-dim: " + optval));
+        throw(MDP_Exception("Unknown Pull-dim: " + optval));
       }
     }
   } else if(nocmmatchkey(opt, "pull_nstxout") || nocmmatchkey(opt, "pull-nstxout")) {
@@ -287,46 +253,64 @@ bool GMXMDP::GMXPULL::operator()(const string& opt, const string& optval) throw(
   } else if(nocmmatchkey(opt, "pull_group0") || nocmmatchkey(opt, "pull-group0")) {
     return true;
   } else {
-    if(pullT == Contact) {
-      for(uint i = 0; i < ncntgrps; ++i) {
-	if(pullcntgrps[i](opt, optval, tostr(i))) { return true; }
-      }
-    } else {
       for(uint i = 0; i < npgrps; ++i) {
-        if(pullgrps[i](opt, optval, tostr(i+1))) { return true; }
-      } 
+	if(pullgrps[i] && (*pullgrps[i])(opt, optval, tostr(i))) { return true; }
+      }
+      return false;
+    } 
+  }
+  //make sure we initialize pullgrps properly
+  if(npgrps) {
+    switch (pullT) {
+      case Umbrella:
+        for(uint i = 0; i < npgrps; ++i) { 
+	  pullgrps[i] = new GMXPULLGRP();
+	  pullgrps[i]->setRSTT(Quad);
+	}
+      case Umbrella-flat-bottom:
+        for(uint i = 0; i < npgrps; ++i) { 
+	  pullgrps[i] = new GMXPULLGRP();
+	  pullgrps[i]->setRSTT(QuadFlat);
+	}
+        break;
+      case Contact:
+        for(uint i = 0; i < npgrps; ++i) { 
+	  pullgrps[i] = new GMXPULLCNTGRP();
+	  pullgrps[i]->setRSTT(Quad);
+	}
+        break;
+      default:
     }
-    return false;
   }
   return true;
 }
 
 GMXMDP::GMXPULL::GMXPULLGRP::GMXPULLGRP() :
-  vec(vector<double>(0, 0.0)),
-  init(vector<double>(0, 0.0)),
-  initB(vector<double>(0, 0.0)),
-  rate(0.0),
-  k(0.0),
-  kB(k)
+  vec(vector<valtype>(0, 0.0)),
+  init(vector<valtype>(0, 0.0)),
+  initB(vector<valtype>(0, 0.0)),
+  rate(0),
+  k(-1),
+  kB(-1)
 {
 }
 
 void GMXMDP::GMXPULL::GMXPULLGRP::print() const {
   printf("#  %20s = ", "pull_vec");
-  copy(vec.begin(), vec.end(), ostream_iterator<double>(cout, " "));
+  copy(vec.begin(), vec.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#  %20s = ", "pull_init");
-  copy(init.begin(), init.end(), ostream_iterator<double>(cout, " "));
+  copy(init.begin(), init.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#  %20s = ", "pull_initB");
-  copy(initB.begin(), initB.end(), ostream_iterator<double>(cout, " "));
+  copy(initB.begin(), initB.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
   printf("#  %20s = %-10.5lf\n", "pull_rate", rate);
   printf("#  %20s = %-10.5lf\n", "pull_k", k);
   printf("#  %20s = %-10.5lf\n", "pull_kB", kB);
 }
 
-bool GMXMDP::GMXPULL::GMXPULLGRP::operator()(const string& opt, const string& optval, const string& i) throw(GMXMDP_Exception, FILEIO_Exception)
+bool GMXMDP::GMXPULL::GMXPULLGRP::operator()(const string& opt, const string& optval, const string& i) throw(MDP_Exception, FILEIO_Exception)
 {
   if(nocmmatchkey(opt, "pull_group" + i) || nocmmatchkey(opt, "pull-group" + i)) {
     return true; //not really need this
@@ -345,6 +329,12 @@ bool GMXMDP::GMXPULL::GMXPULLGRP::operator()(const string& opt, const string& op
   } else {
     return false;
   }
+
+  //make sure we initialize the rst functor properly
+  if(init.size() && initB.size() && k > 0 && kB > 0) {
+
+  }
+
   return true;
 }
 
@@ -365,7 +355,7 @@ void GMXMDP::GMXPULL::PULLCNTGRP::print() const {
   printf("#  %20s = %-10.5lf\n", "kB", kB);
 }
 
-bool GMXMDP::GMXPULL::PULLCNTGRP::operator()(const string& opt, const string& optval, const string& i) throw(GMXMDP_Exception, FILEIO_Exception)
+bool GMXMDP::GMXPULL::PULLCNTGRP::operator()(const string& opt, const string& optval, const string& i) throw(MDP_Exception, FILEIO_Exception)
 {
   const string cntgrpnm = "pull_contactgroup" + i;
   if(nocmmatchkey(opt, cntgrpnm + "_pgrp1")) {
