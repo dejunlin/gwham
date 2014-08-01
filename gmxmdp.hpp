@@ -43,7 +43,7 @@ class GMXMDP : public MDP
 
     /* ====================  ACCESSORS     ======================================= */
     virtual void print() const; /*  print out all the parameters read */
-    virtual Qt cmp(const MDP& mdp) const; /*  compare with another mdp object */
+    virtual uint cmp(const MDP& mdp) const throw(GMXMDP_Exception); /*  compare with another mdp object */
     virtual bool hasTemperature() const; /*  if has temperature */
     virtual bool hasPressure() const; /*  if has pressure */
     virtual bool hasLambda() const; /*  if has Lambdas */
@@ -51,7 +51,8 @@ class GMXMDP : public MDP
     virtual valtype getTemperature() const; /*  get temperature */
     virtual valtype getPressure() const; /*  get pressure */
     virtual vector<valtype> getFEPLambda() const; /*  get FEPLambdas */
-    virtual vector<Functor> getRestraint() const; /*  get restraint */
+    virtual string getRestraintType() const; /*  get the type of restraint */
+    virtual vector<valtype> getRestraint() const; /*  get restraint */
 
     /* ====================  MUTATORS      ======================================= */
 
@@ -73,9 +74,6 @@ class GMXMDP : public MDP
 
 	/* ====================  ACCESSORS     ======================================= */
         virtual void print() const; /*  print out all the parameters read */
-        virtual Qt cmp(const GENERIC& mdp) const; /*  compare with another mdp object */
-        virtual valtype getT() const { return T; }; 
-        virtual valtype getP() const { return P; }; 
 
 	/* ====================  MUTATORS      ======================================= */
 
@@ -110,6 +108,7 @@ class GMXMDP : public MDP
 
 	/* ====================  ACCESSORS     ======================================= */
         virtual void print() const; /*  print out all the parameters read */
+	virtual vector<valtype> getL() const;
 
 	/* ====================  MUTATORS      ======================================= */
 

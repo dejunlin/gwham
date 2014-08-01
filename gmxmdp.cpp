@@ -44,8 +44,31 @@ void GMXMDP::print() const {
   pull.print();
 }
 
-Qt cmp(const MDP& mdp) const {
+uint GMXMDP::cmp(const MDP& mdp) const throw(GMXMDP_Exception) {
+}
 
+bool GMXMDP::hasTemperature() const {
+  return (this->getTemperature() != -1);
+}
+
+bool GMXMDP::hasPressure() const {
+  return (this->getPressure() != -1);
+}
+
+bool GMXMDP::hasFEPLambda() const {
+  return (this->getFEPLambda().size() != 0);
+}
+
+bool GMXMDP::hasRestraint() const {
+  return (this->getRestraint().size() != 0);
+}
+
+valtype GMXMDP::getTemperature() const {
+  return generic.getT();
+}
+
+valtype GMXMDP::getPressure() const {
+  return generic.getP();
 }
 
 GMXMDP::GMXGENERIC::GMXGENERIC() :
@@ -120,6 +143,15 @@ void GMXMDP::GMXFEP::print() const {
   printf("#  %20s = %-5d\n", "nstdhdl", nstdhdl);
   printf("#  %20s = %-5d\n", "nstexpanded", nstexpanded);
   printf("#  %20s = %-10.5lf\n", "mc-temperature", Tmc);
+}
+
+vector<valtype> GMXFEP::getL() const {
+  vector<valtype> Lcnts(Lcnt1.begin(), Lcnt1.end());
+  Lcnts.insert(Lcnts.end(), Lcnt2.begin(), Lcnt2.end());
+  Lcnts.insert(Lcnts.end(), Lcnt3.begin(), Lcnt3.end());
+  vector<valtype> allL = FEP::getL();
+  allL.insert(allL.end(), Lcnts.begin(), Lcnts.end());
+  return allL;
 }
 
 bool GMXMDP::GMXFEP::operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception)

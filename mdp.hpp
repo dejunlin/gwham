@@ -41,7 +41,7 @@ class MDP
 
     /* ====================  ACCESSORS     ======================================= */
     virtual void print() const = 0; /*  print out all the parameters read */
-    virtual Qt cmp(const MDP& mdp) const = 0; /*  compare with another mdp object */
+    virtual uint cmp(const MDP& mdp) const = 0; /*  compare with another mdp object */
     virtual bool hasTemperature() const = 0; /*  if has temperature */
     virtual bool hasPressure() const = 0; /*  if has pressure */
     virtual bool hasLambda() const = 0; /*  if has Lambdas */
@@ -49,7 +49,8 @@ class MDP
     virtual valtype getTemperature() const = 0; /*  get temperature */
     virtual valtype getPressure() const = 0; /*  get pressure */
     virtual vector<valtype> getFEPLambda() const = 0; /*  get FEPLambdas */
-    virtual vector<Functor<valtype, valtype>* > getRestraint() const = 0; /*  get restraint */
+    virtual string getRestraintType() const = 0; /*  get the type of restraint */
+    virtual vector<valtype> getRestraint() const = 0; /*  get restraint */
 
     /* ====================  MUTATORS      ======================================= */
 
@@ -74,9 +75,8 @@ class MDP
     
         /* ====================  ACCESSORS     ======================================= */
         virtual void print() const = 0; /*  print out all the parameters read */
-        virtual Qt cmp(const GENERIC& mdp) const = 0; /*  compare with another mdp object */
-        virtual valtype getT() const = 0; 
-        virtual valtype getP() const = 0; 
+        virtual valtype getT() const { return T; }; 
+        virtual valtype getP() const { return P; }; 
     
         /* ====================  MUTATORS      ======================================= */
     
@@ -112,6 +112,15 @@ class MDP
 
 	/* ====================  ACCESSORS     ======================================= */
         void print() const = 0; /*  print out all the parameters read */
+	virtual vector<valtype> getL() const {
+	  vector<valtype> allL(Lbond.begin(), Lbond.end());
+	  allL.insert(allL.end(), Lmass.begin(), Lmass.end());
+	  allL.insert(allL.end(), Lvdw.begin(), Lvdw.end());
+	  allL.insert(allL.end(), Lcoul.begin(), Lcoul.end());
+	  allL.insert(allL.end(), Lrst.begin(), Lrst.end());
+	  allL.insert(allL.end(), Ltemp.begin(), Ltemp.end());
+	  return allL;
+	}
 
 	/* ====================  MUTATORS      ======================================= */
 
