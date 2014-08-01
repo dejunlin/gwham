@@ -17,6 +17,7 @@
  */
 #include <vector>
 #include "typedefs.hpp"
+#include "excpetion.hpp"
 
 /*
  * =====================================================================================
@@ -37,6 +38,7 @@ class Functor
 
     /* ====================  OPERATORS     ======================================= */
     virtual Output operator() (const Input& in) const = 0;
+    virtual bool operator== (const Functor<Input, Output>& rhs) const = 0;
 
   protected:
     /* ====================  METHODS       ======================================= */
@@ -63,6 +65,13 @@ class Quadratic : public Functor<valtype, valtype>
     Quadratic (const valtype _k, const valtype _r0, const valtype _c=0) : k(_k), r0(_r0), c(_c) {};                             /* constructor */
 
     /* ====================  ACCESSORS     ======================================= */
+    virtual vector<valtype> getParams() const {
+      vector<valtype> ans;
+      ans.push_back(k);
+      ans.push_back(r0);
+      ans.push_back(c);
+      return ans;
+    };
 
     /* ====================  MUTATORS      ======================================= */
 
@@ -72,6 +81,15 @@ class Quadratic : public Functor<valtype, valtype>
       return k*dr*dr + c;
     };
 
+    virtual bool operator== (const Functor<valtype, valtype>& rhs) const {
+      if(this == &rhs) { return true; }
+      try {
+	const Quadratic& rrhs = dynamic_cast<const Quadratic&>(rhs);
+        return this->getParams() == rrhs.getParams();
+      } catch (bad_cast& bcex) {
+	return false;
+      }
+    };
   protected:
     /* ====================  METHODS       ======================================= */
 
@@ -84,6 +102,78 @@ class Quadratic : public Functor<valtype, valtype>
     /* ====================  DATA MEMBERS  ======================================= */
 
 }; /* -----  end of class Quadratic  ----- */
+
+
+/*
+ * =====================================================================================
+ *        Class:  QuadraticNwrap
+ *  Description:  Wrapper functor of N quadratic
+ * =====================================================================================
+ */
+class QuadraticNwrap : Functor<vector<valtype>, valtype>
+{
+  public:
+    /* ====================  LIFECYCLE     ======================================= */
+    QuadraticNwrap (const vector<valtype>& _ks, const vector<valtype>& _r0s, const vector<valtype>& _cs) throw(Functor_Exception)
+    : Qfuncts(vector<Quadratic>(0))  
+    {
+      if(_ks.size() != _r0s.size() || _r0s.size() != _cs.size()) {
+	throw(Functor_Exception("Size of QuadraticNwrap parameters don't match each other"));
+      }
+      for(uint i = 0; i < _ks.size(); ++i) {
+	Qfuncts.push_back(Quadratic(_ks[i], _r0s[i], _cs[i]));
+      }
+    };                             /* constructor */
+    QuadraticNwrap (const vector<valtype>& _ks, const vector<valtype>& _r0s) throw(Functor_Exception)
+    : Qfuncts(vector<Quadratic>(0))  
+    {
+      if(_ks.size() != _r0s.size()) {
+	throw(Functor_Exception("Sizes of QuadraticNwrap parameters don't match each other"));
+      }
+      for(uint i = 0; i < _ks.size(); ++i) {
+	Qfuncts.push_back(Quadratic(_ks[i], _r0s[i], 0));
+      }
+    };                             /* constructor */
+
+    /* ====================  ACCESSORS     ======================================= */
+    const vector<Quadratic>& getQfuncts() const {
+      return this->Qfuncts;
+    }
+    /* ====================  MUTATORS      ======================================= */
+
+    /* ====================  OPERATORS     ======================================= */
+    virtual valtype operator() (const const vector<valtype>& r) const throw(Functor_Exception) {
+      if(r.size() != Qfuncts.size()) {
+	throw(Functor_Exception("Size of QuadraticNwrap arguments doesn't match the number of functors"));
+      }
+      valtype ans = 0.0;
+      for(uint i = 0; i < r.size(); ++i) {
+	ans += Qfuncts[i](r[i]);
+      }
+      return ans;
+    };
+
+    virtual bool operator== (const Functor<vector<valtype>, valtype>& rhs) const {
+      if(this == &rhs) { return true; }
+      try {
+	const QuadraticNwrap& rrhs = dynamic_cast<const QuadraticNwrap&>(rhs);
+        return this->getQfuncts() == rrhs.getQfuncts();
+      } catch (bad_cast& bcex) {
+	return false;
+      }
+    };
+  protected:
+    /* ====================  METHODS       ======================================= */
+
+    /* ====================  DATA MEMBERS  ======================================= */
+    vector<Quadratic> Qfuncts;
+
+  private:
+    /* ====================  METHODS       ======================================= */
+
+    /* ====================  DATA MEMBERS  ======================================= */
+
+}; /* -----  end of class QuadraticNwrap  ----- */
 
 
 /*
@@ -111,6 +201,16 @@ class QuadraticFlat : public Functor<valtype, valtype>
 		   {};                             /* constructor */
 
     /* ====================  ACCESSORS     ======================================= */
+    virtual vector<valtype> getParams() const {
+      vector<valtype> ans;
+      ans.push_back(ref);
+      ans.push_back(r0);
+      ans.push_back(r1);
+      ans.push_back(k0);
+      ans.push_back(k1);
+      ans.push_back(c);
+      return ans;
+    };
 
     /* ====================  MUTATORS      ======================================= */
 
@@ -127,6 +227,15 @@ class QuadraticFlat : public Functor<valtype, valtype>
       }
     }
 
+    virtual bool operator== (const Functor<valtype, valtype>& rhs) const {
+      if(this == &rhs) { return true; }
+      try {
+	const QuadraticFlat& rrhs = dynamic_cast<const QuadraticFlat&>(rhs);
+        return this->getParams() == rrhs.getParams();
+      } catch (bad_cast& bcex) {
+	return false;
+      }
+    };
   protected:
     /* ====================  METHODS       ======================================= */
 
