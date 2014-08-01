@@ -49,7 +49,7 @@ class MDP
     virtual valtype getTemperature() const = 0; /*  get temperature */
     virtual valtype getPressure() const = 0; /*  get pressure */
     virtual vector<valtype> getFEPLambda() const = 0; /*  get FEPLambdas */
-    virtual vector<Functor> getRestraint() const = 0; /*  get restraint */
+    virtual vector<Functor<valtype, valtype>* > getRestraint() const = 0; /*  get restraint */
 
     /* ====================  MUTATORS      ======================================= */
 
