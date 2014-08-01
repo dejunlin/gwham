@@ -26,9 +26,14 @@ class FILEIO_Exception : public General_Exception {
     FILEIO_Exception(const string& _msg) : General_Exception("FILEIO exception: " + _msg) {};
 };
 
-class GMXMDP_Exception : public General_Exception {
+class MDP_Exception : public General_Exception {
   public:
-    GMXMDP_Exception(const string& _msg) : General_Exception("GMXMDP exception: " + _msg) {}; 
+    MDP_Exception(const string& _msg) : General_Exception("GMXMDP exception: " + _msg) {}; 
+};
+
+class Functor_Exception: public General_Exception {
+  public:
+    Functor_Exception(const string& _msg) : General_Exception("Functor exception: " + _msg) {};  
 };
 
 #endif
