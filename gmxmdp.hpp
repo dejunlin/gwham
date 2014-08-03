@@ -40,10 +40,11 @@ class GMXMDP : public MDP
   public:
     /* ====================  LIFECYCLE     ======================================= */
     GMXMDP (const string& fname);    /* constructor */
+    virtual ~GMXMDP() { 
+    };
 
     /* ====================  ACCESSORS     ======================================= */
     virtual void print() const; /*  print out all the parameters read */
-    virtual uint cmp(const MDP& mdp) const throw(MDP_Exception); /*  compare with another mdp object */
 
     /* ====================  MUTATORS      ======================================= */
 
@@ -61,7 +62,7 @@ class GMXMDP : public MDP
     {
       public:
 	/* ====================  LIFECYCLE     ======================================= */
-	GMXGENERIC ();                             /* constructor */
+	GMXGENERIC () {};                             /* constructor */
 
 	/* ====================  ACCESSORS     ======================================= */
         virtual void print() const; /*  print out all the parameters read */
@@ -132,16 +133,16 @@ class GMXMDP : public MDP
      */
     class GMXPULL : public PULL
     {
-      protected:
-	enum PullType {Umbrella, Umbrella-flat-bottom, Constraint, ConstantForce, Contact, NPullTypes} pullT;
+      public:
+	enum PullType {Umbrella, UmbrellaFlatBottom, Constraint, ConstantForce, Contact, NPullTypes} pullT;
 	enum PullGeom {Distance, Direction, DirectionPeriodic, Cylinder, Position, NGeomTypes} geomT;
       public:
 	/* ====================  LIFECYCLE     ======================================= */
 	GMXPULL ();                             /* constructor */
+	virtual ~GMXPULL() { };
 
 	/* ====================  ACCESSORS     ======================================= */
         virtual void print() const; /*  print out all the parameters read */
-	PullType getPT() const; 
 
 	/* ====================  MUTATORS      ======================================= */
 
@@ -161,6 +162,7 @@ class GMXMDP : public MDP
 	  public:
 	    /* ====================  LIFECYCLE     ======================================= */
 	    GMXPULLGRP ();                             /* constructor */
+	    virtual ~GMXPULLGRP() {  };
 
 	    /* ====================  ACCESSORS     ======================================= */
             virtual void print() const; /*  print out all the parameters read */
@@ -176,7 +178,7 @@ class GMXMDP : public MDP
 
 	    /* ====================  DATA MEMBERS  ======================================= */
 	    vector<valtype> vec, init, initB;
-	    valtype rate, k, kB;
+	    valtype k, kB;
 
 	  private:
 	    /* ====================  METHODS       ======================================= */
@@ -196,11 +198,13 @@ class GMXMDP : public MDP
 	  public:
 	    /* ====================  LIFECYCLE     ======================================= */
 	    GMXPULLCNTGRP ();                             /* constructor */
+	    virtual ~GMXPULLCNTGRP() { };
 
 	    /* ====================  ACCESSORS     ======================================= */
             virtual void print() const; /*  print out all the parameters read */
 
 	    /* ====================  MUTATORS      ======================================= */
+
 
 	    /* ====================  OPERATORS     ======================================= */
 	    //parse the mdp options for contact-group
@@ -210,6 +214,7 @@ class GMXMDP : public MDP
 	    /* ====================  METHODS       ======================================= */
 
 	    /* ====================  DATA MEMBERS  ======================================= */
+	    valtype nc, ncB, k, kB;
 
 	  private:
 	    /* ====================  METHODS       ======================================= */
@@ -237,6 +242,7 @@ class GMXMDP : public MDP
 
   private:
     /* ====================  METHODS       ======================================= */
+    void doublechk(); /*  check and combine the parameters */
 
     /* ====================  DATA MEMBERS  ======================================= */
 

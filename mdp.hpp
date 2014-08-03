@@ -50,6 +50,7 @@ class MDP
           T(-1),
           P(-1)
 	  {};                             /* constructor */
+	virtual ~GENERIC() {};
     
         /* ====================  ACCESSORS     ======================================= */
         virtual void print() const = 0; /*  print out all the parameters read */
@@ -60,7 +61,7 @@ class MDP
     
         /* ====================  OPERATORS     ======================================= */
         //parse the generic parameters
-        virtual bool operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception) = 0;
+        virtual bool operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception) = 0;
     
       protected:
         /* ====================  METHODS       ======================================= */
@@ -86,6 +87,7 @@ class MDP
     {
       public:
 	enum FEPType {Yes, Expanded, NFEPTypes};
+	FEPType fepT;
 
       public:
 	/* ====================  LIFECYCLE     ======================================= */
@@ -99,9 +101,10 @@ class MDP
           Ltemp(vector<valtype>(0, 0.0)),
           Linit(-1)
           {};                             /* constructor */
+	virtual ~FEP() {};
 
 	/* ====================  ACCESSORS     ======================================= */
-        void print() const = 0; /*  print out all the parameters read */
+        virtual void print() const = 0; /*  print out all the parameters read */
 	virtual FEPType getFEPT() const { return fepT; }
 	virtual vector<valtype> getL() const {
 	  vector<valtype> allL(Lbond.begin(), Lbond.end());
@@ -117,7 +120,7 @@ class MDP
 
 	/* ====================  OPERATORS     ======================================= */
 	//parse the mdp options for FEP
-        virtual bool operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception) = 0;
+        virtual bool operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception) = 0;
 	/* ====================  DATA MEMBERS  ======================================= */
 	vector<valtype> Lbond, Lmass, Lvdw, Lcoul, Lrst, Ltemp;
 	int Linit;
@@ -126,7 +129,6 @@ class MDP
 	/* ====================  METHODS       ======================================= */
 
 	/* ====================  DATA MEMBERS  ======================================= */
-	FEPType fepT;
 
       private:
 	/* ====================  METHODS       ======================================= */
@@ -144,33 +146,6 @@ class MDP
     class PULL
     {
       public:
-	/* ====================  LIFECYCLE     ======================================= */
-	PULL () : 
-	  dim(0),  
-	  npgrps(0),
-	  ppullgrps(vector<PULLGRP*>(npgrps, NULL))
-	  {};                             /* constructor */
-
-	virtual ~PULL() {
-	  for(uint i = 0; i < ppullgrps.size(); ++i) {
-	    delete ppullgrps[i];
-	  }
-	}
-
-	/* ====================  ACCESSORS     ======================================= */
-        virtual void print() const = 0; /*  print out all the parameters read */
-	uint getNPG() const { return npgrps; }
-	const vector<PULLGRP*>& getPPGRPS() const { return ppullgrps; }
-
-	/* ====================  MUTATORS      ======================================= */
-
-	/* ====================  OPERATORS     ======================================= */
-	//parse the mdp options for pull
-        virtual bool operator()(const string& opt, const string& optval) throw(GMXMDP_Exception, FILEIO_Exception) = 0;
-	/* ====================  DATA MEMBERS  ======================================= */
-	//bit mask of the pulled dimension in left-to-right order (e.g., 001 <=> Y N N, meaning only x dimention is pulled)
-	short dim;
-	uint npgrps;
 	/*
 	 * =====================================================================================
 	 *        Class:  PULLGRP
@@ -181,6 +156,9 @@ class MDP
 	{
 	  public:
 	    enum RestraintType { Quad, QuadFlat, NRestraintTypes };
+	    RestraintType rstT;
+	    valtype rate;
+	    const Functor<valtype, valtype>* rstfunct;
 
 	  public:
 	    /* ====================  LIFECYCLE     ======================================= */
@@ -204,15 +182,12 @@ class MDP
 
 	    /* ====================  OPERATORS     ======================================= */
 	    //parse the mdp options for pull-group
-            virtual bool operator()(const string& opt, const string& optval, const string& i) throw(GMXMDP_Exception, FILEIO_Exception) = 0;
+            virtual bool operator()(const string& opt, const string& optval, const string& i) throw(MDP_Exception, FILEIO_Exception) = 0;
 
 	  protected:
 	    /* ====================  METHODS       ======================================= */
 
 	    /* ====================  DATA MEMBERS  ======================================= */
-	    RestraintType rstT;
-	    valtype rate;
-	    const Functor<valtype, valtype>* rstfunct;
 
 	  private:
 	    /* ====================  METHODS       ======================================= */
@@ -221,6 +196,36 @@ class MDP
 
 
 	}; /* -----  end of class PULLGRP  ----- */
+      public:
+	/* ====================  LIFECYCLE     ======================================= */
+	PULL () : 
+	  dim(0),  
+	  npgrps(0),
+	  ppullgrps(vector<PULLGRP*>(npgrps, NULL))
+	  {};                             /* constructor */
+
+	virtual ~PULL() {
+	  for(uint i = 0; i < ppullgrps.size(); ++i) {
+	    if(ppullgrps[i]) {
+	      delete ppullgrps[i];
+	    }
+	  }
+	}
+
+	/* ====================  ACCESSORS     ======================================= */
+        virtual void print() const = 0; /*  print out all the parameters read */
+	uint getNPG() const { return npgrps; }
+	const vector<PULLGRP*>& getPPGRPS() const { return ppullgrps; }
+
+	/* ====================  MUTATORS      ======================================= */
+
+	/* ====================  OPERATORS     ======================================= */
+	//parse the mdp options for pull
+        virtual bool operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception) = 0;
+	/* ====================  DATA MEMBERS  ======================================= */
+	//bit mask of the pulled dimension in left-to-right order (e.g., 001 <=> Y N N, meaning only x dimention is pulled)
+	short dim;
+	uint npgrps;
 
       protected:
 	/* ====================  METHODS       ======================================= */
@@ -237,13 +242,14 @@ class MDP
 
   public:
     /* ====================  LIFECYCLE     ======================================= */
-    MDP () : 
+    MDP (const string& _fname) : 
+      fname(_fname),
       pgeneric(NULL), 
       pfep(NULL), 
       ppull(NULL) 
       {};                             /* constructor */
 
-    virtual ~MDP() { 
+    virtual ~MDP() {
       if(pgeneric) delete pgeneric;
       if(pfep) delete pfep;
       if(ppull) delete ppull;
@@ -253,7 +259,7 @@ class MDP
     virtual void print() const = 0; /*  print out all the parameters read */
     virtual uint cmp(const MDP& mdp) const throw (MDP_Exception) {
       uint QtMask = 0;
-      if( mdp.hasTemperature != this->hasTemperature() ) {
+      if( mdp.hasTemperature() != this->hasTemperature() ) {
 	throw(MDP_Exception("Comparing a constant-T MDP with a nonconstant-T MDP"));
       } else if( mdp.hasPressure() !=  this->hasPressure() ) {
 	throw(MDP_Exception("Comparing a constant-P MDP with a nonconstant-P MDP"));
@@ -270,11 +276,14 @@ class MDP
       } else {
 	QtMask |= uint(mdp.getTemperature() != this->getTemperature()) << Temperature;
 	QtMask |= uint(mdp.getPressure() != this->getPressure()) << Pressure;
-	QtMask |= uint(mdp.getFEPLambda() != this->getFEPLambda()) << FEPLambda;
+	QtMask |= uint(mdp.getFEPLambda() != this->getFEPLambda()) << Lambdas;
 	vector<const Functor<valtype, valtype>* > myfuncts = this->getRestraintFunctor();
 	vector<const Functor<valtype, valtype>* > theirfuncts = mdp.getRestraintFunctor();
 	for(uint i = 0; i < myfuncts.size(); ++i) {
-	  if(*myfuncts[i] != *theirfuncts[i]) { QtMask |= 1 << Restraints; break; }
+	  if(*myfuncts[i] != *theirfuncts[i]) { 
+	    QtMask |= 1 << Restraints; 
+	    break; 
+	  }
 	}
       }
       return QtMask;
@@ -282,16 +291,17 @@ class MDP
 
     bool hasTemperature() const { return pgeneric->getT() > 0; }; 
     bool hasPressure() const { return pgeneric->getP() > 0; };; 
-    bool hasFEPLambda() const { return pfep->getFEPT() != NFEPTypes; }; 
+    bool hasFEPLambda() const { return pfep->getFEPT() != FEP::NFEPTypes; }; 
     bool hasRestraint() const { return ppull->getNPG() != 0; }; 
 
     valtype getTemperature() const { return pgeneric->getT(); }; 
     valtype getPressure() const { return pgeneric->getP(); };
-    FEP::FEPType getFEPType() const { return pfep->getFEPT() };
-    vector<valtype> getFEPLambda() const  { return pfep->getL() };
+    FEP::FEPType getFEPType() const { return pfep->getFEPT(); };
+    vector<valtype> getFEPLambda() const  { return pfep->getL(); };
 
-    typedef PULL::PULLGRP::RestraintType RSTType;
-    vector<RSTType> getRestraintType() {
+    typedef PULL::PULLGRP PULLGRP;
+    typedef PULLGRP::RestraintType RSTType;
+    vector<RSTType> getRestraintType() const {
       const vector<PULLGRP*>& ppgrps = ppull->getPPGRPS();
       vector<RSTType> rsts;
       for(uint i = 0; i < ppgrps.size(); ++i) {
@@ -300,7 +310,7 @@ class MDP
       return rsts;
     };
 
-    vector<const Functor<valtype, valtype>* > getRestraintFunctor() {
+    vector<const Functor<valtype, valtype>* > getRestraintFunctor() const {
       const vector<PULLGRP*>& ppgrps = ppull->getPPGRPS();
       vector<const Functor<valtype, valtype>* > rstfuncts;
       for(uint i = 0; i < ppgrps.size(); ++i) {
@@ -317,6 +327,7 @@ class MDP
     /* ====================  METHODS       ======================================= */
 
     /* ====================  DATA MEMBERS  ======================================= */
+    const string fname;
     GENERIC* pgeneric;
     FEP* pfep;
     PULL* ppull;
