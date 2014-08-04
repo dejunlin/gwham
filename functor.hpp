@@ -41,10 +41,10 @@ class Functor
     /* ====================  OPERATORS     ======================================= */
     virtual Output operator() (const Input& in) const = 0;
     virtual bool operator== (const Functor<Input, Output>& rhs) const = 0;
-    virtual bool operator!= (const Functor<Input, Output>& rhs) const {
+      virtual bool operator!= (const Functor<Input, Output>& rhs) const {
       return !this->operator==(rhs);
     };
-    virtual ~Functor() = 0;
+    virtual ~Functor() {};
 
   protected:
     /* ====================  METHODS       ======================================= */
@@ -57,6 +57,7 @@ class Functor
     /* ====================  DATA MEMBERS  ======================================= */
 
 }; /* ----------  end of template class Functor  ---------- */
+
 
 /*
  * =====================================================================================
@@ -115,80 +116,6 @@ class Quadratic : public Functor<valtype, valtype>
     /* ====================  DATA MEMBERS  ======================================= */
 
 }; /* -----  end of class Quadratic  ----- */
-
-
-
-/*
- * =====================================================================================
- *        Class:  QuadraticNwrap
- *  Description:  Wrapper functor of N quadratic
- * =====================================================================================
- */
-//class QuadraticNwrap : Functor<vector<valtype>, valtype>
-//{
-//  public:
-//    /* ====================  LIFECYCLE     ======================================= */
-//    QuadraticNwrap (const vector<valtype>& _ks, const vector<valtype>& _r0s, const vector<valtype>& _cs) throw(Functor_Exception)
-//    : Qfuncts(vector<Quadratic>(0))  
-//    {
-//      if(_ks.size() != _r0s.size() || _r0s.size() != _cs.size()) {
-//	throw(Functor_Exception("Size of QuadraticNwrap parameters don't match each other"));
-//      }
-//      for(uint i = 0; i < _ks.size(); ++i) {
-//	Qfuncts.push_back(Quadratic(_ks[i], _r0s[i], _cs[i]));
-//      }
-//    };                             /* constructor */
-//    QuadraticNwrap (const vector<valtype>& _ks, const vector<valtype>& _r0s) throw(Functor_Exception)
-//    : Qfuncts(vector<Quadratic>(0))  
-//    {
-//      if(_ks.size() != _r0s.size()) {
-//	throw(Functor_Exception("Sizes of QuadraticNwrap parameters don't match each other"));
-//      }
-//      for(uint i = 0; i < _ks.size(); ++i) {
-//	Qfuncts.push_back(Quadratic(_ks[i], _r0s[i], 0));
-//      }
-//    };                             /* constructor */
-//    virtual ~QuadraticNwrap() {};
-//
-//    /* ====================  ACCESSORS     ======================================= */
-//    const vector<Quadratic>& getQfuncts() const {
-//      return this->Qfuncts;
-//    }
-//    /* ====================  MUTATORS      ======================================= */
-//
-//    /* ====================  OPERATORS     ======================================= */
-//    virtual valtype operator() (const vector<valtype>& r) const throw(Functor_Exception) {
-//      if(r.size() != Qfuncts.size()) {
-//	throw(Functor_Exception("Size of QuadraticNwrap arguments doesn't match the number of functors"));
-//      }
-//      valtype ans = 0.0;
-//      for(uint i = 0; i < r.size(); ++i) {
-//	ans += Qfuncts[i](r[i]);
-//      }
-//      return ans;
-//    };
-//
-//    virtual bool operator== (const Functor<vector<valtype>, valtype>& rhs) const {
-//      if(this == &rhs) { return true; }
-//      try {
-//	const QuadraticNwrap& rrhs = dynamic_cast<const QuadraticNwrap&>(rhs);
-//        return this->getQfuncts() == rrhs.getQfuncts();
-//      } catch (bad_cast& bcex) {
-//	return false;
-//      }
-//    };
-//  protected:
-//    /* ====================  METHODS       ======================================= */
-//
-//    /* ====================  DATA MEMBERS  ======================================= */
-//    vector<Quadratic> Qfuncts;
-//
-//  private:
-//    /* ====================  METHODS       ======================================= */
-//
-//    /* ====================  DATA MEMBERS  ======================================= */
-//
-//}; /* -----  end of class QuadraticNwrap  ----- */
 
 /*
  * =====================================================================================
