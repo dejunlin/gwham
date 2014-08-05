@@ -35,6 +35,7 @@ class Functor
     Functor () {};                             /* constructor */
 
     /* ====================  ACCESSORS     ======================================= */
+    virtual vector<Input> getParams() const = 0;
 
     /* ====================  MUTATORS      ======================================= */
 
