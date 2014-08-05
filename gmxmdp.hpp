@@ -37,21 +37,7 @@ using namespace std;
  */
 class GMXMDP : public MDP
 {
-  public:
-    /* ====================  LIFECYCLE     ======================================= */
-    GMXMDP (const string& fname);    /* constructor */
-    virtual ~GMXMDP() { 
-    };
-
-    /* ====================  ACCESSORS     ======================================= */
-    virtual void print() const; /*  print out all the parameters read */
-
-    /* ====================  MUTATORS      ======================================= */
-
-    /* ====================  OPERATORS     ======================================= */
-    
   protected:
-      
     /*
      * =====================================================================================
      *        Class:  GMXGENERIC
@@ -68,6 +54,7 @@ class GMXMDP : public MDP
         virtual void print() const; /*  print out all the parameters read */
 
 	/* ====================  MUTATORS      ======================================= */
+	virtual void doublechk() throw(MDP_Exception); /*  check and combine parameters */
 
 	/* ====================  OPERATORS     ======================================= */
         //parse the generic parameters
@@ -103,6 +90,7 @@ class GMXMDP : public MDP
 	virtual vector<valtype> getL() const;
 
 	/* ====================  MUTATORS      ======================================= */
+	virtual void doublechk() throw(MDP_Exception); /*  check and combine parameters */
 
 	/* ====================  OPERATORS     ======================================= */
 	//parse the mdp options for FEP
@@ -145,6 +133,7 @@ class GMXMDP : public MDP
         virtual void print() const; /*  print out all the parameters read */
 
 	/* ====================  MUTATORS      ======================================= */
+	virtual void doublechk() throw(MDP_Exception); /*  check and combine parameters */
 
 	/* ====================  OPERATORS     ======================================= */
 	//parse the mdp options for pull
@@ -162,23 +151,25 @@ class GMXMDP : public MDP
 	  public:
 	    /* ====================  LIFECYCLE     ======================================= */
 	    GMXPULLGRP ();                             /* constructor */
+	    GMXPULLGRP (const vector<valtype>& _vec, const vector<valtype>& _init, const vector<valtype>& _initB, const valtype& _k, const valtype& _kB, const valtype& _r0,const valtype& _r0B,const valtype& _r1,const valtype& _r1B,const valtype& _k0,const valtype& _k0B,const valtype& _k1,const valtype& _k1B,const vector<valtype>& _Lrst);                             /* constructor */
 	    virtual ~GMXPULLGRP() {  };
 
 	    /* ====================  ACCESSORS     ======================================= */
             virtual void print() const; /*  print out all the parameters read */
 
 	    /* ====================  MUTATORS      ======================================= */
+	    virtual void doublechk() throw(MDP_Exception); /*  check and combine parameters */
 
 	    /* ====================  OPERATORS     ======================================= */
-	    //parse the mdp options for pull-group
-            virtual bool operator()(const string& opt, const string& optval, const string& i) throw(MDP_Exception, FILEIO_Exception);
+            virtual bool operator()(const string& opt, const string& optval, const string& i) throw(MDP_Exception, FILEIO_Exception); /* parse the mdp options for pull-group */
 
+	    vector<valtype> vec, init, initB;
+	    valtype k, kB, r0, r0B, r1, r1B, k0, k0B, k1, k1B;
+	    vector<valtype> Lrst; /* restraint-lambdas */
 	  protected:
 	    /* ====================  METHODS       ======================================= */
 
 	    /* ====================  DATA MEMBERS  ======================================= */
-	    vector<valtype> vec, init, initB;
-	    valtype k, kB;
 
 	  private:
 	    /* ====================  METHODS       ======================================= */
@@ -204,17 +195,19 @@ class GMXMDP : public MDP
             virtual void print() const; /*  print out all the parameters read */
 
 	    /* ====================  MUTATORS      ======================================= */
+	    virtual void doublechk() throw(MDP_Exception); /*  check and combine parameters */
 
 
 	    /* ====================  OPERATORS     ======================================= */
 	    //parse the mdp options for contact-group
             virtual bool operator()(const string& opt, const string& optval, const string& i) throw(MDP_Exception, FILEIO_Exception);
 
+	    valtype nc, ncB, k, kB;
+	    vector<valtype> Lcnt; /* contact-lambdas */
 	  protected:
 	    /* ====================  METHODS       ======================================= */
 
 	    /* ====================  DATA MEMBERS  ======================================= */
-	    valtype nc, ncB, k, kB;
 
 	  private:
 	    /* ====================  METHODS       ======================================= */
@@ -234,7 +227,23 @@ class GMXMDP : public MDP
 	/* ====================  DATA MEMBERS  ======================================= */
 
     }; /* -----  end of class PULL  ----- */
+    typedef GMXPULL::GMXPULLGRP GMXPULLGRP;
+    typedef GMXPULL::GMXPULLCNTGRP GMXPULLCNTGRP;
+  public:
+    /* ====================  LIFECYCLE     ======================================= */
+    GMXMDP (const string& fname);    /* constructor */
+    virtual ~GMXMDP() { 
+    };
 
+    /* ====================  ACCESSORS     ======================================= */
+    virtual void print() const; /*  print out all the parameters read */
+
+    /* ====================  MUTATORS      ======================================= */
+    virtual void doublechk() throw(MDP_Exception);
+    void setLPull(); 
+
+    /* ====================  OPERATORS     ======================================= */
+    
 
     /* ====================  METHODS       ======================================= */
 
@@ -242,7 +251,6 @@ class GMXMDP : public MDP
 
   private:
     /* ====================  METHODS       ======================================= */
-    void doublechk(); /*  check and combine the parameters */
 
     /* ====================  DATA MEMBERS  ======================================= */
 

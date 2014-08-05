@@ -43,14 +43,6 @@ GMXMDP::GMXMDP(const string& _fname):
   this->doublechk();
 }
 
-void GMXMDP::doublechk() {
-  if(pfep->fepT != FEP::NFEPTypes && pfep->getL().size() == 0) {
-    throw(MDP_Exception("FEP is activated but no lambda is set in MDP file: '" + fname + "'"));
-  }
-  if(dynamic_cast<GMXPULL*>(ppull)->pullT != GMXPULL::NPullTypes && dynamic_cast<GMXPULL*>(ppull)->npgrps == 0) {
-    throw(MDP_Exception("Pull is activated but no pull-group is defined in MDP file: '" + fname + "'"));
-  }
-}
 
 void GMXMDP::print() const {
   pgeneric->print();
@@ -58,9 +50,85 @@ void GMXMDP::print() const {
   ppull->print();
 }
 
+void GMXMDP::doublechk() throw(MDP_Exception) {
+  pgeneric->doublechk();
+  pfep->doublechk();
+
+  //we need to inform the pullgrp object about the FEP parameters
+  this->setLPull();
+  ppull->doublechk(); /*  this will also initialize the restraint functors */
+}
+
+void GMXMDP::setLPull() {
+  vector<PULLGRP*>& ppgrps = ppull->ppullgrps; 
+  switch (dynamic_cast<GMXPULL*>(ppull)->pullT) {
+    case GMXPULL::Umbrella:
+    case GMXPULL::UmbrellaFlatBottom: {
+      vector<valtype>& Lrst = pfep->Lrst;
+      switch (pfep->fepT) {
+	case FEP::Yes: {
+	  for(uint i = 0; i < ppgrps.size(); ++i) {
+	    GMXPULLGRP* ppgrp = dynamic_cast<GMXPULLGRP*>(ppgrps[i]);
+	    ppgrp->Lrst = vector<valtype>(1, Lrst[pfep->Linit]);
+	  }
+	  break;
+	}
+	case FEP::Expanded: {
+	  for(uint i = 0; i < ppgrps.size(); ++i) {
+	    GMXPULLGRP* ppgrp = dynamic_cast<GMXPULLGRP*>(ppgrps[i]);
+	    ppgrp->Lrst = Lrst;
+	  }
+	  break;
+	}
+	default:
+	  break;
+      }
+      break;
+    }
+    case GMXPULL::Contact: {
+      if(ppgrps.size() > 3) {
+        throw(MDP_Exception("Gromacs MDP can only have <= 3 contact groups for now"));
+      }
+      GMXFEP* pgmxfep = dynamic_cast<GMXFEP*>(pfep);
+      vector<vector<valtype> > Lcnts;
+      Lcnts.push_back(pgmxfep->Lcnt1);
+      Lcnts.push_back(pgmxfep->Lcnt2);
+      Lcnts.push_back(pgmxfep->Lcnt3);
+      switch (pfep->fepT) {
+	case FEP::Yes:
+	  for(uint i = 0; i < ppgrps.size(); ++i) {
+	    GMXPULLCNTGRP* ppgrp = dynamic_cast<GMXPULLCNTGRP*>(ppgrps[i]);
+	    ppgrp->Lcnt = vector<valtype>(1, Lcnts[i][pfep->Linit]);
+	  }
+	  break;
+	case FEP::Expanded:
+	  for(uint i = 0; i < ppgrps.size(); ++i) {
+	    GMXPULLCNTGRP* ppgrp = dynamic_cast<GMXPULLCNTGRP*>(ppgrps[i]);
+	    ppgrp->Lcnt = Lcnts[i];
+	  }
+	  break;
+	default:
+	  break;
+      }
+      break;
+    }
+    default:
+      break;
+  }
+}
+
 void GMXMDP::GMXGENERIC::print() const {
   printf("#%20s = %-10.5f\n", "Temperature", T);
   printf("#%20s = %-10.5f\n", "Pressure", P);
+}
+
+void GMXMDP::GMXGENERIC::doublechk() throw(MDP_Exception) {
+  if(T < 0) {
+    throw(MDP_Exception("Temperature is negative"));
+  }
+  if(P < 0) {
+    throw(MDP_Exception("Pressure is negative"));
+  }
 }
 
 bool GMXMDP::GMXGENERIC::operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception) {
@@ -113,9 +181,49 @@ void GMXMDP::GMXFEP::print() const {
   printf("#%20s = ", "cnt3-lambdas");
   copy(Lcnt3.begin(), Lcnt3.end(), ostream_iterator<valtype>(cout, " "));
   cout << endl;
+  printf("#  %20s = %-5d\n", "Initial L-State", Linit);
   printf("#  %20s = %-5d\n", "nstdhdl", nstdhdl);
   printf("#  %20s = %-5d\n", "nstexpanded", nstexpanded);
   printf("#  %20s = %-10.5lf\n", "mc-temperature", Tmc);
+}
+
+void GMXMDP::GMXFEP::doublechk() throw(MDP_Exception) {
+  if(fepT != FEP::NFEPTypes) {
+    if(getL().size() == 0) {
+      throw(MDP_Exception("FEP is activated but no lambda is set"));
+    }
+    if(Linit < 0) {
+      throw(MDP_Exception("FEP initial lambda must be a non-negative integer"));
+    }
+    uint NL = 0;
+    if(Lbond.size()) { NL = Lbond.size(); } 
+    if(Lmass.size()) { NL = Lmass.size(); } 
+    if(Lvdw.size()) { NL = Lvdw.size(); } 
+    if(Lcoul.size()) { NL = Lcoul.size(); } 
+    if(Lrst.size()) { NL = Lrst.size(); } 
+    if(Ltemp.size()) { NL = Ltemp.size(); } 
+    if(Lcnt1.size()) { NL = Lcnt1.size(); } 
+    if(Lcnt2.size()) { NL = Lcnt2.size(); } 
+    if(Lcnt3.size()) { NL = Lcnt3.size(); }
+    if(!Lbond.size()) { Lbond = vector<valtype>(NL, 0); }
+    else if(Lbond.size() != NL) { throw(MDP_Exception("FEP bond-lambda must be of the same size of other lambdas")); }
+    if(!Lmass.size()) { Lmass = vector<valtype>(NL, 0); }
+    else if(Lmass.size() != NL) { throw(MDP_Exception("FEP mass-lambda must be of the same size of other lambdas")); }
+    if(!Lvdw.size()) { Lvdw = vector<valtype>(NL, 0); }
+    else if(Lvdw.size() != NL) { throw(MDP_Exception("FEP vdw-lambda must be of the same size of other lambdas")); }
+    if(!Lcoul.size()) { Lcoul = vector<valtype>(NL, 0); }
+    else if(Lcoul.size() != NL) { throw(MDP_Exception("FEP coul-lambda must be of the same size of other lambdas")); }
+    if(!Lrst.size()) { Lrst = vector<valtype>(NL, 0); }
+    else if(Lrst.size() != NL) { throw(MDP_Exception("FEP rst-lambda must be of the same size of other lambdas")); }
+    if(!Ltemp.size()) { Ltemp = vector<valtype>(NL, 0); }
+    else if(Ltemp.size() != NL) { throw(MDP_Exception("FEP temp-lambda must be of the same size of other lambdas")); }
+    if(!Lcnt1.size()) { Lcnt1 = vector<valtype>(NL, 0); }
+    else if(Lcnt1.size() != NL) { throw(MDP_Exception("FEP cnt1-lambda must be of the same size of other lambdas")); }
+    if(!Lcnt2.size()) { Lcnt2 = vector<valtype>(NL, 0); }
+    else if(Lcnt2.size() != NL) { throw(MDP_Exception("FEP cnt2-lambda must be of the same size of other lambdas")); }
+    if(!Lcnt3.size()) { Lcnt3 = vector<valtype>(NL, 0); }
+    else if(Lcnt3.size() != NL) { throw(MDP_Exception("FEP cnt3-lambda must be of the same size of other lambdas")); }
+  }
 }
 
 vector<valtype> GMXMDP::GMXFEP::getL() const {
@@ -198,6 +306,45 @@ void GMXMDP::GMXPULL::print() const {
   }
 }
 
+void GMXMDP::GMXPULL::doublechk() throw(MDP_Exception) {
+  if(pullT != NPullTypes) {
+    if(npgrps == 0) {
+      throw(MDP_Exception("Pull is activated but no pull-group is defined"));
+    }
+    if(dim == 0) {
+      throw(MDP_Exception("Pull is activated but pull dimension is 0"));
+    } else {
+      //here we treat the position restraint as if there's a functor for each dimension
+      if((pullT == Umbrella || pullT == UmbrellaFlatBottom) && geomT == Position) {
+	vector<uint> bits(0);
+	for(uint i = 0; i < 2; ++i) { 
+	  if(dim & (i << 1)) {
+	    bits.push_back(i);
+	  }
+	}
+	for(vector<PULLGRP*>::iterator i = ppullgrps.begin(); i != ppullgrps.end(); ++i) {
+	  GMXPULLGRP* pi = dynamic_cast<GMXPULLGRP*>(*i);
+	  const vector<valtype> init = pi->init;
+	  const vector<valtype> initB = pi->initB;
+	  //handle j = 0 case
+	  pi->init = vector<valtype>(1, init[bits[0]]);
+	  pi->initB = vector<valtype>(1, initB[bits[0]]);
+	  for(uint j = 1; j < bits.size(); ++j) {
+	    const uint bit = bits[j];
+	    const vector<valtype> newinit(1, pi->init[bit]);
+            const vector<valtype> newinitB(1, pi->initB[bit]);
+	    i = ppullgrps.insert(i+1, new GMXPULLGRP(pi->vec, newinit, newinitB, pi->k, pi->kB, pi->r0, pi->r0B, pi->r1, pi->r1B, pi->k0, pi->k0B, pi->k1, pi->k1B, pi->Lrst)); 
+	  }
+	}
+      }
+    }
+
+    for(vector<PULLGRP*>::iterator i = ppullgrps.begin(); i != ppullgrps.end(); ++i) {
+      (*i)->doublechk();
+    }
+  }
+}
+
 bool GMXMDP::GMXPULL::operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception)
 {
   if(nocmmatchkey(opt, "pull")) {
@@ -270,21 +417,24 @@ bool GMXMDP::GMXPULL::operator()(const string& opt, const string& optval) throw(
   //make sure we initialize pullgrps properly
   if(npgrps) {
     switch (pullT) {
-      case Umbrella:
+      case Umbrella: {
         for(uint i = 0; i < npgrps; ++i) { 
 	  ppullgrps[i]->setRSTT(PULLGRP::Quad);
 	}
 	break;
-      case UmbrellaFlatBottom:
+      }
+      case UmbrellaFlatBottom: {
         for(uint i = 0; i < npgrps; ++i) { 
 	  ppullgrps[i]->setRSTT(PULLGRP::QuadFlat);
 	}
         break;
-      case Contact:
+      }
+      case Contact: {
         for(uint i = 0; i < npgrps; ++i) { 
 	  ppullgrps[i]->setRSTT(PULLGRP::Quad);
 	}
         break;
+      }
       default:
 	break;
     }
@@ -297,7 +447,48 @@ GMXMDP::GMXPULL::GMXPULLGRP::GMXPULLGRP() :
   init(vector<valtype>(0, 0.0)),
   initB(vector<valtype>(0, 0.0)),
   k(-1),
-  kB(-1)
+  kB(-1),
+  r0(-1),
+  r0B(-1),
+  r1(-1),
+  r1B(-1),
+  k0(-1),
+  k0B(-1),
+  k1(-1),
+  k1B(-1),
+  Lrst(vector<valtype>(0, 0.0))
+{
+}
+
+GMXMDP::GMXPULL::GMXPULLGRP::GMXPULLGRP(
+  const vector<valtype>& _vec, 
+  const vector<valtype>& _init,
+  const vector<valtype>& _initB,
+  const valtype& _k,
+  const valtype& _kB,
+  const valtype& _r0,
+  const valtype& _r0B,
+  const valtype& _r1,
+  const valtype& _r1B,
+  const valtype& _k0,
+  const valtype& _k0B,
+  const valtype& _k1,
+  const valtype& _k1B,
+  const vector<valtype>& _Lrst) :
+  vec(_vec),
+  init(_init),
+  initB(_initB),
+  k(_k),
+  kB(_kB),
+  r0(_r0),
+  r0B(_r0B),
+  r1(_r1),
+  r1B(_r1B),
+  k0(_k0),
+  k0B(_k0B),
+  k1(_k1),
+  k1B(_k1B),
+  Lrst(_Lrst)
 {
 }
 
@@ -314,8 +505,43 @@ void GMXMDP::GMXPULL::GMXPULLGRP::print() const {
   printf("#  %20s = %-10.5lf\n", "pull_rate", rate);
   printf("#  %20s = %-10.5lf\n", "pull_k", k);
   printf("#  %20s = %-10.5lf\n", "pull_kB", kB);
+  printf("#  %20s = %-10.5lf\n", "pull_r0", r0);
+  printf("#  %20s = %-10.5lf\n", "pull_r0B", r0B);
+  printf("#  %20s = %-10.5lf\n", "pull_r1", r1);
+  printf("#  %20s = %-10.5lf\n", "pull_r1B", r1B);
+  printf("#  %20s = %-10.5lf\n", "pull_k0", k0);
+  printf("#  %20s = %-10.5lf\n", "pull_k0B", k0B);
+  printf("#  %20s = %-10.5lf\n", "pull_k1", k1);
+  printf("#  %20s = %-10.5lf\n", "pull_k1B", k1B);
 }
 
+void GMXMDP::GMXPULL::GMXPULLGRP::doublechk() throw(MDP_Exception) {
+  switch (rstT) {
+    case Quad: {
+      for(uint i = 0; i < Lrst.size(); ++i) {
+	const valtype& L = Lrst[i];
+	const valtype ref = init[0] + (initB[0] - init[0])*L;
+	const valtype fconst = (k + (kB - k)*L)/2;
+	rstfunct.push_back(new Quadratic(fconst, ref, 0));
+      }
+      break;
+    }
+    case QuadFlat: {
+      for(uint i = 0; i < Lrst.size(); ++i) {
+	const valtype& L = Lrst[i];
+	const valtype ref = init[0] + (initB[0] - init[0])*L;
+	const valtype Lr = r0 + (r0B - r0)*L;
+	const valtype Rr = r1 + (r1B - r1)*L;
+	const valtype Lk = (k0 + (k0B - k0)*L)/2;
+	const valtype Rk = (k1 + (k1B - k1)*L)/2;
+	rstfunct.push_back(new QuadraticFlat(ref, Lr, Rr, Lk, Rk, 0));
+      }
+      break;
+    }
+    default:
+      break;
+  }
+}
 
 bool GMXMDP::GMXPULL::GMXPULLGRP::operator()(const string& opt, const string& optval, const string& i) throw(MDP_Exception, FILEIO_Exception)
 {
@@ -333,6 +559,22 @@ bool GMXMDP::GMXPULL::GMXPULLGRP::operator()(const string& opt, const string& op
     setsc(optval, k);
   } else if(nocmmatchkey(opt, "pull_kB" + i) || nocmmatchkey(opt, "pull-kB" + i)) {
     setsc(optval, kB);
+  } else if(nocmmatchkey(opt, "pull_umb_r0" + i)) {
+    setsc(optval, r0);
+  } else if(nocmmatchkey(opt, "pull_umb_r0B" + i)) {
+    setsc(optval, r0B);
+  } else if(nocmmatchkey(opt, "pull_umb_r1" + i)) {
+    setsc(optval, r1);
+  } else if(nocmmatchkey(opt, "pull_umb_r1B" + i)) {
+    setsc(optval, r1B);
+  } else if(nocmmatchkey(opt, "pull_umb_k0" + i)) {
+    setsc(optval, k0);
+  } else if(nocmmatchkey(opt, "pull_umb_k0B" + i)) {
+    setsc(optval, k0B);
+  } else if(nocmmatchkey(opt, "pull_umb_k1" + i)) {
+    setsc(optval, k1);
+  } else if(nocmmatchkey(opt, "pull_umb_k1B" + i)) {
+    setsc(optval, k1B);
   } else {
     return false;
   }
@@ -344,7 +586,8 @@ GMXMDP::GMXPULL::GMXPULLCNTGRP::GMXPULLCNTGRP() :
   nc(-1),
   ncB(-1),
   k(-1),
-  kB(-1)
+  kB(-1),
+  Lcnt(vector<valtype>(0, 0.0))
   {}
 
 void GMXMDP::GMXPULL::GMXPULLCNTGRP::print() const {
@@ -353,6 +596,22 @@ void GMXMDP::GMXPULL::GMXPULLCNTGRP::print() const {
   printf("#  %20s = %-10.5lf\n", "ncB", ncB);
   printf("#  %20s = %-10.5lf\n", "k", k);
   printf("#  %20s = %-10.5lf\n", "kB", kB);
+}
+
+void GMXMDP::GMXPULL::GMXPULLCNTGRP::doublechk() throw(MDP_Exception) {
+  switch (rstT) {
+    case Quad: {
+      for(uint i = 0; i < Lcnt.size(); ++i) {
+	const valtype& L = Lcnt[i];
+	const valtype ref = nc + (ncB - nc)*L;
+	const valtype fconst = (k + (kB - k)*L)/2;
+	rstfunct.push_back(new Quadratic(fconst, ref, 0));
+      }
+      break;
+    }
+    default:
+      break;
+  }
 }
 
 bool GMXMDP::GMXPULL::GMXPULLCNTGRP::operator()(const string& opt, const string& optval, const string& i) throw(MDP_Exception, FILEIO_Exception)

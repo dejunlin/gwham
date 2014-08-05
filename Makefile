@@ -1,8 +1,8 @@
 # Linux flags
 CC=g++
-CFLAGS= -Wall -W -O3 
+#CFLAGS= -Wall -W -O3 
 #Debugging flags
-#CFLAGS= -g  -Wall -W 
+CFLAGS= -g  -Wall -W 
 LFLAGS= -lm
 #Linux flags for intel compiler
 #CC=icc

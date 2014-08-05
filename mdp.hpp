@@ -58,6 +58,7 @@ class MDP
         valtype getP() const { return P; }; 
     
         /* ====================  MUTATORS      ======================================= */
+	virtual void doublechk() throw(MDP_Exception) = 0; /*  check and combine parameters */
     
         /* ====================  OPERATORS     ======================================= */
         //parse the generic parameters
@@ -117,6 +118,7 @@ class MDP
 	}
 
 	/* ====================  MUTATORS      ======================================= */
+	virtual void doublechk() throw(MDP_Exception) = 0; /*  check and combine parameters */
 
 	/* ====================  OPERATORS     ======================================= */
 	//parse the mdp options for FEP
@@ -158,27 +160,31 @@ class MDP
 	    enum RestraintType { Quad, QuadFlat, NRestraintTypes };
 	    RestraintType rstT;
 	    valtype rate;
-	    const Functor<valtype, valtype>* rstfunct;
+	    typedef vector<const Functor<valtype, valtype>* > vFunct; 
+	    vFunct rstfunct;
 
 	  public:
 	    /* ====================  LIFECYCLE     ======================================= */
 	    PULLGRP () :
 	      rstT(NRestraintTypes),
               rate(0.0),
-	      rstfunct(NULL)
+	      rstfunct(vFunct(0, NULL))
 	      {};                             /* constructor */
 
 	    virtual ~PULLGRP() {
-	      if(rstfunct) { delete rstfunct; }
+	      for(uint i = 0; i < rstfunct.size(); ++i) {
+	        if(rstfunct[i]) { delete rstfunct[i]; }
+	      }
 	    }
 
 	    /* ====================  ACCESSORS     ======================================= */
             virtual void print() const = 0; /*  print out all the parameters read */
 	    RestraintType getRSTT() const { return rstT; }
-	    const Functor<valtype, valtype>* getRSTF() const { return rstfunct; }
+	    const vFunct& getRSTF() const { return rstfunct; }
 
 	    /* ====================  MUTATORS      ======================================= */
 	    void setRSTT(const RestraintType& _rstT) { rstT = _rstT; }
+	    virtual void doublechk() throw(MDP_Exception) = 0; /*  check and combine parameters */
 
 	    /* ====================  OPERATORS     ======================================= */
 	    //parse the mdp options for pull-group
@@ -215,9 +221,9 @@ class MDP
 	/* ====================  ACCESSORS     ======================================= */
         virtual void print() const = 0; /*  print out all the parameters read */
 	uint getNPG() const { return npgrps; }
-	const vector<PULLGRP*>& getPPGRPS() const { return ppullgrps; }
 
 	/* ====================  MUTATORS      ======================================= */
+	virtual void doublechk() throw(MDP_Exception) = 0; /*  check and combine parameters */
 
 	/* ====================  OPERATORS     ======================================= */
 	//parse the mdp options for pull
@@ -226,12 +232,12 @@ class MDP
 	//bit mask of the pulled dimension in left-to-right order (e.g., 001 <=> Y N N, meaning only x dimention is pulled)
 	short dim;
 	uint npgrps;
+	vector<PULLGRP*> ppullgrps;
 
       protected:
 	/* ====================  METHODS       ======================================= */
 
 	/* ====================  DATA MEMBERS  ======================================= */
-	vector<PULLGRP*> ppullgrps;
 
       private:
 	/* ====================  METHODS       ======================================= */
@@ -302,7 +308,7 @@ class MDP
     typedef PULL::PULLGRP PULLGRP;
     typedef PULLGRP::RestraintType RSTType;
     vector<RSTType> getRestraintType() const {
-      const vector<PULLGRP*>& ppgrps = ppull->getPPGRPS();
+      const vector<PULLGRP*>& ppgrps = ppull->ppullgrps;
       vector<RSTType> rsts;
       for(uint i = 0; i < ppgrps.size(); ++i) {
 	rsts.push_back(ppgrps[i]->getRSTT());
@@ -311,15 +317,18 @@ class MDP
     };
 
     vector<const Functor<valtype, valtype>* > getRestraintFunctor() const {
-      const vector<PULLGRP*>& ppgrps = ppull->getPPGRPS();
-      vector<const Functor<valtype, valtype>* > rstfuncts;
+      const vector<PULLGRP*>& ppgrps = ppull->ppullgrps;
+      typedef PULL::PULLGRP::vFunct vFunct;
+      vFunct rstfuncts(0);
       for(uint i = 0; i < ppgrps.size(); ++i) {
-	rstfuncts.push_back(ppgrps[i]->getRSTF());
+	const vFunct& functs = ppgrps[i]->getRSTF();
+	rstfuncts.insert(rstfuncts.end(), functs.begin(), functs.end());
       }
       return rstfuncts;
     };
 
     /* ====================  MUTATORS      ======================================= */
+    virtual void doublechk() throw(MDP_Exception) = 0; /*  check and combine parameters; should be called at the end of the constructor */
 
     /* ====================  OPERATORS     ======================================= */
 
