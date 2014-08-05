@@ -410,7 +410,8 @@ bool GMXMDP::GMXPULL::operator()(const string& opt, const string& optval) throw(
     return true;
   } else {
     for(uint i = 0; i < npgrps; ++i) {
-	if(ppullgrps[i] && (*ppullgrps[i])(opt, optval, tostr(i))) { return true; }
+      const string gid = pullT == Contact ? tostr(i) : tostr(i+1);
+      if(ppullgrps[i] && (*ppullgrps[i])(opt, optval, gid)) { return true; }
     }
     return false;
   } 
@@ -513,6 +514,13 @@ void GMXMDP::GMXPULL::GMXPULLGRP::print() const {
   printf("#  %20s = %-10.5lf\n", "pull_k0B", k0B);
   printf("#  %20s = %-10.5lf\n", "pull_k1", k1);
   printf("#  %20s = %-10.5lf\n", "pull_k1B", k1B);
+  printf("#  %20s = %-5lu\n", "Nfunctors", rstfunct.size());
+  for(uint i = 0; i < rstfunct.size(); ++i) {
+    printf("#    %20s%-5u = ", "Functor", i);
+    const vector<valtype> params = rstfunct[i]->getParams();
+    copy(params.begin(), params.end(), ostream_iterator<valtype>(cout, " "));
+    cout << endl;
+  }
 }
 
 void GMXMDP::GMXPULL::GMXPULLGRP::doublechk() throw(MDP_Exception) {
@@ -596,6 +604,13 @@ void GMXMDP::GMXPULL::GMXPULLCNTGRP::print() const {
   printf("#  %20s = %-10.5lf\n", "ncB", ncB);
   printf("#  %20s = %-10.5lf\n", "k", k);
   printf("#  %20s = %-10.5lf\n", "kB", kB);
+  printf("#  %20s = %-5lu\n", "Nfunctors", rstfunct.size());
+  for(uint i = 0; i < rstfunct.size(); ++i) {
+    printf("#    %20s%-5u = ", "Functor", i);
+    const vector<valtype> params = rstfunct[i]->getParams();
+    copy(params.begin(), params.end(), ostream_iterator<valtype>(cout, " "));
+    cout << endl;
+  }
 }
 
 void GMXMDP::GMXPULL::GMXPULLCNTGRP::doublechk() throw(MDP_Exception) {
