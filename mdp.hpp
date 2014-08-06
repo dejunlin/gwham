@@ -107,7 +107,7 @@ class MDP
 	/* ====================  ACCESSORS     ======================================= */
         virtual void print() const = 0; /*  print out all the parameters read */
 	virtual FEPType getFEPT() const { return fepT; }
-	virtual vector<valtype> getL() const {
+	virtual vector<valtype> getAllLambdas() const {
 	  vector<valtype> allL(Lbond.begin(), Lbond.end());
 	  allL.insert(allL.end(), Lmass.begin(), Lmass.end());
 	  allL.insert(allL.end(), Lvdw.begin(), Lvdw.end());
@@ -115,6 +115,16 @@ class MDP
 	  allL.insert(allL.end(), Lrst.begin(), Lrst.end());
 	  allL.insert(allL.end(), Ltemp.begin(), Ltemp.end());
 	  return allL;
+	}
+	virtual vector<valtype> getInitLambdas() const {
+	  vector<valtype> initL;
+	  initL.push_back(Lbond[Linit]);
+	  initL.push_back(Lmass[Linit]);
+	  initL.push_back(Lvdw[Linit]);
+	  initL.push_back(Lcoul[Linit]);
+	  initL.push_back(Lrst[Linit]);
+	  initL.push_back(Ltemp[Linit]);
+	  return initL;
 	}
 
 	/* ====================  MUTATORS      ======================================= */
@@ -247,6 +257,7 @@ class MDP
     }; /* -----  end of class PULL  ----- */
 
   public:
+    typedef PULL::PULLGRP::vFunct vFunct;
     /* ====================  LIFECYCLE     ======================================= */
     MDP (const string& _fname) : 
       fname(_fname),
@@ -271,20 +282,20 @@ class MDP
 	throw(MDP_Exception("Comparing a constant-P MDP with a nonconstant-P MDP"));
       } else if( mdp.hasFEPLambda() !=  this->hasFEPLambda() ) {
 	throw(MDP_Exception("Comparing a FEP MDP with a non-FEP MDP"));
-      } else if( mdp.getFEPType() !=  this->getFEPType() ) {
-	throw(MDP_Exception("Comparing a MDP of FEP Type '" + tostr(mdp.getFEPType()) + "' to another of FEP type '" + tostr(this->getFEPType()) + "'"));
-      } else if( mdp.getFEPLambda().size() !=  this->getFEPLambda().size() ) {
-	throw(MDP_Exception("Comparing two MDP's of incompatible FEP Lambdas (of different dimensions)"));
       } else if( mdp.hasRestraint() !=  this->hasRestraint() ) {
-	throw(MDP_Exception("Comparing a Restrained MDP with a non-Restrained MDP"));
-      } else if( mdp.getRestraintType().size() !=  this->getRestraintType().size() ) {
-	throw(MDP_Exception("Comparing two Restrained MDP's of incompatible restraint types (of different dimensions)"));
+	throw(MDP_Exception("Comparing a Restrained MDP with a non-Restrained MDP. You might want to add a dummy potential to the non-restrained one."));
+      } else if( mdp.getNPullGroups() !=  this->getNPullGroups() ) {
+	throw(MDP_Exception("Comparing two Restrained MDP's of different number of pull-groups. You might want to add a dummy potential to the non-restrained one"));
       } else {
 	QtMask |= uint(mdp.getTemperature() != this->getTemperature()) << Temperature;
 	QtMask |= uint(mdp.getPressure() != this->getPressure()) << Pressure;
-	QtMask |= uint(mdp.getFEPLambda() != this->getFEPLambda()) << Lambdas;
-	vector<const Functor<valtype, valtype>* > myfuncts = this->getRestraintFunctor();
-	vector<const Functor<valtype, valtype>* > theirfuncts = mdp.getRestraintFunctor();
+	if(this->getFEPType() != FEP::NFEPTypes || mdp.getFEPType() != FEP::NFEPTypes) {
+	  //whenenver FEP is activated, we assume that we have to histogram on 
+	  //the perturbation energy anyway...
+	  QtMask |= (1 << Lambdas);
+	}
+	vFunct myfuncts = this->getRestraintFunctor();
+	vFunct theirfuncts = mdp.getRestraintFunctor();
 	for(uint i = 0; i < myfuncts.size(); ++i) {
 	  if(*myfuncts[i] != *theirfuncts[i]) { 
 	    QtMask |= 1 << Restraints; 
@@ -303,22 +314,25 @@ class MDP
     valtype getTemperature() const { return pgeneric->getT(); }; 
     valtype getPressure() const { return pgeneric->getP(); };
     FEP::FEPType getFEPType() const { return pfep->getFEPT(); };
-    vector<valtype> getFEPLambda() const  { return pfep->getL(); };
+    const vector<valtype>& getLbond() const { return pfep->Lbond; }
+    const vector<valtype>& getLmass() const { return pfep->Lmass; }
+    const vector<valtype>& getLvdw() const { return pfep->Lvdw; }
+    const vector<valtype>& getLcoul() const { return pfep->Lcoul; }
+    const vector<valtype>& getLrst() const { return pfep->Lrst; }
+    const vector<valtype>& getLtemp() const { return pfep->Ltemp; }
+    valtype getLinit() const { return pfep->Linit; }
+    vector<valtype> getFEPAllLambdas() const  { return pfep->getAllLambdas(); };
+    vector<valtype> getFEPInitLambdas() const  { return pfep->getInitLambdas(); };
 
     typedef PULL::PULLGRP PULLGRP;
     typedef PULLGRP::RestraintType RSTType;
-    vector<RSTType> getRestraintType() const {
-      const vector<PULLGRP*>& ppgrps = ppull->ppullgrps;
-      vector<RSTType> rsts;
-      for(uint i = 0; i < ppgrps.size(); ++i) {
-	rsts.push_back(ppgrps[i]->getRSTT());
-      }
-      return rsts;
-    };
+    
+    uint getNPullGroups() const {
+      return ppull->npgrps;
+    }
 
-    vector<const Functor<valtype, valtype>* > getRestraintFunctor() const {
+    vFunct getRestraintFunctor() const {
       const vector<PULLGRP*>& ppgrps = ppull->ppullgrps;
-      typedef PULL::PULLGRP::vFunct vFunct;
       vFunct rstfuncts(0);
       for(uint i = 0; i < ppgrps.size(); ++i) {
 	const vFunct& functs = ppgrps[i]->getRSTF();

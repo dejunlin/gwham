@@ -50,6 +50,31 @@ void GMXMDP::print() const {
   ppull->print();
 }
 
+uint GMXMDP::cmp(const MDP& mdp) const throw (MDP_Exception) {
+  uint QtMask = MDP::cmp(mdp);
+  //in case of 2 MDP are different in both Lambdas and Restraints
+  //we want to skip Lambdas if the only difference in FEP is restraint-lambdas
+  //and we will shout out loud once we do that since there're positional restraints
+  //in GROMACS that can't be detected in MDP file (which doesn't conserve momentum either)
+  if( (QtMask & (1 << Lambdas)) && (QtMask & (1 << Restraints)) ) {
+    const uint myLsize = this->getLbond().size(); /*  assume we already make sure all lambdas have the same dimension */
+    const uint theirLsize = mdp.getLbond().size();
+    const vector<valtype> myzeros(myLsize, 0); 
+    const vector<valtype> theirzeros(theirLsize, 0);
+    if(this->getLbond() == myzeros && mdp.getLbond() == theirzeros &&
+       this->getLmass() == myzeros && mdp.getLmass() == theirzeros &&
+       this->getLvdw() == myzeros && mdp.getLvdw() == theirzeros &&
+       this->getLcoul() == myzeros && mdp.getLcoul() == theirzeros &&
+       this->getLtemp() == myzeros && mdp.getLtemp() == theirzeros
+      ) {
+      cout << "# In file " << fname << ": FEP is turned on but only restraint is affected so we won't histogram on the perturbation energy\n";
+      QtMask ^= (1 << Lambdas);
+    }
+  }
+  //TODO: we need to handle if only Temperature-lambda are non-zero and expanded ensemble is turned on...
+  return QtMask;
+}
+
 void GMXMDP::doublechk() throw(MDP_Exception) {
   pgeneric->doublechk();
   pfep->doublechk();
@@ -189,7 +214,7 @@ void GMXMDP::GMXFEP::print() const {
 
 void GMXMDP::GMXFEP::doublechk() throw(MDP_Exception) {
   if(fepT != FEP::NFEPTypes) {
-    if(getL().size() == 0) {
+    if(getAllLambdas().size() == 0) {
       throw(MDP_Exception("FEP is activated but no lambda is set"));
     }
     if(Linit < 0) {
@@ -226,13 +251,21 @@ void GMXMDP::GMXFEP::doublechk() throw(MDP_Exception) {
   }
 }
 
-vector<valtype> GMXMDP::GMXFEP::getL() const {
+vector<valtype> GMXMDP::GMXFEP::getAllLambdas() const {
   vector<valtype> Lcnts(Lcnt1.begin(), Lcnt1.end());
   Lcnts.insert(Lcnts.end(), Lcnt2.begin(), Lcnt2.end());
   Lcnts.insert(Lcnts.end(), Lcnt3.begin(), Lcnt3.end());
-  vector<valtype> allL = FEP::getL();
+  vector<valtype> allL = FEP::getAllLambdas();
   allL.insert(allL.end(), Lcnts.begin(), Lcnts.end());
   return allL;
+}
+
+vector<valtype> GMXMDP::GMXFEP::getInitLambdas() const {
+  vector<valtype> initL = FEP::getInitLambdas();
+  initL.push_back(Lcnt1[Linit]);
+  initL.push_back(Lcnt2[Linit]);
+  initL.push_back(Lcnt3[Linit]);
+  return initL;
 }
 
 bool GMXMDP::GMXFEP::operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception)

@@ -87,7 +87,8 @@ class GMXMDP : public MDP
 
 	/* ====================  ACCESSORS     ======================================= */
         virtual void print() const; /*  print out all the parameters read */
-	virtual vector<valtype> getL() const;
+	virtual vector<valtype> getAllLambdas() const;
+	virtual vector<valtype> getInitLambdas() const;
 
 	/* ====================  MUTATORS      ======================================= */
 	virtual void doublechk() throw(MDP_Exception); /*  check and combine parameters */
@@ -237,6 +238,7 @@ class GMXMDP : public MDP
 
     /* ====================  ACCESSORS     ======================================= */
     virtual void print() const; /*  print out all the parameters read */
+    virtual uint cmp(const MDP& mdp) const throw (MDP_Exception);
 
     /* ====================  MUTATORS      ======================================= */
     virtual void doublechk() throw(MDP_Exception);
