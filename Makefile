@@ -26,7 +26,7 @@ OBJSMBARGMX463UMB=ensemble.o  gmxmdp.o gmxmdpio.o fileio_utils.o fileio.o  gmxpu
 OBJSUMB=ensemble.o fileio_utils.o fileio.o gwham_umb.o 
 OBJSMC=ensemble.o mc.o fileio_utils.o
 OBJSGMBAR=gmbar.o 
-HEADER_FILES=densityofstate.hpp  ensemble.hpp  fileio.hpp  fileio_utils.hpp mdp.hpp gmxmdp.hpp gmxmdpio.hpp  gmxpullpot.hpp  gmxxvgio.hpp  gnarray.hpp  gwham.hpp  hamiltonian.hpp  typedefs.hpp mc.hpp gmbar.hpp trjsubtrj.hpp
+HEADER_FILES=densityofstate.hpp  ensemble.hpp  fileio.hpp  fileio_utils.hpp mdp.hpp gmxmdp.hpp gmxmdpio.hpp  gmxpullpot.hpp  gmxxvgio.hpp  gnarray.hpp  gwham.hpp  hamiltonian.hpp  typedefs.hpp mc.hpp gmbar.hpp 
 all: gwham_gromacs463_umb gwham_gromacs463_umbfb mc gmbar_gromacs463_umb gwham_umb 
 
 ran2.o: ran2.c
