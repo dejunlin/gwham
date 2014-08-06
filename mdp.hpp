@@ -31,7 +31,7 @@ using namespace std;
  */
 
 //The thermodynamic quantities we care about
-enum Qt {Temperature, Pressure, Lambdas, Restraints};
+enum Qt {Temperature, Pressure, Restraints, BondLambdas, Masslambdas, VdwLambdas, CoulLambdas, TemperatureLambdas};
 
 class MDP
 {
@@ -289,10 +289,8 @@ class MDP
       } else {
 	QtMask |= uint(mdp.getTemperature() != this->getTemperature()) << Temperature;
 	QtMask |= uint(mdp.getPressure() != this->getPressure()) << Pressure;
-	if(this->getFEPType() != FEP::NFEPTypes || mdp.getFEPType() != FEP::NFEPTypes) {
-	  //whenenver FEP is activated, we assume that we have to histogram on 
-	  //the perturbation energy anyway...
-	  QtMask |= (1 << Lambdas);
+	//whenenver FEP is activated for both MDP, we assume that we have to histogram on the perturbation energy anyway...
+	if( mdp.hasFEPLambda() && this->hasFEPLambda() ) {
 	}
 	vFunct myfuncts = this->getRestraintFunctor();
 	vFunct theirfuncts = mdp.getRestraintFunctor();
@@ -309,7 +307,32 @@ class MDP
     bool hasTemperature() const { return pgeneric->getT() > 0; }; 
     bool hasPressure() const { return pgeneric->getP() > 0; };; 
     bool hasFEPLambda() const { return pfep->getFEPT() != FEP::NFEPTypes; }; 
-    bool hasRestraint() const { return ppull->getNPG() != 0; }; 
+    bool hasRestraint() const { return ppull->getNPG() != 0; };
+    bool hasBondLambda() const { 
+      const vector<valtype>& Lbond = this->getLbond();
+      const vector<valtype> zeros(Lbond.size(), 0.0);
+      return Lbond != zeros;
+    }
+    bool hasMassLambda() const { 
+      const vector<valtype>& Lmass = this->getLmass();
+      const vector<valtype> zeros(Lmass.size(), 0.0);
+      return Lmass != zeros;
+    }
+    bool hasVdwLambda() const { 
+      const vector<valtype>& Lvdw = this->getLvdw();
+      const vector<valtype> zeros(Lvdw.size(), 0.0);
+      return Lvdw != zeros;
+    }
+    bool hasCoulLambda() const { 
+      const vector<valtype>& Lcoul = this->getLcoul();
+      const vector<valtype> zeros(Lcoul.size(), 0.0);
+      return Lcoul != zeros;
+    }
+    bool hasTempLambda() const { 
+      const vector<valtype>& Ltemp = this->getLtemp();
+      const vector<valtype> zeros(Ltemp.size(), 0.0);
+      return Ltemp != zeros;
+    }
 
     valtype getTemperature() const { return pgeneric->getT(); }; 
     valtype getPressure() const { return pgeneric->getP(); };
