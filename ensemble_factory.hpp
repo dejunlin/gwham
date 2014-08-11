@@ -18,6 +18,7 @@
  * =====================================================================================
  */
 #include "mdp.hpp"
+#include "exception.hpp"
 #include <vector>
 
 /*
@@ -30,7 +31,7 @@ class Ensemble_Factory
 {
   public:
     /* ====================  LIFECYCLE     ======================================= */
-    Ensemble_Factory (const vector<MDP*>& mdps);                             /* constructor */
+    Ensemble_Factory (const vector<MDP*>& mdps) throw(Ensemble_Factory_Exception);                             /* constructor */
 
     /* ====================  ACCESSORS     ======================================= */
 
@@ -42,11 +43,15 @@ class Ensemble_Factory
     /* ====================  METHODS       ======================================= */
 
     /* ====================  DATA MEMBERS  ======================================= */
-    //These bits (left to right) tell if the following thermodynamic quantites (in 
-    //the same order defined in MDP::Qt) are different among different mdps:
-    //temperatures, pressures, lambdas, restraints 
-    uint QtMask; 
-
+    //! Thermodynamic quantities masks 
+    /* These bits (left to right) tell if the following 
+     * thermodynamic quantites (in the same order defined 
+     * in MDP::Qt) are different among different mdps: 
+     * temperatures, pressures, lambdas, restraints
+     */
+    uint QtMask;
+    //! vector of ensembles functor
+    vPEns ensembles; 
   private:
     /* ====================  METHODS       ======================================= */
 

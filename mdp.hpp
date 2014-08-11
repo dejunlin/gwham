@@ -47,6 +47,7 @@ class MDP
       public:
         /* ====================  LIFECYCLE     ======================================= */
         GENERIC () :
+	  kB(-1),
           T(-1),
           P(-1)
 	  {};                             /* constructor */
@@ -54,6 +55,7 @@ class MDP
     
         /* ====================  ACCESSORS     ======================================= */
         virtual void print() const = 0; /*  print out all the parameters read */
+	valtype getkB() const { return kB; };
         valtype getT() const { return T; }; 
         valtype getP() const { return P; }; 
     
@@ -68,9 +70,12 @@ class MDP
         /* ====================  METHODS       ======================================= */
     
         /* ====================  DATA MEMBERS  ======================================= */
-        //reference temperature and pressure NOTE these parameters might not be relevant
-        //to the WHAM calculation since some FEP parameters might overwrite these
-        valtype T, P;
+        //! Boltzman constant, reference temperature and pressure 
+	/* NOTE these parameters might not be relevant 
+	 * to the WHAM calculation since some FEP parameters 
+	 * might overwrite these
+	 */
+	 valtype kB, T, P;
     
       private:
         /* ====================  METHODS       ======================================= */
@@ -170,15 +175,14 @@ class MDP
 	    enum RestraintType { Quad, QuadFlat, NRestraintTypes };
 	    RestraintType rstT;
 	    valtype rate;
-	    typedef vector<const Functor<valtype, valtype>* > vFunct; 
-	    vFunct rstfunct;
+	    vPFunct rstfunct;
 
 	  public:
 	    /* ====================  LIFECYCLE     ======================================= */
 	    PULLGRP () :
 	      rstT(NRestraintTypes),
               rate(0.0),
-	      rstfunct(vFunct(0, NULL))
+	      rstfunct(vPFunct(0, NULL))
 	      {};                             /* constructor */
 
 	    virtual ~PULLGRP() {
@@ -190,7 +194,7 @@ class MDP
 	    /* ====================  ACCESSORS     ======================================= */
             virtual void print() const = 0; /*  print out all the parameters read */
 	    RestraintType getRSTT() const { return rstT; }
-	    const vFunct& getRSTF() const { return rstfunct; }
+	    const vPFunct& getRSTF() const { return rstfunct; }
 
 	    /* ====================  MUTATORS      ======================================= */
 	    void setRSTT(const RestraintType& _rstT) { rstT = _rstT; }
@@ -257,7 +261,7 @@ class MDP
     }; /* -----  end of class PULL  ----- */
 
   public:
-    typedef PULL::PULLGRP::vFunct vFunct;
+    typedef PULL::PULLGRP::vPFunct vPFunct;
     /* ====================  LIFECYCLE     ======================================= */
     MDP (const string& _fname) : 
       fname(_fname),
@@ -302,8 +306,8 @@ class MDP
 	  QtMask |= uint( mdp.getLrst() != this->getLrst() && !(mdp.getLrst() != theirzeros && this->getLrst() != myzeros) ) << RestraintLambdas;
 	  QtMask |= uint( mdp.getLtemp() != this->getLtemp() && !(mdp.getLtemp() != theirzeros && this->getLtemp() != myzeros) ) << TemperatureLambdas;
 	}
-	vFunct myfuncts = this->getRestraintFunctor();
-	vFunct theirfuncts = mdp.getRestraintFunctor();
+	vPFunct myfuncts = this->getRestraintFunctor();
+	vPFunct theirfuncts = mdp.getRestraintFunctor();
 	for(uint i = 0; i < myfuncts.size(); ++i) {
 	  if(*myfuncts[i] != *theirfuncts[i]) { 
 	    QtMask |= 1 << Restraints; 
@@ -343,7 +347,8 @@ class MDP
       const vector<valtype> zeros(Ltemp.size(), 0.0);
       return Ltemp != zeros;
     }
-
+    
+    valtype getkB() const { return pgeneric->getkB(); }
     valtype getTemperature() const { return pgeneric->getT(); }; 
     valtype getPressure() const { return pgeneric->getP(); };
     FEP::FEPType getFEPType() const { return pfep->getFEPT(); };
@@ -363,12 +368,13 @@ class MDP
     uint getNPullGroups() const {
       return ppull->npgrps;
     }
-
-    vFunct getRestraintFunctor() const {
+    
+    //! Return a vector of restraint functors from the pull-groups
+    vPFunct getRestraintFunctor() const {
       const vector<PULLGRP*>& ppgrps = ppull->ppullgrps;
-      vFunct rstfuncts(0);
+      vPFunct rstfuncts(0);
       for(uint i = 0; i < ppgrps.size(); ++i) {
-	const vFunct& functs = ppgrps[i]->getRSTF();
+	const vPFunct& functs = ppgrps[i]->getRSTF();
 	rstfuncts.insert(rstfuncts.end(), functs.begin(), functs.end());
       }
       return rstfuncts;

@@ -36,4 +36,9 @@ class Functor_Exception: public General_Exception {
     Functor_Exception(const string& _msg) : General_Exception("Functor exception: " + _msg) {};  
 };
 
+class Ensemble_Factory_Exception : public General_Exception {
+  public:
+    Ensemble_Factory_Exception(const string& _msg) : General_Exception("Ensemble Factory exception: " + _msg) {};
+}
+
 #endif

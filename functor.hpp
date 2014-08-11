@@ -59,6 +59,12 @@ class Functor
 
 }; /* ----------  end of template class Functor  ---------- */
 
+//! short-hand definition for a vector of functors
+/** We can use smart-pointer here if the performance 
+ * is good
+ */
+typedef const Functor<valtype, valtype>* cpFunctorVV;
+typedef vector< cpFunctorVV > vPFunct; 
 
 /*
  * =====================================================================================

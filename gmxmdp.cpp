@@ -144,6 +144,8 @@ void GMXMDP::GMXGENERIC::doublechk() throw(MDP_Exception) {
 }
 
 bool GMXMDP::GMXGENERIC::operator()(const string& opt, const string& optval) throw(MDP_Exception, FILEIO_Exception) {
+  //first set the boltzman constant in GROMACS unit (kJ/(mol*K))
+  kB = 0.0083144621;
   if(nocmmatchkey(opt, "ref-t") || nocmmatchkey(opt, "ref_t")) {
     setsc(optval, T);
   } else if(nocmmatchkey(opt, "ref-p") || nocmmatchkey(opt, "ref_p")) {
