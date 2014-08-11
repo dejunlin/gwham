@@ -52,26 +52,13 @@ void GMXMDP::print() const {
 
 uint GMXMDP::cmp(const MDP& mdp) const throw (MDP_Exception) {
   uint QtMask = MDP::cmp(mdp);
-  //in case of 2 MDP are different in both Lambdas and Restraints
-  //we want to skip Lambdas if the only difference in FEP is restraint-lambdas
-  //and we will shout out loud once we do that since there're positional restraints
-  //in GROMACS that can't be detected in MDP file (which doesn't conserve momentum either)
-  if( (QtMask & (1 << Lambdas)) && (QtMask & (1 << Restraints)) ) {
-    const uint myLsize = this->getLbond().size(); /*  assume we already make sure all lambdas have the same dimension */
-    const uint theirLsize = mdp.getLbond().size();
-    const vector<valtype> myzeros(myLsize, 0); 
-    const vector<valtype> theirzeros(theirLsize, 0);
-    if(this->getLbond() == myzeros && mdp.getLbond() == theirzeros &&
-       this->getLmass() == myzeros && mdp.getLmass() == theirzeros &&
-       this->getLvdw() == myzeros && mdp.getLvdw() == theirzeros &&
-       this->getLcoul() == myzeros && mdp.getLcoul() == theirzeros &&
-       this->getLtemp() == myzeros && mdp.getLtemp() == theirzeros
-      ) {
-      cout << "# In file " << fname << ": FEP is turned on but only restraint is affected so we won't histogram on the perturbation energy\n";
-      QtMask ^= (1 << Lambdas);
-    }
-  }
   //TODO: we need to handle if only Temperature-lambda are non-zero and expanded ensemble is turned on...
+  //Turn off Restraint-Lambdas when Restraint is on. NOTE that position restraint 
+  //can also be affected by Restraint-Lambdas. TODO: we need a better way to find out if position restraint interactions are affected.
+  if((QtMask & Restraints) && (QtMask & RestraintLambdas)) {
+    cout << "# In file " << fname << ": Restraint and FEP restraint-lambda are both turned on but we can only handle pulling interaction not position restraint, the latter is affected by restraint-lambda also; we manually turn off restraint-lambda here\n";
+    QtMask ^= (1 << RestraintLambdas);
+  }
   return QtMask;
 }
 

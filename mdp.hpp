@@ -31,7 +31,7 @@ using namespace std;
  */
 
 //The thermodynamic quantities we care about
-enum Qt {Temperature, Pressure, Restraints, BondLambdas, Masslambdas, VdwLambdas, CoulLambdas, TemperatureLambdas};
+enum Qt {Temperature, Pressure, Restraints, BondLambdas, MassLambdas, VdwLambdas, CoulLambdas, RestraintLambdas, TemperatureLambdas};
 
 class MDP
 {
@@ -291,6 +291,16 @@ class MDP
 	QtMask |= uint(mdp.getPressure() != this->getPressure()) << Pressure;
 	//whenenver FEP is activated for both MDP, we assume that we have to histogram on the perturbation energy anyway...
 	if( mdp.hasFEPLambda() && this->hasFEPLambda() ) {
+	  const uint myLsize = this->getLbond().size(); /*  assume we already make sure all lambdas have the same dimension */
+          const uint theirLsize = mdp.getLbond().size(); 
+          const vector<valtype> myzeros(myLsize, 0); 
+          const vector<valtype> theirzeros(theirLsize, 0);
+	  QtMask |= uint( mdp.getLbond() != this->getLbond() && !(mdp.getLbond() != theirzeros && this->getLbond() != myzeros) ) << BondLambdas;
+	  QtMask |= uint( mdp.getLmass() != this->getLmass() && !(mdp.getLmass() != theirzeros && this->getLmass() != myzeros) ) << MassLambdas;
+	  QtMask |= uint( mdp.getLvdw() != this->getLvdw() && !(mdp.getLvdw() != theirzeros && this->getLvdw() != myzeros) ) << VdwLambdas;
+	  QtMask |= uint( mdp.getLcoul() != this->getLcoul() && !(mdp.getLcoul() != theirzeros && this->getLcoul() != myzeros) ) << CoulLambdas;
+	  QtMask |= uint( mdp.getLrst() != this->getLrst() && !(mdp.getLrst() != theirzeros && this->getLrst() != myzeros) ) << RestraintLambdas;
+	  QtMask |= uint( mdp.getLtemp() != this->getLtemp() && !(mdp.getLtemp() != theirzeros && this->getLtemp() != myzeros) ) << TemperatureLambdas;
 	}
 	vFunct myfuncts = this->getRestraintFunctor();
 	vFunct theirfuncts = mdp.getRestraintFunctor();
