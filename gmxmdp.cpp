@@ -56,7 +56,7 @@ uint GMXMDP::cmp(const MDP& mdp) const throw (MDP_Exception) {
   //Turn off Restraint-Lambdas when Restraint is on. NOTE that position restraint 
   //can also be affected by Restraint-Lambdas. TODO: we need a better way to find out if position restraint interactions are affected.
   if((QtMask & Restraints) && (QtMask & RestraintLambdas)) {
-    cout << "# In file " << fname << ": Restraint and FEP restraint-lambda are both turned on but we can only handle pulling interaction not position restraint, the latter is affected by restraint-lambda also; we manually turn off restraint-lambda here\n";
+    cout << "# In file " << fname << ": Restraint and FEP restraint-lambda are both turned on but we can only handle pulling interaction not position restraint, the latter of which is affected by restraint-lambda also; we manually turn off restraint-lambda here\n";
     QtMask ^= (1 << RestraintLambdas);
   }
   return QtMask;
