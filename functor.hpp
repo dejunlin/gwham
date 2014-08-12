@@ -41,8 +41,18 @@ class Functor
 
     /* ====================  OPERATORS     ======================================= */
     virtual Output operator() (const Input& in) const = 0;
-    virtual bool operator== (const Functor<Input, Output>& rhs) const = 0;
-      virtual bool operator!= (const Functor<Input, Output>& rhs) const {
+
+    template < class TheirType >
+    bool operator== (const TheirType& rhs) const {
+      try {
+	const TheirType& lhs = dynamic_cast<const TheirType&>(*this);
+	return &lhs == &rhs || lhs.getParams() == rhs.getParams();
+      } catch (bad_cast& bcex) {
+	return false;
+      }
+    };
+
+    virtual bool operator!= (const Functor<Input, Output>& rhs) const {
       return !this->operator==(rhs);
     };
     virtual ~Functor() {};
@@ -102,15 +112,6 @@ class Quadratic : public Functor<valtype, valtype>
       return k*dr*dr + c;
     };
 
-    virtual bool operator== (const Functor<valtype, valtype>& rhs) const {
-      if(this == &rhs) { return true; }
-      try {
-	const Quadratic& rrhs = dynamic_cast<const Quadratic&>(rhs);
-        return this->getParams() == rrhs.getParams();
-      } catch (bad_cast& bcex) {
-	return false;
-      }
-    };
   protected:
     /* ====================  METHODS       ======================================= */
 
@@ -176,15 +177,6 @@ class QuadraticFlat : public Functor<valtype, valtype>
       }
     }
 
-    virtual bool operator== (const Functor<valtype, valtype>& rhs) const {
-      if(this == &rhs) { return true; }
-      try {
-	const QuadraticFlat& rrhs = dynamic_cast<const QuadraticFlat&>(rhs);
-        return this->getParams() == rrhs.getParams();
-      } catch (bad_cast& bcex) {
-	return false;
-      }
-    };
   protected:
     /* ====================  METHODS       ======================================= */
 
