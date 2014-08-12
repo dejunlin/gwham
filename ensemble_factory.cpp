@@ -43,10 +43,14 @@ Ensemble_Factory::Ensemble_Factory(const vector<MDP*>& mdps) throw(Ensemble_Fact
       //NOTE that the restraint functors rstfuncts is a vector of 
       //pointer to functors, which are created in the MDP class 
       //and will be destroyed once the MDP object goes out of scope.
-      //We should use smart-pointer for the functor pointer
+      //TODO: We should use smart-pointer for the functor pointer in the future
+      //by simply changing the typedef for vFunct
       const MDP* const mdp = mdps[i];
-      const vPFunct& rstfuncts = mdp->getRestraintFunctor();
-      vPEns.push_back(new NVT(mdp->getkB(), mdp->getTemperature(), mdp->getPressure(), Hamiltonian(rstfuncts))); 
+      vPEns.push_back(new NVT(mdp->getkB(), mdp->getTemperature(), mdp->getPressure(), Hamiltonian(mdp->getRestraintFunctor()))); 
     }
   }
+}
+
+const vPEns& Ensemble_Factory::getEnsemble() const { 
+  return ensembles;
 }
