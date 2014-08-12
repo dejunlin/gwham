@@ -261,7 +261,6 @@ class MDP
     }; /* -----  end of class PULL  ----- */
 
   public:
-    typedef PULL::PULLGRP::vPFunct vPFunct;
     /* ====================  LIFECYCLE     ======================================= */
     MDP (const string& _fname) : 
       fname(_fname),
