@@ -1,3 +1,6 @@
+#if !defined(TIMESERIES_HPP)
+#define TIMESERIES_HPP
+
 /*
  * =====================================================================================
  *
@@ -15,6 +18,11 @@
  *
  * =====================================================================================
  */
+#include "typedefs.hpp"
+#include "fileio.hpp"
+#include "exception.hpp"
+#include <vector>
+#include "column_processor.hpp"
 
 /*
  * =====================================================================================
@@ -27,19 +35,21 @@ class TimeSeries
 {
   public:
     /* ====================  LIFECYCLE     ======================================= */
-    TimeSeries (fileio& _fio) : fio(_fio) {};                             /* constructor */
+    TimeSeries (fileio& _fio, const vector<column_processor>& _cps) : fio(_fio), cps(_cps) {};                             /* constructor */
 
     /* ====================  ACCESSORS     ======================================= */
 
     /* ====================  MUTATORS      ======================================= */
 
     /* ====================  OPERATORS     ======================================= */
+    virtual linecounter operator()(const string& fname, Output& data) = 0;
 
   protected:
     /* ====================  METHODS       ======================================= */
 
     /* ====================  DATA MEMBERS  ======================================= */
     fileio fio;
+    const vector<column_processor> cps;
 
   private:
     /* ====================  METHODS       ======================================= */
@@ -48,3 +58,4 @@ class TimeSeries
 
 }; /* ----------  end of template class TimeSeries  ---------- */
 
+#endif
