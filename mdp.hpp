@@ -175,26 +175,21 @@ class MDP
 	    enum RestraintType { Quad, QuadFlat, NRestraintTypes };
 	    RestraintType rstT;
 	    valtype rate;
-	    vPFunct rstfunct;
+	    vFunctVV rstfunct;
 
 	  public:
 	    /* ====================  LIFECYCLE     ======================================= */
 	    PULLGRP () :
 	      rstT(NRestraintTypes),
               rate(0.0),
-	      rstfunct(vPFunct(0, NULL))
+	      rstfunct(vFunctVV(0))
 	      {};                             /* constructor */
 
-	    virtual ~PULLGRP() {
-	      for(uint i = 0; i < rstfunct.size(); ++i) {
-	        if(rstfunct[i]) { delete rstfunct[i]; }
-	      }
-	    }
+	    virtual ~PULLGRP() {}
 
 	    /* ====================  ACCESSORS     ======================================= */
             virtual void print() const = 0; /*  print out all the parameters read */
 	    RestraintType getRSTT() const { return rstT; }
-	    const vPFunct& getRSTF() const { return rstfunct; }
 
 	    /* ====================  MUTATORS      ======================================= */
 	    void setRSTT(const RestraintType& _rstT) { rstT = _rstT; }
@@ -305,14 +300,7 @@ class MDP
 	  QtMask |= uint( mdp.getLrst() != this->getLrst() && !(mdp.getLrst() != theirzeros && this->getLrst() != myzeros) ) << RestraintLambdas;
 	  QtMask |= uint( mdp.getLtemp() != this->getLtemp() && !(mdp.getLtemp() != theirzeros && this->getLtemp() != myzeros) ) << TemperatureLambdas;
 	}
-	vPFunct myfuncts = this->getRestraintFunctor();
-	vPFunct theirfuncts = mdp.getRestraintFunctor();
-	for(uint i = 0; i < myfuncts.size(); ++i) {
-	  if(*myfuncts[i] != *theirfuncts[i]) { 
-	    QtMask |= 1 << Restraints; 
-	    break; 
-	  }
-	}
+	QtMask |= uint( mdp.getRestraintFunctor() != this->getRestraintFunctor() ) << Restraints;
       }
       return QtMask;
     }; /*  compare with another mdp object */
@@ -369,12 +357,12 @@ class MDP
     }
     
     //! Return a vector of restraint functors from the pull-groups
-    vPFunct getRestraintFunctor() const {
+    vFunctVV getRestraintFunctor() const {
       const vector<PULLGRP*>& ppgrps = ppull->ppullgrps;
-      vPFunct rstfuncts(0);
+      vFunctVV rstfuncts;
       for(uint i = 0; i < ppgrps.size(); ++i) {
-	const vPFunct& functs = ppgrps[i]->getRSTF();
-	rstfuncts.insert(rstfuncts.end(), functs.begin(), functs.end());
+	for(const FunctVV& f : ppgrps[i]->rstfunct)
+	  rstfuncts.push_back(f);
       }
       return rstfuncts;
     };

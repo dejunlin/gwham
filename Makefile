@@ -2,8 +2,8 @@
 CC=g++
 #CFLAGS= -Wall -W -O3 
 #Debugging flags
-CFLAGS= -g  -Wall -W 
-LFLAGS= -lm
+CFLAGS= -g -Wall -W -std=c++11
+LFLAGS= -lm -std=c++11
 #Linux flags for intel compiler
 #CC=icc
 #CFLAGS= -fast -Wall
