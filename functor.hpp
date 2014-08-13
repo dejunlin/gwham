@@ -52,7 +52,8 @@ class Functor
       }
     };
 
-    virtual bool operator!= (const Functor<Input, Output>& rhs) const {
+    template < class TheirType >
+    bool operator!= (const TheirType& rhs) const {
       return !this->operator==(rhs);
     };
     virtual ~Functor() {};
