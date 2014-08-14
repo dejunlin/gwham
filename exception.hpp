@@ -3,7 +3,7 @@
 
 #include <exception>
 #include <errno.h>
-#include <string>
+#include <cstring>
 
 using namespace std;
 
