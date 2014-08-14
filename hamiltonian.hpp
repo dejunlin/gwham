@@ -22,15 +22,15 @@
 
 class Hamiltonian {
   public:
-    Hamiltonian(const vPFunct& _potentials);
+    Hamiltonian(const vFunctVV& _potentials);
     Hamiltonian(const Hamiltonian& _H);
     //! return the functors
-    const vPFunct& getPotentialFuncts() const;
+    const vFunctVV& getPotentialFuncts() const;
     //! return the total energy (only potential energy for now)
     valtype ener(const vector<valtype>& vals) const; 
   private:
     //! potential energy functors
-    const vPFunct potentials; 
+    const vFunctVV potentials; 
 };
 
 #endif
