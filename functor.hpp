@@ -39,6 +39,7 @@ class Functor
     /* ====================  LIFECYCLE     ======================================= */
     //! Default constructor
     Functor() = default;
+
     //! Delegating constructor
     /** Only works if Tfunctor::getParams() is implemented
      */
@@ -46,20 +47,25 @@ class Functor
 
     //! Target constructor
     Functor (const Tf& _funct, const Params& _params) : funct(_funct), params(_params) {};
+
     //! Target constructor enabling move semantics in Params
     Functor (const Tf& _funct, const Params&& _params) : funct(_funct), params(move(_params)) {};
 
+    //! Destructor
     virtual ~Functor() {};
+
     /* ====================  ACCESSORS     ======================================= */
     virtual const Params& getParams() const { return this->params; };
 
     /* ====================  MUTATORS      ======================================= */
 
     /* ====================  OPERATORS     ======================================= */
+    //! calculate the function value
     virtual Output operator() (const Input&... in) const {
       return funct(in...);
     };
 
+    //! == with another object
     template < class TheirType >
     bool operator== (const TheirType& rhs) const {
       try {
@@ -70,6 +76,7 @@ class Functor
       }
     };
 
+    //! =! with another object
     template < class TheirType >
     bool operator!= (const TheirType& rhs) const {
       return !this->operator==(rhs);
@@ -79,7 +86,9 @@ class Functor
     /* ====================  METHODS       ======================================= */
 
     /* ====================  DATA MEMBERS  ======================================= */
+    //! The virtual functor that does the caclulation
     const Tf funct;
+    //! The parameters associated with the virtual functor
     const Params params;
 
   private:
@@ -91,6 +100,8 @@ class Functor
 
 //! short-hand definition for scalar double -> scalar double function
 typedef Functor<vector<valtype>, valtype, valtype> FunctVV;
+
+//! short-hand for a vector of scalar functors
 typedef vector< FunctVV > vFunctVV; 
 
 /*
@@ -102,34 +113,51 @@ typedef vector< FunctVV > vFunctVV;
 class Quadratic 
 {
   public:
+    //! The elements in the Quadratic::params array
     enum ParamEnum { K, R0, C };
     /* ====================  LIFECYCLE     ======================================= */
+    //! construct an empty object
     Quadratic() : Quadratic(vector<valtype>({0,0,0})) {};
+
+    //! copy constructor
     Quadratic(const Quadratic& src) : Quadratic(src.getParams()) {};
+
+    //! construct from a list of parameters
     Quadratic (const valtype& _k, const valtype& _r0, const valtype& _c=0) :
       Quadratic(vector<valtype>({_k, _r0, _c}))
     {};
-
-    Quadratic(const vector<valtype>&& _params) :
+    
+    //! construct from a vector (rvalue)
+    Quadratic(const vector<valtype>&& _params) try : 
       params(move(_params)),
-      k(params[K]), r0(params[R0]), c(params[C]) 
-    {};
+      k(params.at(K)), r0(params.at(R0)), c(params.at(C)) 
+    {
+      if(params.size() != 3) { throw out_of_range(""); }
+    } catch(const out_of_range& orex) {
+	throw(Functor_Exception("Quadratic functor can only be constructed from 3 parameters"));
+    };
 
-    Quadratic(const vector<valtype>& _params) :
+    //! consttruct from a vector (lvalue)
+    Quadratic(const vector<valtype>& _params) try :
       params(_params),
-      k(params[K]), r0(params[R0]), c(params[C]) 
-    {};
+      k(params.at(K)), r0(params.at(R0)), c(params.at(C)) 
+    {
+      if(params.size() != 3) { throw out_of_range(""); }
+    } catch(const out_of_range& orex) {
+	throw(Functor_Exception("Quadratic functor can only be constructed from 3 parameters"));
+    };
 
+    //! destructor
     virtual ~Quadratic() {};
 
     /* ====================  ACCESSORS     ======================================= */
-    virtual vector<valtype> getParams() const {
-      return params;
-    };
+    //! return the parameters
+    virtual vector<valtype> getParams() const { return params; };
 
     /* ====================  MUTATORS      ======================================= */
 
     /* ====================  OPERATORS     ======================================= */
+    //! calculate the value of the quadratic function
     virtual valtype operator() (const valtype& r) const {
       const valtype dr = r - r0;
       return k*dr*dr + c;
@@ -139,7 +167,9 @@ class Quadratic
     /* ====================  METHODS       ======================================= */
 
     /* ====================  DATA MEMBERS  ======================================= */
+    //! a vector of parameters
     const vector<valtype> params;
+    //! reference to the elements in params
     const valtype& k, r0, c; 
 
   private:
