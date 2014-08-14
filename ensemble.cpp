@@ -23,7 +23,7 @@ NVT::NVT(const valtype _kB, const valtype _T, const Hamiltonian& _H):
 
 valtype NVT::ener(const vector<valtype>& vals) const {
   // Note that we don't do bound-check here
-  return H(vals)/(kB*T);
+  return H.ener(vals)/(kB*T);
 }
 
 NPT::NPT(const valtype _kB, const valtype _T, const Hamiltonian& _H, const valtype _P):
@@ -38,6 +38,6 @@ valtype NPT::ener(const vector<valtype>& vals) const {
   // by just assuming the hamiltonian functor
   // will use and only use as many as it needs
   // so that the last element is the volumn term
-  return (H(vals) + P*vals.back())/(kB*T);
+  return (H.ener(vals) + P*vals.back())/(kB*T);
 }
 
