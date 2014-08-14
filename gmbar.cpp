@@ -7,6 +7,10 @@
 
 using namespace std;
 
+const valtype GMBAR::kB = 0.0083144621;
+const valtype GMBAR::T = 300;
+
+
 GMBAR::GMBAR(const vector<vector<vector<valtype> > >& dEs, const vector<uint>& N, const vector<valtype>& _f, const valtype& _tol):
   f(_f),
   tol(_tol)

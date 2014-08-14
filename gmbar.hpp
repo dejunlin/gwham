@@ -13,8 +13,8 @@ class GMBAR {
     GMBAR(const vector<vector<vector<valtype> > >& dEs, const vector<uint>& N, const vector<valtype>& _f, const valtype& _tol);
     const vector<valtype>& getf() const;
   private:
-    static const valtype kB = 0.0083144621;
-    static const valtype T = 300;
+    static const valtype kB;
+    static const valtype T;
     //!max number of iterations
     static const ulong MAXIT = 1000000;
     //! free energy of each state
