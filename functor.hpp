@@ -22,6 +22,7 @@
 #include <functional>
 #include "typedefs.hpp"
 #include "exception.hpp"
+#include <stdexcept>
 
 /*
  * =====================================================================================
