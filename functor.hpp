@@ -27,34 +27,34 @@
 
 /*
  * =====================================================================================
- *        Class:  Functor
+ *        Class:  FunctorWrapper
  *  Description:  Wrapper to all kinds of functors with basic comparison operator
  *                Note that the comparison only works if the rhs provides implementation 
  *                of getParams() member function
  * =====================================================================================
  */
 template < class Params, class Output, class ... Input >
-class Functor
+class FunctorWrapper
 {
   public:
     typedef function<Output(Input...)> Tf; 
     /* ====================  LIFECYCLE     ======================================= */
     //! Default constructor
-    Functor() = default;
+    FunctorWrapper() = default;
 
     //! Delegating constructor
     /** Only works if Tfunctor::getParams() is implemented
      */
-    template < class Tfunctor > Functor (const Tfunctor& _f) : Functor(Tf(_f), _f.getParams())  {};
+    template < class Tfunctor > FunctorWrapper (const Tfunctor& _f) : FunctorWrapper(Tf(_f), _f.getParams())  {};
 
     //! Target constructor
-    Functor (const Tf& _funct, const Params& _params) : funct(_funct), params(_params) {};
+    FunctorWrapper (const Tf& _funct, const Params& _params) : funct(_funct), params(_params) {};
 
     //! Target constructor enabling move semantics in Params
-    Functor (const Tf& _funct, const Params&& _params) : funct(_funct), params(move(_params)) {};
+    FunctorWrapper (const Tf& _funct, const Params&& _params) : funct(_funct), params(move(_params)) {};
 
     //! Destructor
-    virtual ~Functor() {};
+    virtual ~FunctorWrapper() {};
 
     /* ====================  ACCESSORS     ======================================= */
     virtual const Params& getParams() const { return this->params; };
@@ -63,8 +63,8 @@ class Functor
 
     /* ====================  OPERATORS     ======================================= */
     //! calculate the function value
-    virtual Output operator() (const Input&... in) const {
-      return funct(in...);
+    virtual Output operator() (const Input... in) const {
+      return funct(forward<Input...>(in...));
     };
 
     //! == with another object
@@ -98,13 +98,74 @@ class Functor
 
     /* ====================  DATA MEMBERS  ======================================= */
 
-}; /* ----------  end of template class Functor  ---------- */
+}; /* ----------  end of template class FunctorWrapper  ---------- */
 
 //! short-hand definition for scalar double -> scalar double function
-typedef Functor<vector<valtype>, valtype, valtype> FunctVV;
+typedef FunctorWrapper<vector<valtype>, valtype, valtype&> FunctVV;
 
 //! short-hand for a vector of scalar functors
 typedef vector< FunctVV > vFunctVV; 
+
+/*
+ * =====================================================================================
+ *        Class:  Functor
+ *  Description:  Generic functor class where the user can just plug in a custom 
+ *                function (or function pointer) and can treat the arguments as 
+ *                either parameters or arguments for this->operator()
+ * =====================================================================================
+ */
+//! Primary template
+template < class ... T > class Functor; 
+//! Partially specialized for a functor using compiler-time fixed-size container as parameter holder
+template < 
+	   template <class, class...> class Funct,
+	   class Output,
+	   class ... Arg,
+           template <class,size_t> class ParamsContainer,
+           class ParamsContained,
+	   class ParamsOutput,
+	   class ... Params
+         >
+class Functor < 
+                Funct<Output(Arg...)>,
+                ParamsContainer<ParamsContained, sizeof...(Params)>, 
+	        ParamsOutput,
+	        Params... 
+	      >
+{
+  public:
+    //! functor type
+    typedef Funct<Output(Arg...)> Tf; 
+    //! Number of parameters
+    constexpr static uint Nparams = sizeof...(Params);
+    //! parameters type
+    typedef ParamsContainer<ParamsContained, Nparams> Tp;
+    /* ====================  LIFECYCLE     ======================================= */
+    //! Construct from a functor and a list of parameters
+    Functor (const Tf& _funct, const Params&... params) : Functor(_funct, Tp{params...}) {};
+    //! Construct from a functor and a container of parameters -- Target constructor
+    Functor (const Tf& _funct, const Tp& _params) : funct(_funct), params(_params) {};
+
+    /* ====================  ACCESSORS     ======================================= */
+    //! Get the parameters
+    const Tp& _getParams() const { return params; };
+    //! Output the parameters (to other wrapper/interface) 
+    //TODO: we know the size of this->params at compile-time and should be able to unroll it here
+    const ParamsOutput getParams() const { return ParamsOutput(params.begin(), params.end()); };
+
+    /* ====================  OPERATORS     ======================================= */
+    //! Evaluate the functor
+    /** Note that we really need perfect forwarding here because 'arg' is 
+     * lvalue in this function body but Tf::operator() could take rvalue
+     */
+    Output operator()(Arg... arg) const { return funct(forward<Arg...>(arg...)); };
+  protected:
+    /* ====================  METHODS       ======================================= */
+
+    /* ====================  DATA MEMBERS  ======================================= */
+    const Tf funct;
+    const Tp params;
+}; /* ----------  end of template class Functor  ---------- */
 
 /*
  * =====================================================================================
