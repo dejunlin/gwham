@@ -23,6 +23,7 @@
 #include "typedefs.hpp"
 #include "exception.hpp"
 #include <stdexcept>
+#include <array>
 
 /*
  * =====================================================================================
@@ -115,45 +116,40 @@ class Quadratic
 {
   public:
     //! The elements in the Quadratic::params array
-    enum ParamEnum { K, R0, C };
+    enum ParamEnum { K, R0, C, NPARAM };
+    typedef array<valtype, NPARAM> Params;
     /* ====================  LIFECYCLE     ======================================= */
     //! construct an empty object
-    Quadratic() : Quadratic(vector<valtype>({0,0,0})) {};
+    Quadratic() : Quadratic(0,0,0) {};
 
     //! copy constructor
-    Quadratic(const Quadratic& src) : Quadratic(src.getParams()) {};
+    Quadratic(const Quadratic& src) : Quadratic(src._getParams()) {};
 
     //! construct from a list of parameters
     Quadratic (const valtype& _k, const valtype& _r0, const valtype& _c=0) :
-      Quadratic(vector<valtype>({_k, _r0, _c}))
+      Quadratic({_k, _r0, _c})
     {};
     
     //! construct from a vector (rvalue)
-    Quadratic(const vector<valtype>&& _params) try : 
+    Quadratic(const Params&& _params) : 
       params(move(_params)),
       k(params.at(K)), r0(params.at(R0)), c(params.at(C)) 
-    {
-      if(params.size() != 3) { throw out_of_range(""); }
-    } catch(const out_of_range& orex) {
-	throw(Functor_Exception("Quadratic functor can only be constructed from 3 parameters"));
-    };
+    {};
 
     //! consttruct from a vector (lvalue)
-    Quadratic(const vector<valtype>& _params) try :
+    Quadratic(const Params& _params) :
       params(_params),
       k(params.at(K)), r0(params.at(R0)), c(params.at(C)) 
-    {
-      if(params.size() != 3) { throw out_of_range(""); }
-    } catch(const out_of_range& orex) {
-	throw(Functor_Exception("Quadratic functor can only be constructed from 3 parameters"));
-    };
+    {};
 
     //! destructor
     virtual ~Quadratic() {};
 
     /* ====================  ACCESSORS     ======================================= */
-    //! return the parameters
-    virtual vector<valtype> getParams() const { return params; };
+    //! return the parameters (vector interface)
+    virtual vector<valtype> getParams() const { return vector<valtype>(params.begin(), params.end()); };
+    //! return the parameters (array interface)
+    virtual const Params& _getParams() const { return params; }
 
     /* ====================  MUTATORS      ======================================= */
 
@@ -169,7 +165,7 @@ class Quadratic
 
     /* ====================  DATA MEMBERS  ======================================= */
     //! a vector of parameters
-    const vector<valtype> params;
+    const Params params;
     //! reference to the elements in params
     const valtype& k, r0, c; 
 
