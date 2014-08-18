@@ -15,7 +15,7 @@
  *
  * =====================================================================================
  */
-
+#include <iostream>
 /*
  * =====================================================================================
  *        Class:  condition dependent type 
@@ -156,4 +156,24 @@ struct make_indices< false, Indices, Propagator<Indices, PropagatorArg>, Termina
 template < class Indices, class Propagator, class Terminator > 
 struct make_indices<true, Indices, Propagator, Terminator> {
   typedef Indices type;
+};
+
+
+/*
+ * =====================================================================================
+ *        Class:  Container Copier 
+ *  Description:  These helper classes copy the subset of a container of type Src into 
+ *                another container of Type Des where the size of Src is known at 
+ *                compilation time. The subset to be copied is identified by a list of 
+ *                indices. 
+ * =====================================================================================
+ */
+//! Primary template
+template < class Src, class Des, class ... Sub > struct ContainerCopier{};
+//! Copy a subset
+template < class Src, class Des, template <size_t...> class I, size_t ... indices > 
+struct ContainerCopier<Src, Des, I<indices...> > {
+  ContainerCopier(Src src) : value({src[indices]...,}) {
+  };
+  Des value;
 };
