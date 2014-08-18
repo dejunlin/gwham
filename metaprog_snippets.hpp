@@ -84,58 +84,50 @@ struct Extract_Elements< I<indices...>, I<>, I<output...> >  {
  * =====================================================================================
  *        Class:  Indices generator for constexpr integer 
  *  Description:  These helper classes define a compile-time sequence 
- *                Indices<N1, N2, ..., > for a given N1, a propagator template P<N> 
- *                where Ni+1 == P<Ni>::value and a termination condition T<Indices<N1...> >
- *                that determine the end of the sequence.
+ *                Indices<N1, N2, ..., > for a given N1, a propagator template P<Indices<N1,...> > 
+ *                where Ni+1 == P<Indices<N1,N2,...,Ni> >::value and a termination 
+ *                condition T<Indices<N1...> > that determine the end of the sequence.
  *                The idea is to recursively define a nested type in the helper template
  *                class make_indices where a new Ni is pushed back in Indices<N1..., Ni-1> 
  *                at each recursion step until the termination condistion is satisfied
  * =====================================================================================
  */
 //! These are the propagators
-//! Propagate the sequence indices...,Ni by appending a new element Ni+dN
-template < size_t dN > struct IncrdN {
-  /** This nested template is needed in order to hide the parameter dN
-   * from the user. E.g., if another template class takes a templated class
-   * with one type parameter as parameter, we should plug in the alias:
-   * template < class T > using Incr = typename IncrdN<N>::template Incr<T>;
-   */
-  template < class T > struct Incr{};
-  template < size_t ... indices, template <size_t...> class I>
-  struct Incr<I<indices...> > {
-    constexpr static size_t Ni = Last_Index<indices...>::value;
-    typedef I<indices..., Ni+dN> type;
-  };
+//! Propagate the arithmetic sequence with a commone difference of dN and initial term Ni
+template < class T, class Arg > struct ArithmeticSeq{};
+template < size_t ... indices, template <size_t...> class I, size_t Ni, size_t dN>
+struct ArithmeticSeq<I<indices...>, I<Ni, dN> > {
+  typedef I<indices..., Ni+dN> type;
+  typedef I<Ni+dN, dN> seed;
 };
+
 //! Propagate the Fibonacci sequence
-template < class T > struct Fibonacci{};
-template < size_t ... indices, template <size_t...> class I > 
-struct Fibonacci<I<indices...> > {
+template < class T, class Arg > struct Fibonacci{};
+template < size_t ... indices, template <size_t...> class I, size_t Ni, size_t Nj > 
+struct Fibonacci<I<indices...>, I<Ni,Nj> > {
   typedef I<indices...> Indices;
-  constexpr static size_t j = sizeof...(indices);
-  constexpr static size_t i = j-1;
-  constexpr static size_t k = Extract_One_Element<Indices, i>::value + Extract_One_Element<Indices, j>::value;
-  typedef I<indices..., k> type;
+  typedef I<indices..., Ni+Nj> type;
+  typedef I<Nj, Ni+Nj> seed; 
 };
 
 template <template <size_t...> class I >
-struct Fibonacci<I<> > {
-  typedef typename Fibonacci<I<1, 1> >::type type;
+struct Fibonacci<I<>, I<> > {
+  typedef typename Fibonacci<I<1, 1>, I<1,1> >::type type;
+  typedef I<1, 2> seed;
 };
 
 template <template <size_t...> class I >
-struct Fibonacci<I<1> > {
-  typedef typename Fibonacci<I<1, 1> >::type type;
+struct Fibonacci<I<1>, I<> > {
+  typedef typename Fibonacci<I<1, 1>, I<1,1> >::type type;
+  typedef I<1, 2> seed;
 };
 
 //! These are the termination condition
 //! Terminate if a maximum number of elements is reached in the sequence
-template < size_t Max > struct StopIfMax {
-  template < class T > struct StopIfMaxN {};
-  template < size_t ... indices, template <size_t...> class I> 
-  struct StopIfMaxN<I<indices...> > {
-    constexpr static bool decision = sizeof...(indices) >= Max ? true : false;
-  };
+template < class T, class Arg > struct StopAtMaxN {};
+template < size_t ... indices, template <size_t...> class I, size_t Max> 
+struct StopAtMaxN<I<indices...>, I<Max> > {
+  constexpr static bool decision = sizeof...(indices) >= Max ? true : false;
 };
 
 //! This is the target type to be generated
@@ -146,13 +138,16 @@ template < bool Terminate, class Indices, class Propagator, class Terminator >
 struct make_indices{};
 //! Propagate if Terminate == false
 template < class Indices, 
-	   template <class> class Propagator, 
-	   template <class> class Terminator 
+	   template <class, class> class Propagator,
+	   class PropagatorArg, 
+	   template <class, class> class Terminator, 
+	   class TerminatorArg 
 	 >
-struct make_indices< false, Indices, Propagator<Indices>, Terminator<Indices> > {
-  typedef typename Propagator<Indices>::type newIndices;
-  typedef Propagator<newIndices> newPropagator;
-  typedef Terminator<newIndices> newTerminator;
+struct make_indices< false, Indices, Propagator<Indices, PropagatorArg>, Terminator<Indices, TerminatorArg> > {
+  typedef typename Propagator<Indices, PropagatorArg>::type newIndices;
+  typedef typename Propagator<Indices, PropagatorArg>::seed newPropagatorArg;
+  typedef Propagator<newIndices,newPropagatorArg> newPropagator;
+  typedef Terminator<newIndices,TerminatorArg> newTerminator;
   constexpr static bool newdecision = newTerminator::decision;
   typedef typename make_indices<newdecision, newIndices, newPropagator, newTerminator>::type type; 
 };
