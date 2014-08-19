@@ -24,6 +24,10 @@
 #include "exception.hpp"
 #include <stdexcept>
 #include <array>
+#include <utility>
+#include "metaprog_snippets.hpp"
+
+using namespace std;
 
 /*
  * =====================================================================================
@@ -135,23 +139,25 @@ class Functor <
 {
   public:
     //! functor type
-    typedef Funct<Output(Arg...)> Tf; 
+    typedef Funct<Output(Arg...)> Tf;
     //! Number of parameters
     constexpr static uint Nparams = sizeof...(Params);
     //! parameters type
     typedef ParamsContainer<ParamsContained, Nparams> Tp;
+    //! Here we make a index sequence for the parameters
+    typedef ArithmeticSeq<IndexSeq<>, IndexSeq<> > IndexSeqGen;
+    typedef StopAtMaxN<IndexSeq<>, IndexSeq<Nparams> > IndexSeqStop;
+    typedef typename make_index_seq<IndexSeqStop::decision, IndexSeq<>,  IndexSeqGen, IndexSeqStop>::type ParamIndex;
+
     /* ====================  LIFECYCLE     ======================================= */
     //! Construct from a functor and a list of parameters
-    Functor (const Tf& _funct, const Params&... params) : Functor(_funct, Tp{params...}) {};
-    //! Construct from a functor and a container of parameters -- Target constructor
-    Functor (const Tf& _funct, const Tp& _params) : funct(_funct), params(_params) {};
+    Functor (const Tf& _funct, const Params... params) : Functor(_funct, Tp{params...}, ParamIndex()) {};
 
     /* ====================  ACCESSORS     ======================================= */
     //! Get the parameters
     const Tp& _getParams() const { return params; };
     //! Output the parameters (to other wrapper/interface) 
-    //TODO: we know the size of this->params at compile-time and should be able to unroll it here
-    const ParamsOutput getParams() const { return ParamsOutput(params.begin(), params.end()); };
+    const ParamsOutput& getParams() const { return paramsout; };
 
     /* ====================  OPERATORS     ======================================= */
     //! Evaluate the functor
@@ -161,10 +167,18 @@ class Functor <
     Output operator()(Arg... arg) const { return funct(forward<Arg...>(arg...)); };
   protected:
     /* ====================  METHODS       ======================================= */
+    //! Construct from a functor and a container of parameters -- Target constructor
+    /** Note the last argument has to be provided at the called site since the 
+     * template parameters can't be deduced from default function argument
+     */
+    template < size_t ... indices >
+    Functor (const Tf& _funct, const Tp& _params, const IndexSeq<indices...> paramid) : 
+      funct(_funct), params(_params), paramsout{params[indices]...} {};
 
     /* ====================  DATA MEMBERS  ======================================= */
     const Tf funct;
-    const Tp params;
+    Tp params;
+    const ParamsOutput paramsout;
 }; /* ----------  end of template class Functor  ---------- */
 
 /*
@@ -188,7 +202,7 @@ class Quadratic
 
     //! construct from a list of parameters
     Quadratic (const valtype& _k, const valtype& _r0, const valtype& _c=0) :
-      Quadratic({_k, _r0, _c})
+      Quadratic(Params{_k, _r0, _c})
     {};
     
     //! construct from a vector (rvalue)
