@@ -88,7 +88,7 @@ struct Extract_Elements< I<indices...>, I<>, I<output...> >  {
  *                where Ni+1 == P<Indices<N1,N2,...,Ni> >::value and a termination 
  *                condition T<Indices<N1...> > that determine the end of the sequence.
  *                The idea is to recursively define a nested type in the helper template
- *                class make_indices where a new Ni is pushed back in Indices<N1..., Ni-1> 
+ *                class make_index_seq where a new Ni is pushed back in Indices<N1..., Ni-1> 
  *                at each recursion step until the termination condistion is satisfied
  * =====================================================================================
  */
@@ -99,6 +99,12 @@ template < size_t ... indices, template <size_t...> class I, size_t Ni, size_t d
 struct ArithmeticSeq<I<indices...>, I<Ni, dN> > {
   typedef I<indices..., Ni+dN> type;
   typedef I<Ni+dN, dN> seed;
+};
+//! Specialize for index sequence
+template < template <size_t...> class I>
+struct ArithmeticSeq<I<>, I<> > {
+  typedef I<0> type;
+  typedef I<1, 1> seed;
 };
 
 //! Propagate the Fibonacci sequence
@@ -131,11 +137,11 @@ struct StopAtMaxN<I<indices...>, I<Max> > {
 };
 
 //! This is the target type to be generated
-template < size_t ... N > struct Index {};
+template < size_t ... N > struct IndexSeq {};
 
 //! Primary template
 template < bool Terminate, class Indices, class Propagator, class Terminator > 
-struct make_indices{};
+struct make_index_seq{};
 //! Propagate if Terminate == false
 template < class Indices, 
 	   template <class, class> class Propagator,
@@ -143,18 +149,18 @@ template < class Indices,
 	   template <class, class> class Terminator, 
 	   class TerminatorArg 
 	 >
-struct make_indices< false, Indices, Propagator<Indices, PropagatorArg>, Terminator<Indices, TerminatorArg> > {
+struct make_index_seq< false, Indices, Propagator<Indices, PropagatorArg>, Terminator<Indices, TerminatorArg> > {
   typedef typename Propagator<Indices, PropagatorArg>::type newIndices;
   typedef typename Propagator<Indices, PropagatorArg>::seed newPropagatorArg;
   typedef Propagator<newIndices,newPropagatorArg> newPropagator;
   typedef Terminator<newIndices,TerminatorArg> newTerminator;
   constexpr static bool newdecision = newTerminator::decision;
-  typedef typename make_indices<newdecision, newIndices, newPropagator, newTerminator>::type type; 
+  typedef typename make_index_seq<newdecision, newIndices, newPropagator, newTerminator>::type type; 
 };
 
 //! Stop if Terminate == true 
 template < class Indices, class Propagator, class Terminator > 
-struct make_indices<true, Indices, Propagator, Terminator> {
+struct make_index_seq<true, Indices, Propagator, Terminator> {
   typedef Indices type;
 };
 
