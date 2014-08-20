@@ -7,6 +7,7 @@
 #include <limits>
 #include <climits>
 #include <bitset>
+#include "functor.hpp"
 
 using namespace std;
 
@@ -38,5 +39,11 @@ const valtype MINEXPARG = log(DBL_MIN); //min of the arguments to std::exp() cal
 //!kB in kJ/mol/K
 const valtype BoltzmannkJ = 0.0083144621; 
 const valtype Boltzmannkcal = 0.0019872041;
+
+//! short-hand definition for scalar double -> scalar double function
+typedef Functor<const function<valtype(const valtype&)>, const vector<valtype>> FunctVV;
+
+//! short-hand for a vector of scalar functors
+typedef vector< FunctVV > vFunctVV;
 
 #endif
