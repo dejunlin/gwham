@@ -20,12 +20,8 @@
 #include <vector>
 #include <typeinfo>
 #include <functional>
-#include "typedefs.hpp"
-#include "exception.hpp"
-#include <stdexcept>
 #include <array>
 #include <utility>
-#include "metaprog_snippets.hpp"
 
 using namespace std;
 
