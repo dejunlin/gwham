@@ -164,6 +164,15 @@ struct make_index_seq<true, Indices, Propagator, Terminator> {
   typedef Indices type;
 };
 
+template < size_t N >
+using make_container_index = 
+  make_index_seq< StopAtMaxN<IndexSeq<>, IndexSeq<N>>::decision,
+                  IndexSeq<>,
+		  ArithmeticSeq<IndexSeq<>, IndexSeq<>>,
+		  StopAtMaxN<IndexSeq<>, IndexSeq<N>> >;
+
+template < size_t N >
+using container_index = typename make_container_index<N>::type;
 
 /*
  * =====================================================================================
