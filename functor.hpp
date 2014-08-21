@@ -111,7 +111,7 @@ class Functor <
 template < size_t i > struct myplaceholder{};
 namespace std {
   template < size_t i >
-  struct is_placeholder<::myplaceholder<i>> : public integral_constant<size_t, i>{};
+  struct is_placeholder< ::myplaceholder<i> > : public integral_constant<size_t, i>{};
 }
 
 template < size_t ... indices, template <size_t...> class I, class F, class ... Params >
