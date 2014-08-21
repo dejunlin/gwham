@@ -22,6 +22,7 @@
 #include <functional>
 #include <array>
 #include <utility>
+#include "metaprog_snippets.hpp"
 
 using namespace std;
 
@@ -63,8 +64,13 @@ class Functor <
     //! Empty constructor
     Functor() = default;
 
+    //! Construct from a functor and a parameter initializer list
+    /** Note that the parameter type Tp must be brace-initializible 
+     */
+    Functor (Tf _funct, initializer_list<ParamsContained> lparam) : Functor(forward<Tf>(_funct), Tp{lparam}) {};
+
     //! Construct from a functor and a list of parameters
-    Functor (Tf _funct, Params... params) : Functor(forward<Tf>(_funct), Tp{forward<Params...>(params...)}) {};
+    Functor (Tf _funct, Params... params) : Functor(forward<Tf>(_funct), Tp{forward<Params>(params)...}) {};
 
     //! Construct from a functor and a container of parameters -- Target constructor
     Functor (Tf _funct, Tp _params) : 
@@ -93,6 +99,43 @@ class Functor <
     Tf funct;
     Tp params;
 }; /* ----------  end of template class Functor  ---------- */
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  Make_Functor 
+ *  Description:  bind any arbituray function with any arbituary parameters into a 
+ *                std::function object
+ * =====================================================================================
+ */
+
+template < size_t i > struct myplaceholder{};
+namespace std {
+  template < size_t i >
+  struct is_placeholder<::myplaceholder<i>> : public integral_constant<size_t, i>{};
+}
+
+template < size_t ... indices, template <size_t...> class I, class F, class ... Params >
+auto Make_Functor_Impl(I<indices...>, const F& f, Params&&... params) 
+  -> decltype ( bind(f, forward<Params>(params)..., myplaceholder<indices+1>{}...) )
+{
+  return bind(f, forward<Params>(params)..., myplaceholder<indices+1>{}...);
+}
+
+template < class Output, class ... Input, class ... Params >
+auto Make_Functor ( Output (*const f)(Input...), Params&&... params ) 
+  -> decltype ( Make_Functor_Impl(container_index<sizeof...(Input) - sizeof...(Params)>{}, f, forward<Params>(params)...) )
+{
+  constexpr size_t Nph = sizeof...(Input) - sizeof...(Params);
+  using Index = container_index<Nph>;
+  return Make_Functor_Impl(Index{}, f, forward<Params>(params)...);
+}		/* -----  end of template function Make_Functor  ----- */
+
+template < class Functor, class Output, class ... Input, class ... Params >
+auto Make_Functor_Wrapper (Functor dummy, Output (*const f)(Input...), Params&&... params) 
+  -> decltype (dummy)
+{
+  return { Make_Functor(f, forward<Params>(params)...), {forward<Params>(params)...} };
+}
 
 /* 
  * ===  FUNCTION  ======================================================================

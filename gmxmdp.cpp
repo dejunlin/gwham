@@ -553,7 +553,7 @@ void GMXMDP::GMXPULL::GMXPULLGRP::doublechk() throw(MDP_Exception) {
 	const valtype& L = Lrst[i];
 	const valtype ref = init[0] + (initB[0] - init[0])*L;
 	const valtype fconst = (k + (kB - k)*L)/2;
-	rstfunct.push_back({bind(Quadratic<valtype>, fconst, ref, 0, _1), vector<valtype>{fconst, ref, 0}});
+	rstfunct.push_back( Make_Functor_Wrapper(FunctVV{}, Quadratic<valtype>, fconst, ref, 0.0) );
       }
       break;
     }
@@ -565,7 +565,7 @@ void GMXMDP::GMXPULL::GMXPULLGRP::doublechk() throw(MDP_Exception) {
 	const valtype Rr = r1 + (r1B - r1)*L;
 	const valtype Lk = (k0 + (k0B - k0)*L)/2;
 	const valtype Rk = (k1 + (k1B - k1)*L)/2;
-	rstfunct.push_back({bind(QuadraticFlat<valtype>, ref, Lr, Rr, Lk, Rk, 0, _1), vector<valtype>{ref, Lr, Rr, Lk, Rk, 0}});
+	rstfunct.push_back( Make_Functor_Wrapper(FunctVV{}, QuadraticFlat<valtype>, ref, Lr, Rr, Lk, Rk, 0.0) );
       }
       break;
     }
@@ -644,7 +644,7 @@ void GMXMDP::GMXPULL::GMXPULLCNTGRP::doublechk() throw(MDP_Exception) {
 	const valtype& L = Lcnt[i];
 	const valtype ref = nc + (ncB - nc)*L;
 	const valtype fconst = (k + (kB - k)*L)/2;
-	rstfunct.push_back({bind(Quadratic<valtype>, fconst, ref, 0, _1), vector<valtype>{fconst, ref, 0}});
+	rstfunct.push_back( Make_Functor_Wrapper(FunctVV{}, Quadratic<valtype>, fconst, ref, 0.0) );
       }
       break;
     }
