@@ -198,33 +198,32 @@ struct ContainerCopier<Src, Des, I<indices...> > {
 
 /*
  * =====================================================================================
- *        Class:  has_member
- *  Description:  check if a class T has a member function
+ *        Class:  check_if
+ *  Description:  check if a class T satisify a condition 
  *                The idea is to make the compiler decide which member function template
- *                'f' to overload based on whether the parameter 'MfnChecker' has a 
+ *                'f' to overload based on whether the parameter 'Condition' has a 
  *                valid definition of nested template class 'type' -- if yes, then 
- *                TMached f(MfnChecker::template type<C>*) is seen because interpreting
- *                '0' in f<T>(0) as MfnChecker::template type<C>* is more specific than
+ *                TMached f(Condition::template type<C>*) is seen because interpreting
+ *                '0' in f<T>(0) as Condition::template type<C>* is more specific than
  *                the vararg list '...'.
- *                The implementation of class MfnChecker could look like this:
+ *                The implementation of class Condition for checking if the class T has 
+ *                a member function 'Mfn' could look like this:
  *                template <class Ret, class ... Arg>
- *                struct MfnChecker {
+ *                struct Condition {
  *                  template < class T, Ret (T::*)(Arg&&...) = &T::Mfn > struct type {};
  *                };
- *                where the name of the function you want to check against is 'T::Mfn'
  * =====================================================================================
  */
-template < class T, class MFnChecker >
-struct has_member
+template < class T, class Condition >
+struct check_if
 {
   typedef char TMatched;
   typedef long TUnmatched;
   
-  template < class C > static TMatched f(const typename MFnChecker::template type<C>*) {};
+  template < class C > static TMatched f(const typename Condition::template type<C>*) {};
   template < class C > static TUnmatched f(...) {};
 
   constexpr static bool value = (sizeof(f<T>(0)) == sizeof(TMatched));
-}; /* ----------  end of template class has_member  ---------- */
-
+}; /* ----------  end of template class check_if  ---------- */
 
 #endif
