@@ -103,4 +103,14 @@ void setvec(const string& entry, vector<T>& output) {
   parser(output, entry); 
 };
 
+template <class T>
+T fromstr(const string& input) {
+  T ans;
+  stringstream ss(input);
+  if(!(ss >> ans)) {
+    throw(FILEIO_Exception("Error parsing string '" + input + "' into type '" + typeid(T).name() + "'"));
+  }
+  return ans;
+};
+
 #endif
