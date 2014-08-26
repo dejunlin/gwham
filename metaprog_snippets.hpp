@@ -226,4 +226,25 @@ struct check_if
   constexpr static bool value = (sizeof(f<T>(0)) == sizeof(TMatched));
 }; /* ----------  end of template class check_if  ---------- */
 
+//Here are some examples of the Condition class
+//! This class check if a class T has member function 
+// T::size_type size() const 
+struct has_memfn_size {
+  template < class T, typename T::size_type (T::*)() const = &T::size >
+  struct type {};
+};
+
+//! This class check if a class T has member function 
+// void emplace_back(T::value_type&) 
+struct has_memfn_emplace_back {
+  template < class T, void (T::*)(typename T::value_type&) = &T::emplace_back >
+  struct type {};
+};
+
+//! This class check if a class T has unerlying elements
+//that can be retrieved by std::get<0>
+struct can_be_get {
+  template < class T, typename T::value_type& (*)(T&) = &std::get<0> >
+  struct type {};
+};
 #endif
