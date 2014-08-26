@@ -1,3 +1,5 @@
+#if !defined(METAPROG_SNIPPETS_HPP)
+#define METAPROG_SNIPPETS_HPP
 /*
  * =====================================================================================
  *
@@ -192,3 +194,37 @@ struct ContainerCopier<Src, Des, I<indices...> > {
   };
   Des value;
 };
+
+
+/*
+ * =====================================================================================
+ *        Class:  has_member
+ *  Description:  check if a class T has a member function
+ *                The idea is to make the compiler decide which member function template
+ *                'f' to overload based on whether the parameter 'MfnChecker' has a 
+ *                valid definition of nested template class 'type' -- if yes, then 
+ *                TMached f(MfnChecker::template type<C>*) is seen because interpreting
+ *                '0' in f<T>(0) as MfnChecker::template type<C>* is more specific than
+ *                the vararg list '...'.
+ *                The implementation of class MfnChecker could look like this:
+ *                template <class Ret, class ... Arg>
+ *                struct MfnChecker {
+ *                  template < class T, Ret (T::*)(Arg&&...) = &T::Mfn > struct type {};
+ *                };
+ *                where the name of the function you want to check against is 'T::Mfn'
+ * =====================================================================================
+ */
+template < class T, class MFnChecker >
+struct has_member
+{
+  typedef char TMatched;
+  typedef long TUnmatched;
+  
+  template < class C > static TMatched f(const typename MFnChecker::template type<C>*) {};
+  template < class C > static TUnmatched f(...) {};
+
+  constexpr static bool value = (sizeof(f<T>(0)) == sizeof(TMatched));
+}; /* ----------  end of template class has_member  ---------- */
+
+
+#endif
