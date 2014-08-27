@@ -104,7 +104,7 @@ void setvec(const string& entry, vector<T>& output) {
 };
 
 template <class T>
-T fromstr(const string& input) {
+T stosc(const string& input) {
   T ans;
   stringstream ss(input);
   if(!(ss >> ans)) {
