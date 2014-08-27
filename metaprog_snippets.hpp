@@ -220,8 +220,8 @@ struct check_if
   typedef char TMatched;
   typedef long TUnmatched;
   
-  template < class C > static TMatched f(const typename Condition::template type<C>*) {};
-  template < class C > static TUnmatched f(...) {};
+  template < class C > static TMatched f(const typename Condition::template type<C>*) { return '0'; };
+  template < class C > static TUnmatched f(...) { return 0; };
 
   constexpr static bool value = (sizeof(f<T>(0)) == sizeof(TMatched));
 }; /* ----------  end of template class check_if  ---------- */
@@ -238,6 +238,11 @@ struct has_memfn_size {
 // void emplace_back(T::value_type&) 
 struct has_memfn_emplace_back {
   template < class T, void (T::*)(typename T::value_type&) = &T::emplace_back >
+  struct type {};
+};
+
+struct has_mem_const_iterator {
+  template < class T, class C = typename T::const_iterator >
   struct type {};
 };
 
