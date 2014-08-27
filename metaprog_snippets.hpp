@@ -18,22 +18,6 @@
  * =====================================================================================
  */
 #include <iostream>
-/*
- * =====================================================================================
- *        Class:  condition dependent type 
- *  Description:  The nested type depends on the condition and can only be either 
- *                TrueType or FalseType
- * =====================================================================================
- */
-template < bool Condition, class TrueType, class FalseType > struct if_;
-
-template < class TrueType, class FalseType > struct if_<true, TrueType, FalseType> {
-  typedef TrueType result;
-};
-
-template < class TrueType, class FalseType > struct if_<false, TrueType, FalseType> {
-  typedef FalseType result;
-};
 
 /*
  * =====================================================================================
@@ -240,8 +224,8 @@ struct has_memfn_emplace_back {
   template < class T, void (T::*)(typename T::value_type&) = &T::emplace_back >
   struct type {};
 };
-
-struct has_mem_const_iterator {
+//!This class check if a class T has nested type iterator
+struct has_const_iterator {
   template < class T, class C = typename T::const_iterator >
   struct type {};
 };
@@ -252,4 +236,15 @@ struct can_be_get {
   template < class T, typename T::value_type& (*)(T&) = &std::get<0> >
   struct type {};
 };
+
+/*
+ * =====================================================================================
+ *        Class:  Type trait of std::string 
+ *  Description:  
+ * =====================================================================================
+ */
+template < class T > struct is_string : std::false_type {};
+template <typename charT, typename traits, typename Alloc>
+struct is_string<std::basic_string<charT, traits, Alloc> > : std::true_type {};
+
 #endif
