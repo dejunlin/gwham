@@ -272,12 +272,15 @@ struct is_string<std::basic_string<charT, traits, Alloc> > : std::true_type {};
 template <class S, class C>
 typename std::enable_if<
 check_if<C, can_be_const_iterate>::value
-//&& check_if<typename std::remove_reference<typename C::const_iterator::reference>::type, can_be_streamed<S>>::value
+&& check_if<
+            decltype( *(std::declval<typename C::const_iterator>()) ), 
+	    can_be_streamed<S>
+	   >::value
 ,S&>::type
 operator<< (S& stream, const C& input) 
 {
   for(auto& e : input) stream << e << ' ';
   return stream;
-}		/* -----  end of template function operator<<  ----- */
+}	/* -----  end of template function operator<<  ----- */
 
 #endif
