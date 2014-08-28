@@ -229,9 +229,13 @@ struct has_memfn_emplace_back {
   template < class T, void (T::*)(typename T::value_type&) = &T::emplace_back >
   struct type {};
 };
-//!This class check if a class T has nested type iterator
-struct has_const_iterator {
-  template < class T, class C = typename T::const_iterator >
+//!This class check if a class T can be iterated using nested const_iterator 
+struct can_be_const_iterate {
+  template < class T, 
+  class C = typename T::const_iterator,
+  C (T::*)() const = &T::begin,
+  C (T::*)() const = &T::end
+           >
   struct type {};
 };
 
@@ -257,5 +261,23 @@ struct can_be_streamed {
 template < class T > struct is_string : std::false_type {};
 template <typename charT, typename traits, typename Alloc>
 struct is_string<std::basic_string<charT, traits, Alloc> > : std::true_type {};
+
+
+/*
+ * =====================================================================================
+ *     Function: Print any container with const_iterator and streamable element  
+ *  Description: 
+ * =====================================================================================
+ */
+template <class S, class C>
+typename std::enable_if<
+check_if<C, can_be_const_iterate>::value
+//&& check_if<typename std::remove_reference<typename C::const_iterator::reference>::type, can_be_streamed<S>>::value
+,S&>::type
+operator<< (S& stream, const C& input) 
+{
+  for(auto& e : input) stream << e << ' ';
+  return stream;
+}		/* -----  end of template function operator<<  ----- */
 
 #endif
