@@ -187,9 +187,8 @@ struct ContainerCopier<Src, Des, I<indices...> > {
  *                The idea is to make the compiler decide which member function template
  *                'f' to overload based on whether the parameter 'Condition' has a 
  *                valid definition of nested template class 'type' -- if yes, then 
- *                TMached f(Condition::template type<C>*) is seen because interpreting
- *                '0' in f<T>(0) as Condition::template type<C>* is more specific than
- *                the vararg list '...'.
+ *                std::true_type f(int*) is seen because interpreting '0' in f<T>(0) 
+ *                as int* is more specific than the vararg list '...'.
  *                The implementation of class Condition for checking if the class T has 
  *                a member function 'Mfn' could look like this:
  *                template <class Ret, class ... Arg>
@@ -201,13 +200,19 @@ struct ContainerCopier<Src, Des, I<indices...> > {
 template < class T, class Condition >
 struct check_if
 {
-  typedef char TMatched;
-  typedef long TUnmatched;
-  
-  template < class C > static TMatched f(const typename Condition::template type<C>*) { return '0'; };
-  template < class C > static TUnmatched f(...) { return 0; };
+  template < class C > 
+  static auto f(int*)
+    ->
+    decltype(
+      //NOTE: the first expression (left operand in comma operator) is discarded
+      std::declval<typename Condition::template type<C>>(), 
+      //NOTE: std::true_type is used if the left operand is valid
+      std::true_type() 
+    ); 
 
-  constexpr static bool value = (sizeof(f<T>(0)) == sizeof(TMatched));
+  template < class C > static auto f(...) -> std::false_type;
+
+  constexpr static bool value = decltype(f<T>(0))::value;
 }; /* ----------  end of template class check_if  ---------- */
 
 //Here are some examples of the Condition class
@@ -235,6 +240,12 @@ struct has_const_iterator {
 struct can_be_get {
   template < class T, typename T::value_type& (*)(T&) = &std::get<0> >
   struct type {};
+};
+
+template <class S>
+struct can_be_streamed {
+  template < class T >
+  using type = std::remove_reference<decltype(std::declval<S&>() << std::declval<T>())>;
 };
 
 /*
