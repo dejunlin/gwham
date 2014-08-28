@@ -72,6 +72,9 @@ class Functor <
     //! Construct from a functor and a list of parameters
     Functor (Tf _funct, Params... params) : Functor(forward<Tf>(_funct), Tp{forward<Params>(params)...}) {};
 
+    //! Copy construction
+    Functor (const ThisType& src) : Functor(src.funct, src.params) {};
+
     //! Construct from a functor and a container of parameters -- Target constructor
     Functor (Tf _funct, Tp _params) : 
       funct(_funct), params(_params) {};
