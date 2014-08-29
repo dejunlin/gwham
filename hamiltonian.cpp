@@ -32,7 +32,7 @@ const vFunctVV& Hamiltonian::getPotentialFuncts() const {
 
 valtype Hamiltonian::ener(const vector<valtype>& vals) const {
   valtype ans = 0.0;
-  for(uint i = 0; i < vals.size(); ++i) {
+  for(uint i = 0; i < potentials.size(); ++i) {
     ans += potentials[i](vals[i]);
   }
   return ans;
