@@ -31,7 +31,7 @@ class Ensemble_Factory
 {
   public:
     /* ====================  LIFECYCLE     ======================================= */
-    Ensemble_Factory (const vector<MDP*>& mdps) throw(Ensemble_Factory_Exception);                             /* constructor */
+    Ensemble_Factory (const vector<MDP*>& mdps); 
 
     /* ====================  ACCESSORS     ======================================= */
 

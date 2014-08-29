@@ -40,13 +40,8 @@ Ensemble_Factory::Ensemble_Factory(const vector<MDP*>& mdps) throw(Ensemble_Fact
   if(QtMask & (1 << Restraints)) {
     for(uint i = 0; i < mdps.size(); ++i) {
       //we only need the NVT ensemble for this
-      //NOTE that the restraint functors rstfuncts is a vector of 
-      //pointer to functors, which are created in the MDP class 
-      //and will be destroyed once the MDP object goes out of scope.
-      //TODO: We should use smart-pointer for the functor pointer in the future
-      //by simply changing the typedef for vFunct
       const MDP* const mdp = mdps[i];
-      vPEns.push_back(new NVT(mdp->getkB(), mdp->getTemperature(), mdp->getPressure(), Hamiltonian(mdp->getRestraintFunctor()))); 
+      vPEns.push_back(new NVT(mdp->getkB(), mdp->getTemperature(), mdp->getPressure(), Hamiltonian(mdp->getRestraints()))); 
     }
   }
 }
