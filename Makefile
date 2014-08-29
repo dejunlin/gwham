@@ -32,6 +32,9 @@ all: gwham_gromacs463_umb gwham_gromacs463_umbfb mc gmbar_gromacs463_umb gwham_u
 ran2.o: ran2.c
 	$(CC) $(CFLAGS) -c ran2.c
 
+hamiltonian.o : hamiltonian.cpp hamiltonian.hpp functor.hpp 
+	$(CC) $(CFLAGS) -c hamiltonian.cpp
+
 gwham_umb.o:  gwham.hpp densityofstate.hpp gwham_umb.cpp hamiltonian.hpp fileio.hpp fileio_utils.hpp gnarray.hpp typedefs.hpp ensemble.o
 	$(CC) $(CFLAGS) -c gwham_umb.cpp
 
