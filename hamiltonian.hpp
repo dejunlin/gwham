@@ -22,15 +22,23 @@
 
 class Hamiltonian {
   public:
+    //! Target constructor
     Hamiltonian(const vFunctVV& _potentials);
+    //! Target move constructor
+    Hamiltonian(vFunctVV&& _potentials);
+    //! Copy constructor
     Hamiltonian(const Hamiltonian& _H);
+    //! Move constructor
+    Hamiltonian(Hamiltonian&& _H);
     //! return the functors
     const vFunctVV& getPotentialFuncts() const;
     //! return the total energy (only potential energy for now)
     valtype ener(const vector<valtype>& vals) const; 
   private:
     //! potential energy functors
-    const vFunctVV potentials; 
+    const vFunctVV potentials;
+    //! Number of potential energy functors
+    const uint Npot;
 };
 
 #endif

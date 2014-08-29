@@ -19,11 +19,21 @@
 #include "hamiltonian.hpp"
 
 Hamiltonian::Hamiltonian(const vFunctVV& _potentials) : 
-  potentials(_potentials)
+  potentials(_potentials),
+  Npot(potentials.size())
+  {};
+
+Hamiltonian::Hamiltonian(vFunctVV&& _potentials) :
+  potentials(std::move(_potentials)),
+  Npot(potentials.size())
   {};
 
 Hamiltonian::Hamiltonian(const Hamiltonian& _H) :
-  potentials(_H.getPotentialFuncts())
+  Hamiltonian(_H.getPotentialFuncts())
+  {};
+
+Hamiltonian::Hamiltonian(Hamiltonian&& _H) :
+  Hamiltonian(std::move(_H.getPotentialFuncts()))
   {};
 
 const vFunctVV& Hamiltonian::getPotentialFuncts() const {
@@ -32,7 +42,7 @@ const vFunctVV& Hamiltonian::getPotentialFuncts() const {
 
 valtype Hamiltonian::ener(const vector<valtype>& vals) const {
   valtype ans = 0.0;
-  for(uint i = 0; i < potentials.size(); ++i) {
+  for(uint i = 0; i < Npot; ++i) {
     ans += potentials[i](vals[i]);
   }
   return ans;
