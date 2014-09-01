@@ -15,10 +15,20 @@ Ensemble::Ensemble(const valtype _kB):
   kB(_kB)
   {}
 
-NVT::NVT(const valtype _kB, const valtype _T, const Hamiltonian& _H):
+NVE::NVE(const valtype _kB, const Hamiltonian& _H) :
   Ensemble(_kB),
-  T(_T),
   H(_H)
+  {}
+
+valtype NVE::ener(const vector<valtype>& vals) const {
+  // Note that we don't do bound-check here
+  // and we don't have temperature here
+  return H.ener(vals);
+}
+
+NVT::NVT(const valtype _kB, const valtype _T, const Hamiltonian& _H):
+  NVE(_kB, _H),
+  T(_T)
   {}
 
 valtype NVT::ener(const vector<valtype>& vals) const {

@@ -25,9 +25,18 @@ class Ensemble {
     const valtype kB; 
 };
 
-typedef vector<Ensemble* > vPEns;
+class NVE : public virtual Ensemble {
+  public:
+    NVE(const valtype _kB, const Hamiltonian& _H);
+    //! NVE::ener() returns the energy not weighted by kB*T
+    virtual valtype ener(const vector<valtype>& vals) const; 
+    virtual ~NVE() {};
+  protected:
+    //! Hamiltonian of the system
+    const Hamiltonian H; 
+};
 
-class NVT : public virtual Ensemble {
+class NVT : public virtual NVE {
   public:
     NVT(const valtype _kB, const valtype _T, const Hamiltonian& _H);
     virtual valtype ener(const vector<valtype>& vals) const; 
@@ -35,8 +44,6 @@ class NVT : public virtual Ensemble {
   protected:
     //! Temperature
     const valtype T;
-    //! Hamiltonian of the system
-    const Hamiltonian H; 
 };
 
 class NPT : public virtual NVT {
