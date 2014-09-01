@@ -19,15 +19,21 @@
  */
 #include <vector>
 #include "typedefs.hpp"
+#include "exception.hpp"
 #include "functor.hpp"
 #include "metaprog_snippets.hpp"
 
 using namespace std;
+//! True if the vector is a vector of zeros
+template < class T >
+bool iszero(const vector<T>& op) {
+  return op == vector<T>(op.size(), T(0));
+}
 
 //! True if 2 vector of type T are not the same and they're both non-zero
 template < class T >
 bool nonzero_diff(const vector<T>& op1, const vector<T>& op2) {
-  return op1 != op2 && !( op1 == vector<T>(op1.size(), T(0)) && op2 == vector<T>(op2.size(), T(0)) );
+  return op1 != op2 && !( iszero(op1) && iszero(op2) );
 }
 
 /*
@@ -42,8 +48,9 @@ enum Qt {Temperature, Pressure, Restraints, BondLambdas, MassLambdas, VdwLambdas
 
 class MDP
 {
-  protected:
+  public:
     const string fname;
+  protected:
     //! Boltzman constant
     valtype kB = 0;
     //! Reference temperature
@@ -64,23 +71,58 @@ class MDP
     //! constructor
     MDP (const string& _fname) : 
       fname(_fname)
-      {};                          
+      {};
+    //! copy constructor
+    MDP (const MDP& src) : 
+      MDP(src.fname)
+      {
+	*this = src;
+      };
+    //! copy assignment
+    MDP& operator=(const MDP& src) {
+      kB = src.getkB();
+      T = src.getTemperature();
+      P = src.getPressure();
+      fepT = src.getfepT();
+      Linit = src.getLinit();
+      Lbond = src.getLbond();
+      Lmass = src.getLmass();
+      Lvdw = src.getLvdw();
+      Lcoul = src.getLcoul();
+      Lrst = src.getLrst();
+      Ltemp = src.getLtemp();
 
+      for(const auto& rstfunct : src.getrstfuncts()) {
+	rstfuncts.emplace_back(rstfunct);
+      }
+
+      return *this;
+    };
     /* ====================  ACCESSORS     ======================================= */
     bool hasTemperature() const { return T > 0; }; 
     bool hasPressure() const { return P > 0; }; 
-    bool hasFEPLambda() const { return fepT != NFEPTypes; }; 
+    bool hasFEPLambda() const { return fepT != NFEPTypes && fepT != No; }; 
+    bool hasLbond() const { return iszero(Lbond); }
+    bool hasLmass() const { return iszero(Lmass); }
+    bool hasLvdw() const { return iszero(Lvdw); }
+    bool hasLcoul() const { return iszero(Lcoul); }
+    bool hasLrst() const { return iszero(Lrst); }
+    bool hasLtemp() const { return iszero(Ltemp); }
+    bool isExpandedEnsemble() const { return fepT == Expanded; };
     bool hasRestraint() const { return rstfuncts.size() != 0; };
     uint NRestraints() const { return rstfuncts.size(); }
+    const valtype& getkB() const { return kB; };
     const valtype& getTemperature() const { return T; }; 
     const valtype& getPressure() const { return P; };
+    const FEPType& getfepT() const { return fepT; };
+    const int& getLinit() const { return Linit; }
     const vector<valtype>& getLbond() const { return Lbond; }
     const vector<valtype>& getLmass() const { return Lmass; }
     const vector<valtype>& getLvdw() const { return Lvdw; }
     const vector<valtype>& getLcoul() const { return Lcoul; }
     const vector<valtype>& getLrst() const { return Lrst; }
     const vector<valtype>& getLtemp() const { return Ltemp; }
-    const vector<vFunctVV>& getRestraints() const { return rstfuncts; }
+    const vector<vFunctVV>& getrstfuncts() const { return rstfuncts; }
     //! print out all the parameters read 
     virtual void print() const = 0; 
     //! compare 2 MDP objects and return a mask indicating what thermodynamic quantities are different
@@ -109,7 +151,7 @@ class MDP
 	  QtMask |= uint( nonzero_diff(mdp.getLrst(), this->getLrst()) ) << RestraintLambdas;
 	  QtMask |= uint( nonzero_diff(mdp.getLtemp(), this->getLtemp()) ) << TemperatureLambdas;
 	}
-	QtMask |= uint( mdp.getRestraints() != this->getRestraints() ) << Restraints;
+	QtMask |= uint( mdp.getrstfuncts() != this->getrstfuncts() ) << Restraints;
       }
       return QtMask;
     }; 
