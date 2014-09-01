@@ -7,7 +7,9 @@
 #include <limits>
 #include <climits>
 #include <bitset>
+#include <memory>
 #include "functor.hpp"
+#include "mdp.hpp"
 
 using namespace std;
 
@@ -45,5 +47,15 @@ typedef Functor<const function<valtype(const valtype&)>, const vector<valtype>> 
 
 //! short-hand for a vector of scalar functors
 typedef vector< FunctVV > vFunctVV;
+
+//! pointer to MDP
+class MDP;
+typedef shared_ptr<MDP> pMDP;
+typedef vector<pMDP> vpMDP;
+
+//! pointer to Ensemble
+class Ensemble;
+typedef shared_ptr<Ensemble> pEnsemble;
+typedef vector<pEnsemble> vpEnsemble;
 
 #endif
