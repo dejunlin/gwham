@@ -20,7 +20,7 @@
 #include "exception.hpp"
 #include "mdp.hpp"
 
-Ensemble_Factory::Ensemble_Factory(const vector<MDP*>& mdps) throw(Ensemble_Factory_Exception):
+Ensemble_Factory::Ensemble_Factory(const vector<MDP*>& mdps) :
   QtMask(0),
   ensembles(vPEns(0, NULL))
 {
