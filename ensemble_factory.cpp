@@ -20,10 +20,18 @@
 #include "exception.hpp"
 #include "mdp.hpp"
 
-Ensemble_Factory::Ensemble_Factory(const vector<MDP*>& mdps) :
+Ensemble_Factory::Ensemble_Factory(const vpMDP& mdps) :
   QtMask(0),
   ensembles(vPEns(0, NULL))
 {
+  vector<MDP> _mdps;
+  //check for expanded ensemble
+  for(const auto& pmdp : mdps) {
+    _mdps.push_back(*pmdp);
+    if(pmdp->isExpandedEnsemble()) {  continue; }
+     
+  }
+  
   //we only check each one against the 1st mdp since we only need to know if the are different
   const MDP* const mdp0 = mdps[0];
   for(uint i = 1; i < mdps.size(); ++i) {
@@ -33,7 +41,7 @@ Ensemble_Factory::Ensemble_Factory(const vector<MDP*>& mdps) :
   if(QtMask != (1 << Restraints)) {
     throw(Ensemble_Factory_Exception("we can only handle MDPs differing in restraints"));
   }
-
+ 
   //construct the ensemble functors. We pretend to handle the general
   //case, e.g., the ensemble can differ in any thermodynamic quantites, 
   //so that the developers know how they can add things they need here 
@@ -41,7 +49,7 @@ Ensemble_Factory::Ensemble_Factory(const vector<MDP*>& mdps) :
     for(uint i = 0; i < mdps.size(); ++i) {
       //we only need the NVT ensemble for this
       const MDP* const mdp = mdps[i];
-      vPEns.push_back(new NVT(mdp->getkB(), mdp->getTemperature(), mdp->getPressure(), Hamiltonian(mdp->getRestraints()))); 
+      vPEns.push_back(new NVT(mdp->getkB(), mdp->getTemperature(), mdp->getPressure(), Hamiltonian(mdp->getrstfuncts()))); 
     }
   }
 }

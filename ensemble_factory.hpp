@@ -17,9 +17,31 @@
  *
  * =====================================================================================
  */
+#include "typedefs.hpp"
 #include "mdp.hpp"
 #include "exception.hpp"
 #include <vector>
+#include "ensemble.hpp"
+
+
+template <class MDP>
+vpEnsemble MDP2Ensemble (const MDP& mdp)
+{
+  vpEnsemble ans;
+  if(mdp.hasFEPLambda() && 
+     mdp.hasLbond() || mdp.hasLmass() || mdp.hasLvdw() || 
+     mdp.hasLcoul() || mdp.hasLtemp() 
+    ) {
+    throw(MDP_Exception("Can't use GWHAM to handle FEP for now"));
+  }
+  if( mdp.isExpandedEnsemble() ) {
+    const auto& rstfuncts = mdp.getrstfuncts();
+    for(const auto& rstfunct : rstfuncts) {
+      ans.emplace_back(new NVT(mdp.getkB(), mdp.getTemperature(), Hamiltonian()));
+    }
+  }
+  return ans;
+}		/* -----  end of template function generate_ensemble  ----- */
 
 /*
  * =====================================================================================
@@ -31,14 +53,14 @@ class Ensemble_Factory
 {
   public:
     /* ====================  LIFECYCLE     ======================================= */
-    Ensemble_Factory (const vector<MDP*>& mdps); 
+    Ensemble_Factory (const vpMDP& mdps); 
 
     /* ====================  ACCESSORS     ======================================= */
 
     /* ====================  MUTATORS      ======================================= */
 
     /* ====================  OPERATORS     ======================================= */
-    const vPEns& getEnsemble() const;
+    const vpEnsemble& getEnsemble() const;
 
   protected:
     /* ====================  METHODS       ======================================= */
