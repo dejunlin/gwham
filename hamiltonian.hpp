@@ -30,13 +30,15 @@ class Hamiltonian {
     Hamiltonian(const Hamiltonian& _H);
     //! Move constructor
     Hamiltonian(Hamiltonian&& _H);
-    //! return the functors
-    const vFunctVV& getPotentialFuncts() const;
+    //! access the functors
+    vFunctVV& getPotentialFuncts();
     //! return the total energy (only potential energy for now)
-    valtype ener(const vector<valtype>& vals) const; 
+    valtype ener(const vector<valtype>& vals) const;
+    //! check if the energy functors are the same
+    Hamiltonian& operator==(const Hamiltonian& src) const;
   private:
     //! potential energy functors
-    const vFunctVV potentials;
+    vFunctVV potentials;
     //! Number of potential energy functors
     const uint Npot;
 };

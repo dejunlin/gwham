@@ -36,9 +36,7 @@ Hamiltonian::Hamiltonian(Hamiltonian&& _H) :
   Hamiltonian(std::move(_H.getPotentialFuncts()))
   {};
 
-const vFunctVV& Hamiltonian::getPotentialFuncts() const {
-  return potentials;
-}
+vFunctVV& Hamiltonian::getPotentialFuncts() {return potentials; }
 
 valtype Hamiltonian::ener(const vector<valtype>& vals) const {
   valtype ans = 0.0;
@@ -47,3 +45,7 @@ valtype Hamiltonian::ener(const vector<valtype>& vals) const {
   }
   return ans;
 }
+
+Hamiltonian& Hamiltonian::operator==(const Hamiltonian& src) const {
+  return (this == &src) || (this->potentials == src.getPotentialFuncts()); 
+};
