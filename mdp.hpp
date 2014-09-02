@@ -64,6 +64,8 @@ class MDP
     //! All the lambda vectors
     vector<valtype> Lbond, Lmass, Lvdw, Lcoul, Lrst, Ltemp;
     //! Restraint functors
+    /** rstfuncts[i][j] is the j'th functor of the i'th pull-group
+     */
     vector<vFunctVV> rstfuncts;
 
   public:
@@ -102,12 +104,12 @@ class MDP
     bool hasTemperature() const { return T > 0; }; 
     bool hasPressure() const { return P > 0; }; 
     bool hasFEPLambda() const { return fepT != NFEPTypes && fepT != No; }; 
-    bool hasLbond() const { return iszero(Lbond); }
-    bool hasLmass() const { return iszero(Lmass); }
-    bool hasLvdw() const { return iszero(Lvdw); }
-    bool hasLcoul() const { return iszero(Lcoul); }
-    bool hasLrst() const { return iszero(Lrst); }
-    bool hasLtemp() const { return iszero(Ltemp); }
+    bool hasLbond() const { return !iszero(Lbond); }
+    bool hasLmass() const { return !iszero(Lmass); }
+    bool hasLvdw() const { return !iszero(Lvdw); }
+    bool hasLcoul() const { return !iszero(Lcoul); }
+    bool hasLrst() const { return !iszero(Lrst); }
+    bool hasLtemp() const { return !iszero(Ltemp); }
     bool isExpandedEnsemble() const { return fepT == Expanded; };
     bool hasRestraint() const { return rstfuncts.size() != 0; };
     uint NRestraints() const { return rstfuncts.size(); }
