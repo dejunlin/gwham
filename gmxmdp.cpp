@@ -292,26 +292,26 @@ void GMXMDP::setLs() {
     case Expanded:
       break;
     case Yes:
-      Lbond.resize(1, Lbond[Linit]);
-      Lmass.resize(1, Lmass[Linit]);
-      Lvdw.resize(1, Lvdw[Linit]);
-      Lcoul.resize(1, Lcoul[Linit]);
-      Lrst.resize(1, Lrst[Linit]);
-      Ltemp.resize(1, Ltemp[Linit]);
-      Lcnt1.resize(1, Lcnt1[Linit]);
-      Lcnt2.resize(1, Lcnt2[Linit]);
-      Lcnt3.resize(1, Lcnt3[Linit]);
+      Lbond = vector<valtype>(1, Lbond[Linit]);
+      Lmass = vector<valtype>(1, Lmass[Linit]);
+      Lvdw = vector<valtype>(1, Lvdw[Linit]);
+      Lcoul = vector<valtype>(1, Lcoul[Linit]);
+      Lrst = vector<valtype>(1, Lrst[Linit]);
+      Ltemp = vector<valtype>(1, Ltemp[Linit]);
+      Lcnt1 = vector<valtype>(1, Lcnt1[Linit]);
+      Lcnt2 = vector<valtype>(1, Lcnt2[Linit]);
+      Lcnt3 = vector<valtype>(1, Lcnt3[Linit]);
       break;
     default:
-      Lbond.resize(1, 0);
-      Lmass.resize(1, 0);
-      Lvdw.resize(1, 0);
-      Lcoul.resize(1, 0);
-      Lrst.resize(1, 0);
-      Ltemp.resize(1, 0);
-      Lcnt1.resize(1, 0);
-      Lcnt2.resize(1, 0);
-      Lcnt3.resize(1, 0);
+      Lbond = vector<valtype>(1, 0);
+      Lmass = vector<valtype>(1, 0);
+      Lvdw = vector<valtype>(1, 0);
+      Lcoul = vector<valtype>(1, 0);
+      Lrst = vector<valtype>(1, 0);
+      Ltemp = vector<valtype>(1, 0);
+      Lcnt1 = vector<valtype>(1, 0);
+      Lcnt2 = vector<valtype>(1, 0);
+      Lcnt3 = vector<valtype>(1, 0);
       break;  
   }
 }
@@ -341,6 +341,7 @@ void GMXMDP::print() const {
   printMDPopt(key2vvec);
   printMDPopt(key2vecstr);
   for(const GMXPGRP& pgrp : pgrps) {
+    printf("#%27s%-3d\n", "Pull-group",pgrp.gid);
     printMDPopt(pgrp.key2val);
     printMDPopt(pgrp.key2vvec);
     uint i = 0;
