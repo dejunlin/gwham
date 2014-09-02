@@ -29,6 +29,8 @@
 #include <map>
 #include <vector>
 #include <iterator>
+#include <regex>
+#include <cmath>
 
 using namespace std;
 /*
@@ -49,6 +51,8 @@ class GMXMDP : public MDP
     virtual void print() const; 
     //! compare 2 MDP objects and return a mask indicating what thermodynamic quantities are different
     virtual uint cmp(const MDP& mdp) const;
+    //! return the unfolded lambda vectors
+    virtual vector<valtype> getlambdas() const;
 
     /* ====================  MUTATORS      ======================================= */
 
@@ -79,6 +83,8 @@ class GMXMDP : public MDP
     int nstexpanded = -1;
     //! Temperature for doing Monte Carlo jump between FEP states 
     valtype Tmc = T;
+    //! Max and Min Temperatures for simulated tempering
+    valtype Tmax = T, Tmin = T;
     //! Contact lambdas
     vector<valtype> Lcnt1, Lcnt2, Lcnt3;
     //! Pull dimension
@@ -131,20 +137,26 @@ class GMXMDP : public MDP
     void setmask();
     //! integrate the input info. and make final processing
     virtual void doublechk();
+    //! set the expanded ensemble parameters
+    virtual void setexpand();
     //! check temperature, pressure ... etc.
     void checkgeneric();
     //! check FEP parameters
     void checkfep();
     //! check pull parameters
     void checkpull();
+    //! set the B-state parameters to the corresponding A-state ones if not set yet
+    void setAB();
     //! convert contact parameters
     void setcntgrp();
+    //! set the lambda vectors
+    virtual void setLs();
     //! set GMXPGRP::Lrst
     void setpgrpLrst();
     //! we treate each dimension of pulling as an individual pull group
     void expandpgrps();
     //! populate GMXPGRP::rstfuncts
-    void setrstfuncts();
+    void setpgrprstfuncts();
     //! Initialize the MDP key maps
     bool initopts() {
       key2val =
@@ -154,6 +166,8 @@ class GMXMDP : public MDP
         {"ref-p", P},
         {"ref_p", P},
         {"mc-temperature", Tmc},
+	{"sim-temp-high", Tmax}, 
+	{"sim-temp-low", Tmin}, 
       };  
       
       key2str = 
@@ -207,6 +221,7 @@ class GMXMDP::GMXPGRP {
   //! target constructor
   GMXPGRP(const uint& _gid) : 
     gid(_gid), gidstr(tostr(gid)),
+    kB(BoltzmannkJ),
     ifinit(this->initopts())
   {};
   //! copy constructor
@@ -253,11 +268,11 @@ class GMXMDP::GMXPGRP {
   //! Velocity of the reference position
   vector<valtype> vec;
   //! Coefficient of the harmonic potential in state A and B
-  valtype k = 0, kB = 0;
+  valtype k = NaN, kB = k;
   //! Parameters for the flat-bottom harmonic potential
-  valtype r0 = 0, r0B = r0, r1 = 0, r1B = r1, k0 = 0, k0B = k0, k1 = k0, k1B = k1;
+  valtype r0 = NaN, r0B = r0, r1 = NaN, r1B = r1, k0 = NaN, k0B = k0, k1 = k0, k1B = k1;
   //! Reference contact number
-  valtype nc0 = 0, nc0B = 0;
+  valtype nc0 = NaN, nc0B = NaN;
   //! Restraint lambdas
   vector<valtype> Lrst;
   //! Restraint type
@@ -304,6 +319,49 @@ class GMXMDP::GMXPGRP {
     return true;
   }
 };
+
+//! check if a variable is set to default valeu (NaN)
+template < class T >
+typename enable_if<numeric_limits<T>::has_quiet_NaN, bool>::type
+isdefault(const T& obj) {
+  return std::isnan(obj);
+}
+
+template < class T >
+typename enable_if<check_if<T, has_memfn_size>::value, bool>::type
+isdefault(const T& obj) {
+  return obj.size() == typename T::size_type{0};
+}
+
+//! This function loop through the key in a map<string, rw<T>> object
+//and set the B-state parameters to A-state if the former is not set. 
+//class T must either have a quiet NaN or can be sized so that we 
+//have a way to tell whether the objects of T has been set or not
+template < class T >
+typename enable_if<numeric_limits<T>::has_quiet_NaN || 
+                   check_if<T, has_memfn_size>::value 
+		   ,void
+		  >::type
+setMDPABpair(map<string, reference_wrapper<T>>& key2opt,
+             const string& Aid = "",
+	     const string& Bid = "B"
+            ) {
+  typedef typename map<string,reference_wrapper<T>>::iterator iterator;
+  const regex Bkey(string(R"(^(.*))") + Bid + string(R"((.*)$)"));
+  const string Akey = "$1" + Aid + "$2";
+  for(iterator it = key2opt.begin(); it != key2opt.end(); ++it) {
+    // if the opt value is set already, skip
+    auto& val = it->second.get();
+    if(!isdefault(val)) { continue; }
+    const string& key = it->first;
+    const string Akeystr = regex_replace(key, Bkey, Akey);
+    if(!Akeystr.compare(key)) { continue; }
+    auto ij = key2opt.find(Akeystr);
+    // if these's no key sharing the same base, skip
+    if(ij == key2opt.end()) { continue; }
+    val = ij->second.get();
+  }
+}
 
 //! This function handles MDP option with option value that 
 //can be interpreted as a type T which has 

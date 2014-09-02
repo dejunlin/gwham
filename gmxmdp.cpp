@@ -113,12 +113,20 @@ uint GMXMDP::cmp(const MDP& mdp) const {
 
 }
 
+vector<valtype> GMXMDP::getlambdas() const {
+  auto ans = MDP::getlambdas();
+  ans.insert(ans.end(), Lcnt1.begin(), Lcnt1.end());
+  ans.insert(ans.end(), Lcnt2.begin(), Lcnt2.end());
+  ans.insert(ans.end(), Lcnt3.begin(), Lcnt3.end());
+  return ans;
+}
+
 void GMXMDP::checkgeneric() {
-  if(T < 0) {
-    throw(MDP_Exception("Temperature is negative"));
+  if(T != T) {
+    throw(MDP_Exception("Temperature is not set"));
   }
-  if(P < 0) {
-    throw(MDP_Exception("Pressure is negative"));
+  if(P != P) {
+    throw(MDP_Exception("Pressure is not set"));
   }
 }
 
@@ -159,7 +167,6 @@ void GMXMDP::checkfep() {
     if(!Lcnt3.size()) { Lcnt3 = vector<valtype>(NL, 0); }
     else if(Lcnt3.size() != NL) { throw(MDP_Exception("FEP cnt3-lambda must be of the same size of other lambdas")); }
   }
-
 }
 
 void GMXMDP::checkpull() {
@@ -176,38 +183,29 @@ void GMXMDP::checkpull() {
   }
 }
 
+void GMXMDP::setAB() {
+  //First is the temperature
+  setMDPABpair(key2val, "ref-t", "sim-temp-high");
+  setMDPABpair(key2val, "high", "low");
+  //Then are the pull-group parameters
+  for(auto& pgrp : pgrps) {
+    setMDPABpair(pgrp.key2val);
+    setMDPABpair(pgrp.key2vvec);
+  }
+}
+
 void GMXMDP::setpgrpLrst() {
   vector<vector<valtype> > lambdas;
   switch(pullT) {
     case Umbrella:
     case UmbrellaFlatBottom: {
-      switch(fepT) {
-	case Yes:
-	  lambdas.emplace_back(vector<valtype>(1,Lrst[Linit]));
-	  break;
-	case Expanded:
-	  lambdas.emplace_back(Lrst);
-	  break;
-	default:
-	  break;
-      }
+      lambdas.emplace_back(Lrst);
       break;
     }
     case Contact: {
-      switch(fepT) {
-	case Yes:
-            lambdas.emplace_back(vector<valtype>(1, Lcnt1[Linit]));
-            lambdas.emplace_back(vector<valtype>(1, Lcnt2[Linit]));
-            lambdas.emplace_back(vector<valtype>(1, Lcnt3[Linit]));
-	  break;
-	case Expanded:
-            lambdas.emplace_back(Lcnt1);
-            lambdas.emplace_back(Lcnt2);
-            lambdas.emplace_back(Lcnt3);
-	  break;
-	default:
-	  break;
-      }
+      lambdas.emplace_back(Lcnt1);
+      lambdas.emplace_back(Lcnt2);
+      lambdas.emplace_back(Lcnt3);
       break;
     }
     default:
@@ -247,7 +245,10 @@ void GMXMDP::expandpgrps() {
   }
 }
 
-void GMXMDP::setrstfuncts() {
+void GMXMDP::setpgrprstfuncts() {
+  setpgrpLrst();
+  expandpgrps();
+  uint Nstates = 0;
   for(GMXPGRP& pgrp : pgrps) {
     switch(pgrp.rstT) {
       case GMXPGRP::Quad: {
@@ -272,7 +273,10 @@ void GMXMDP::setrstfuncts() {
       default:
         break;
     }
-    rstfuncts.emplace_back(pgrp.rstfuncts);
+    if(Nstates && Nstates != pgrp.Lrst.size()) { 
+	throw(MDP_Exception("The number of rstfunctors for each pull-group are not consistent"));
+    }
+    Nstates = pgrp.Lrst.size();
   }
 }
 
@@ -280,10 +284,55 @@ void GMXMDP::doublechk() {
   checkgeneric();
   checkfep();
   checkpull();
-  setpgrpLrst();
-  expandpgrps();
-  setrstfuncts();
+  setexpand();
 };
+
+void GMXMDP::setLs() {
+  switch(fepT) {
+    case Expanded:
+      break;
+    case Yes:
+      Lbond.resize(1, Lbond[Linit]);
+      Lmass.resize(1, Lmass[Linit]);
+      Lvdw.resize(1, Lvdw[Linit]);
+      Lcoul.resize(1, Lcoul[Linit]);
+      Lrst.resize(1, Lrst[Linit]);
+      Ltemp.resize(1, Ltemp[Linit]);
+      Lcnt1.resize(1, Lcnt1[Linit]);
+      Lcnt2.resize(1, Lcnt2[Linit]);
+      Lcnt3.resize(1, Lcnt3[Linit]);
+      break;
+    default:
+      Lbond.resize(1, 0);
+      Lmass.resize(1, 0);
+      Lvdw.resize(1, 0);
+      Lcoul.resize(1, 0);
+      Lrst.resize(1, 0);
+      Ltemp.resize(1, 0);
+      Lcnt1.resize(1, 0);
+      Lcnt2.resize(1, 0);
+      Lcnt3.resize(1, 0);
+      break;  
+  }
+}
+
+void GMXMDP::setexpand() {
+  setAB();
+  setLs();
+  setpgrprstfuncts();
+  //First temperature; only support linear scaling simulated tempering now
+  Ts.clear();
+  for(const auto& L : Ltemp) {Ts.emplace_back(Tmin + L*(Tmax-Tmin));}
+  //Then restraints
+  const auto Nstates = Lrst.size();
+  rstfuncts.resize(Nstates);
+  for(const auto& pgrp : pgrps) {
+    const auto& pgrprst = pgrp.rstfuncts;
+    for(uint i = 0; i < Nstates; ++i) {
+      rstfuncts[i].emplace_back(pgrprst[i]);
+    }
+  }
+}
 
 void GMXMDP::print() const {
   printMDPopt(key2val);

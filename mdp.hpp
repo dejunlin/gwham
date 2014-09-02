@@ -52,21 +52,32 @@ class MDP
     const string fname;
   protected:
     //! Boltzman constant
-    valtype kB = 0;
+    valtype kB = Boltzmannkcal;
     //! Reference temperature
-    valtype T = -1;
+    valtype T = NaN;
     //! Reference pressure 
-    valtype P = -1;
+    valtype P = NaN;
     //! Free-energy-perturbation type
     enum FEPType {No, Yes, Expanded, NFEPTypes} fepT = NFEPTypes;
     //! Initial lambda state id
     int Linit = -1;
     //! All the lambda vectors
     vector<valtype> Lbond, Lmass, Lvdw, Lcoul, Lrst, Ltemp;
+
+    /** The following are expanded ensemble parameters. 
+     * NOTE that we only support restraints and temperate 
+     * now. TODO: For other FEP parameters, we need to have 
+     * a vector of potential energy functors for each type 
+     * of FEP lambdas and populate them in MDP::setexpand()
+     */
     //! Restraint functors
-    /** rstfuncts[i][j] is the j'th functor of the i'th pull-group
+    /** rstfuncts[i][j] is the j'th functor of the i'th state
+     * NOTE that each state could have multiple functors, usually 
+     * with each corresponding to 1 pull-group
      */
     vector<vFunctVV> rstfuncts;
+    //! Temperatures in simulated tempering if using expanded ensemble
+    vector<valtype> Ts;
 
   public:
     /* ====================  LIFECYCLE     ======================================= */
@@ -93,17 +104,18 @@ class MDP
       Lcoul = src.getLcoul();
       Lrst = src.getLrst();
       Ltemp = src.getLtemp();
-
+      
+      rstfuncts.clear();
       for(const auto& rstfunct : src.getrstfuncts()) {
 	rstfuncts.emplace_back(rstfunct);
       }
-
+      Ts = src.getTs();
       return *this;
     };
     /* ====================  ACCESSORS     ======================================= */
-    bool hasTemperature() const { return T > 0; }; 
-    bool hasPressure() const { return P > 0; }; 
-    bool hasFEPLambda() const { return fepT != NFEPTypes && fepT != No; }; 
+    bool hasTemperature() const { return T == T; }; 
+    bool hasPressure() const { return P == P; }; 
+    bool hasFEPLambda() const { return getlambdas().size() != 0; }; 
     bool hasLbond() const { return !iszero(Lbond); }
     bool hasLmass() const { return !iszero(Lmass); }
     bool hasLvdw() const { return !iszero(Lvdw); }
@@ -125,6 +137,7 @@ class MDP
     const vector<valtype>& getLrst() const { return Lrst; }
     const vector<valtype>& getLtemp() const { return Ltemp; }
     const vector<vFunctVV>& getrstfuncts() const { return rstfuncts; }
+    const vector<valtype>& getTs() const { return Ts; }
     //! print out all the parameters read 
     virtual void print() const = 0; 
     //! compare 2 MDP objects and return a mask indicating what thermodynamic quantities are different
@@ -182,7 +195,11 @@ class MDP
   private:
     /* ====================  METHODS       ======================================= */
     //! check and combine parameters; should be called at the end of the constructor
-    virtual void doublechk() = 0; 
+    virtual void doublechk() = 0;
+    //! set the lambda vectors
+    virtual void setLs() = 0;
+    //! set the expanded ensemble states
+    virtual void setexpand() = 0;
 
     /* ====================  DATA MEMBERS  ======================================= */
 
