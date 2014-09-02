@@ -43,12 +43,12 @@ bool nonzero_diff(const vector<T>& op1, const vector<T>& op2) {
  * =====================================================================================
  */
 
-//The thermodynamic quantities we care about
-enum Qt {Temperature, Pressure, Restraints, BondLambdas, MassLambdas, VdwLambdas, CoulLambdas, RestraintLambdas, TemperatureLambdas};
-
 class MDP
 {
   public:
+    //The thermodynamic quantities we care about
+    enum Qt {Temperature, Pressure, Restraints, BondLambdas, MassLambdas, VdwLambdas, CoulLambdas, RestraintLambdas, TemperatureLambdas};
+    //! File name 
     const string fname;
   protected:
     //! Boltzman constant
