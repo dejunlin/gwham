@@ -32,10 +32,12 @@ class Hamiltonian {
     Hamiltonian(Hamiltonian&& _H);
     //! access the functors
     vFunctVV& getPotentialFuncts();
+    const vFunctVV& getPotentialFuncts() const;
     //! return the total energy (only potential energy for now)
     valtype ener(const vector<valtype>& vals) const;
     //! check if the energy functors are the same
-    Hamiltonian& operator==(const Hamiltonian& src) const;
+    bool operator==(const Hamiltonian& src) const;
+    bool operator!=(const Hamiltonian& src) const;
   private:
     //! potential energy functors
     vFunctVV potentials;
