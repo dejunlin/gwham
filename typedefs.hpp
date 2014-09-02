@@ -34,6 +34,9 @@ typedef ulong histcounter; //the histogram counter
 typedef ulong linecounter; //the file line counter
 static const ulong MAXNLINE = ULONG_MAX; //maximum number of lines that can be counted 
 
+static constexpr enable_if<numeric_limits<valtype>::has_quiet_NaN, valtype>::type
+NaN = numeric_limits<valtype>::quiet_NaN();
+
 const valtype MAXEXPARG = log(DBL_MAX); //max of the arguments to std::exp() call
 const valtype MINEXPARG = log(DBL_MIN); //min of the arguments to std::exp() call
 
