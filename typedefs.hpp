@@ -9,7 +9,6 @@
 #include <bitset>
 #include <memory>
 #include "functor.hpp"
-#include "mdp.hpp"
 
 using namespace std;
 
@@ -55,7 +54,13 @@ typedef vector<pMDP> vpMDP;
 
 //! pointer to Ensemble
 class Ensemble;
+class NVE;
+class NVT;
+class NPT;
 typedef shared_ptr<Ensemble> pEnsemble;
 typedef vector<pEnsemble> vpEnsemble;
+typedef shared_ptr<NVE> pNVE;
+typedef shared_ptr<NVT> pNVT;
+typedef shared_ptr<NPT> pNPT;
 
 #endif
