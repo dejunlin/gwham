@@ -20,27 +20,63 @@ NVE::NVE(const valtype _kB, const Hamiltonian& _H) :
   H(_H)
   {}
 
+uint NVE::cmp(const Ensemble& src) const {
+  uint Qt = 0;
+  if(this == &src) { return Qt; }
+  try {
+    const NVE& _src = dynamic_cast<const NVE&>(src);
+    Qt |= (this->H != _src.getHamiltonian()) << DHamiltonian ;
+    return Qt;
+  } catch(const bad_cast& bcex) {
+    return Qt;
+  };
+}
+
 valtype NVE::ener(const vector<valtype>& vals) const {
   // Note that we don't do bound-check here
   // and we don't have temperature here
   return H.ener(vals);
 }
 
-NVT::NVT(const valtype _kB, const valtype _T, const Hamiltonian& _H):
+NVT::NVT(const valtype _kB, const Hamiltonian& _H, const valtype _T):
   NVE(_kB, _H),
   T(_T)
   {}
+
+uint NVT::cmp(const Ensemble& src) const {
+  uint Qt = NVE::cmp(src);
+  if(this == &src) { return Qt; }
+  try {
+    const NVT& _src = dynamic_cast<const Ensemble&>(src);
+    Qt |= (this->T != _src.getT()) << DTemperature;
+    return Qt;
+  } catch (const bad_cast& bcex) {
+    return Qt;
+  }
+}
 
 valtype NVT::ener(const vector<valtype>& vals) const {
   // Note that we don't do bound-check here
   return H.ener(vals)/(kB*T);
 }
 
-NPT::NPT(const valtype _kB, const valtype _T, const Hamiltonian& _H, const valtype _P):
+NPT::NPT(const valtype _kB, const Hamiltonian& _H, const valtype _T, const valtype _P):
   Ensemble(_kB),
-  NVT(_kB, _T, _H),
+  NVT(_kB, _H, _T),
   P(_P)
   {}
+
+uint NPT::cmp(const Ensemble& src) const {
+  uint Qt = NVT::cmp(src);
+  if(this == &src) { return Qt; }
+  try {
+    const NPT& _src = dynamic_cast<const NPT&>(src);
+    Qt |= (this->P != _src.getP());
+    return Qt;
+  } catch (const bad_cast& bcex) {
+    return Qt;
+  }
+}
 
 valtype NPT::ener(const vector<valtype>& vals) const {
   // Note that we don't do bound-check here
