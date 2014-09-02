@@ -9,7 +9,7 @@ using namespace std;
 
 class Ensemble {
   public:
-    enum Qt {DHamiltonian, DTemperature, DPressure};
+    enum Qt {DkB, DHamiltonian, DTemperature, DPressure};
     Ensemble();
     Ensemble(const valtype _kB);
     //! return the dimensionless total energy (in the unit of kB*T)
@@ -20,8 +20,14 @@ class Ensemble {
      *  i.e., there's always enough elements in it for this function to work
      *  */
     virtual valtype ener(const vector<valtype>& vals) const = 0;
-    //! Compare the parameters of two ensembles
-    virtual uint cmp(const Ensemble& src) const = 0;
+    //! Compare the parameters of two ensembles 
+    /* NOTE: we are essentially comparing the units of kB here
+     */ 
+    virtual uint cmp(const Ensemble& src) const;
+    //! true iff. this->cmp(src) == 0
+    virtual bool operator==(const Ensemble& src) const;
+    //! true iff. this->cmp(src) != 0
+    virtual bool operator!=(const Ensemble& src) const;
     //! return kB
     const valtype& getkB() const { return kB; };
     virtual ~Ensemble() {};
@@ -39,6 +45,7 @@ class NVE : public virtual Ensemble {
     virtual uint cmp(const Ensemble& src) const;
     //! access the Hamiltonian
     Hamiltonian& getH() { return H; };
+    const Hamiltonian& getH() const { return H; };
     virtual ~NVE() {};
   protected:
     //! Hamiltonian of the system
@@ -61,7 +68,7 @@ class NVT : public virtual NVE {
 
 class NPT : public virtual NVT {
   public:
-    NPT(const valtype _kB,const Hamiltonian& _H, const valtype _T,  const valtype _P);
+    NPT(const valtype _kB, const Hamiltonian& _H, const valtype _T,  const valtype _P);
     //! Compare the parameters of two ensembles
     virtual uint cmp(const Ensemble& src) const;
     //! return the pressure
