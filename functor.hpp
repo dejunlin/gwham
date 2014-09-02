@@ -179,4 +179,11 @@ T QuadraticFlat (const T ref,
   }
 }		/* -----  end of function QuadraticFlat  ----- */
 
+
+template <class T>
+T Linear ( const T a, const T b, const T& r )
+{
+  return a*r + b;
+}		/* -----  end of template function Linear  ----- */
+
 #endif
