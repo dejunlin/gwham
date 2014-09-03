@@ -85,7 +85,7 @@ uint NPT::cmp(const Ensemble& src) const {
   if(this == &src) { return Qt; }
   try {
     const NPT& _src = dynamic_cast<const NPT&>(src);
-    Qt |= (this->P != _src.getP());
+    Qt |= (this->P != _src.getP()) << DPressure;
     return Qt;
   } catch (const bad_cast& bcex) {
     return Qt;
