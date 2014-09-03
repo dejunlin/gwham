@@ -50,9 +50,6 @@ void chkens(vpEnsemble& ens) {
   for(auto& pens : ens) {
     Qt |= pens->cmp(*ens[0]);
   }
-/*   bitset<numeric_limits<uint>::digits> bits(Qt);
- *   cout << bits << endl;
- */
 
   //! If pressures are consistent, down cast the pointer to NVT 
   if(!(Qt & (1<<Ensemble::DPressure))) {
@@ -78,11 +75,8 @@ void genens(const MDP& mdp, vpEnsemble& ens, bool combinestates) {
   //functors/parameters from the MDP object
   const auto& rstfuncts = mdp.getrstfuncts();
   const auto& Ts = mdp.getTs();
-  const uint Nstates = rstfuncts.size();
-  if(!issize(Nstates, Ts)) {
-    throw(MDP_Exception("Size of various expanded ensemble parameters are not consistent"));
-  }
-  const vector<valtype> Ps(Nstates, mdp.getPressure());
+  const auto& Ps = mdp.getPs();
+  const uint Nstates = mdp.getNstates();
 
   for(uint i = 0; i < Nstates; ++i) {
     auto newpens = 

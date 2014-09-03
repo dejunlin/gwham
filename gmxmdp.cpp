@@ -24,16 +24,16 @@
 
 using namespace std;
 
-const map<string, MDP::FEPType> GMXMDP::str2fepT = 
+const map<string, GMXMDP::FEPType> GMXMDP::str2fepT = 
     {
-      {"no", MDP::No},
-      {"yes", MDP::Yes},
-      {"expanded", MDP::Expanded},
+      {"no", GMXMDP::NoFEP},
+      {"yes", GMXMDP::Yes},
+      {"expanded", GMXMDP::Expanded},
     };
 
 const map<string, GMXMDP::PullType> GMXMDP::str2pullT = 
 {
-  {"no", GMXMDP::No},
+  {"no", GMXMDP::NoPull},
   {"umbrella", GMXMDP::Umbrella},
   {"umbrella-flat-bottom", GMXMDP::UmbrellaFlatBottom},
   {"constraint", GMXMDP::Constraint},
@@ -96,23 +96,6 @@ GMXMDP::GMXMDP(const string& fname) : MDP(fname), ifinit(this->initopts()) {
 
 };
 
-uint GMXMDP::cmp(const MDP& mdp) const {
-  uint QtMask = MDP::cmp(mdp);
-  //TODO: we need to handle if only Temperature-lambda 
-  //are non-zero and expanded ensemble is turned on...
-  //Turn off Restraint-Lambdas when Restraint is on. 
-  //The catch here is that position restraint 
-  //can also be affected by Restraint-Lambdas. 
-  //TODO: we need a better way to find out if 
-  //position restraint interactions are affected.
-  if((QtMask & Restraints) && (QtMask & RestraintLambdas)) {
-    cout << "# In file " << fname << ": Restraint and FEP restraint-lambda are both turned on but we can only handle pulling interaction not position restraint, the latter of which is affected by restraint-lambda also; we manually turn off restraint-lambda here\n";
-    QtMask ^= (1 << RestraintLambdas);
-  }
-  return QtMask;
-
-}
-
 vector<valtype> GMXMDP::getlambdas() const {
   auto ans = MDP::getlambdas();
   ans.insert(ans.end(), Lcnt1.begin(), Lcnt1.end());
@@ -138,34 +121,24 @@ void GMXMDP::checkfep() {
     if(Linit < 0) {
       throw(MDP_Exception("FEP initial lambda must be a non-negative integer"));
     }
+    vector<reference_wrapper<vector<valtype>>> _Ls = {
+      Ls[Lbond], Ls[Lmass], Ls[Lvdw], Ls[Lcoul], Ls[Ltemp], Ls[Lpress],
+      Lcnt1, Lcnt2, Lcnt3
+    };
+
     uint NL = 0;
-    if(Lbond.size()) { NL = Lbond.size(); } 
-    if(Lmass.size()) { NL = Lmass.size(); } 
-    if(Lvdw.size()) { NL = Lvdw.size(); } 
-    if(Lcoul.size()) { NL = Lcoul.size(); } 
-    if(Lrst.size()) { NL = Lrst.size(); } 
-    if(Ltemp.size()) { NL = Ltemp.size(); } 
-    if(Lcnt1.size()) { NL = Lcnt1.size(); } 
-    if(Lcnt2.size()) { NL = Lcnt2.size(); } 
-    if(Lcnt3.size()) { NL = Lcnt3.size(); }
-    if(!Lbond.size()) { Lbond = vector<valtype>(NL, 0); }
-    else if(Lbond.size() != NL) { throw(MDP_Exception("FEP bond-lambda must be of the same size of other lambdas")); }
-    if(!Lmass.size()) { Lmass = vector<valtype>(NL, 0); }
-    else if(Lmass.size() != NL) { throw(MDP_Exception("FEP mass-lambda must be of the same size of other lambdas")); }
-    if(!Lvdw.size()) { Lvdw = vector<valtype>(NL, 0); }
-    else if(Lvdw.size() != NL) { throw(MDP_Exception("FEP vdw-lambda must be of the same size of other lambdas")); }
-    if(!Lcoul.size()) { Lcoul = vector<valtype>(NL, 0); }
-    else if(Lcoul.size() != NL) { throw(MDP_Exception("FEP coul-lambda must be of the same size of other lambdas")); }
-    if(!Lrst.size()) { Lrst = vector<valtype>(NL, 0); }
-    else if(Lrst.size() != NL) { throw(MDP_Exception("FEP rst-lambda must be of the same size of other lambdas")); }
-    if(!Ltemp.size()) { Ltemp = vector<valtype>(NL, 0); }
-    else if(Ltemp.size() != NL) { throw(MDP_Exception("FEP temp-lambda must be of the same size of other lambdas")); }
-    if(!Lcnt1.size()) { Lcnt1 = vector<valtype>(NL, 0); }
-    else if(Lcnt1.size() != NL) { throw(MDP_Exception("FEP cnt1-lambda must be of the same size of other lambdas")); }
-    if(!Lcnt2.size()) { Lcnt2 = vector<valtype>(NL, 0); }
-    else if(Lcnt2.size() != NL) { throw(MDP_Exception("FEP cnt2-lambda must be of the same size of other lambdas")); }
-    if(!Lcnt3.size()) { Lcnt3 = vector<valtype>(NL, 0); }
-    else if(Lcnt3.size() != NL) { throw(MDP_Exception("FEP cnt3-lambda must be of the same size of other lambdas")); }
+    for(auto& _L : _Ls) {
+      auto& L = _L.get();
+      if(NL && L.size() && NL != L.size()) {
+	throw(MDP_Exception("Sizes of all FEP lambdas should be the same"));
+      } else if(!NL && L.size()) { NL = L.size(); }
+    }
+    if(NL) {
+      for(auto& _L : _Ls) { 
+        auto& L = _L.get();
+	if(!L.size()) {	L.resize(NL, 0); }
+      } 
+    }
   }
 }
 
@@ -184,8 +157,11 @@ void GMXMDP::checkpull() {
 }
 
 void GMXMDP::setAB() {
-  //First is the temperature
+  //First set the temperature to ref-t
   setMDPABpair(key2val, "ref-t", "sim-temp-high");
+  //Do the same thing to pressure
+  setMDPABpair(key2val, "ref-p", "sim-press-high");
+  //Now sync. the high and low pressure/temperature
   setMDPABpair(key2val, "high", "low");
   //Then are the pull-group parameters
   for(auto& pgrp : pgrps) {
@@ -199,7 +175,7 @@ void GMXMDP::setpgrpLrst() {
   switch(pullT) {
     case Umbrella:
     case UmbrellaFlatBottom: {
-      lambdas.emplace_back(Lrst);
+      lambdas.emplace_back(Ls[Lrst]);
       break;
     }
     case Contact: {
@@ -248,7 +224,6 @@ void GMXMDP::expandpgrps() {
 void GMXMDP::setpgrprstfuncts() {
   setpgrpLrst();
   expandpgrps();
-  uint Nstates = 0;
   for(GMXPGRP& pgrp : pgrps) {
     switch(pgrp.rstT) {
       case GMXPGRP::Quad: {
@@ -274,9 +249,8 @@ void GMXMDP::setpgrprstfuncts() {
         break;
     }
     if(Nstates && Nstates != pgrp.Lrst.size()) { 
-	throw(MDP_Exception("The number of rstfunctors for each pull-group are not consistent"));
-    }
-    Nstates = pgrp.Lrst.size();
+	throw(MDP_Exception("The number of rstfunctors should be the same of the number of FEP states in expanded ensemble"));
+    } else if(!Nstates && pgrp.Lrst.size()) { Nstates = pgrp.Lrst.size(); }
   }
 }
 
@@ -290,28 +264,21 @@ void GMXMDP::doublechk() {
 void GMXMDP::setLs() {
   switch(fepT) {
     case Expanded:
+      Nstates = Ls[0].size();
       break;
     case Yes:
-      Lbond = vector<valtype>(1, Lbond[Linit]);
-      Lmass = vector<valtype>(1, Lmass[Linit]);
-      Lvdw = vector<valtype>(1, Lvdw[Linit]);
-      Lcoul = vector<valtype>(1, Lcoul[Linit]);
-      Lrst = vector<valtype>(1, Lrst[Linit]);
-      Ltemp = vector<valtype>(1, Ltemp[Linit]);
-      Lcnt1 = vector<valtype>(1, Lcnt1[Linit]);
-      Lcnt2 = vector<valtype>(1, Lcnt2[Linit]);
-      Lcnt3 = vector<valtype>(1, Lcnt3[Linit]);
+      for(auto& L : Ls) L = { L[Linit] };
+      Lcnt1 = { Lcnt1[Linit] };
+      Lcnt2 = { Lcnt2[Linit] };
+      Lcnt3 = { Lcnt3[Linit] };
+      Nstates = 1;
       break;
     default:
-      Lbond = vector<valtype>(1, 0);
-      Lmass = vector<valtype>(1, 0);
-      Lvdw = vector<valtype>(1, 0);
-      Lcoul = vector<valtype>(1, 0);
-      Lrst = vector<valtype>(1, 0);
-      Ltemp = vector<valtype>(1, 0);
-      Lcnt1 = vector<valtype>(1, 0);
-      Lcnt2 = vector<valtype>(1, 0);
-      Lcnt3 = vector<valtype>(1, 0);
+      for(auto& L : Ls) L = { 0 };
+      Lcnt1 = { 0 };
+      Lcnt2 = { 0 };
+      Lcnt3 = { 0 };
+      Nstates = 1;
       break;  
   }
 }
@@ -322,9 +289,11 @@ void GMXMDP::setexpand() {
   setpgrprstfuncts();
   //First temperature; only support linear scaling simulated tempering now
   Ts.clear();
-  for(const auto& L : Ltemp) {Ts.emplace_back(Tmin + L*(Tmax-Tmin));}
+  for(const auto& L : Ls[Ltemp]) {Ts.emplace_back(Tmin + L*(Tmax-Tmin));}
+  //Then pressure; only linear scaling
+  Ps.clear();
+  for(const auto& L : Ls[Lpress]) {Ps.emplace_back(Pmin + L*(Pmax-Pmin));}
   //Then restraints
-  const auto Nstates = Lrst.size();
   rstfuncts.resize(Nstates);
   for(const auto& pgrp : pgrps) {
     const auto& pgrprst = pgrp.rstfuncts;

@@ -49,8 +49,6 @@ class GMXMDP : public MDP
     /* ====================  ACCESSORS     ======================================= */
     //! print out all the parameters read 
     virtual void print() const; 
-    //! compare 2 MDP objects and return a mask indicating what thermodynamic quantities are different
-    virtual uint cmp(const MDP& mdp) const;
     //! return the unfolded lambda vectors
     virtual vector<valtype> getlambdas() const;
 
@@ -62,12 +60,24 @@ class GMXMDP : public MDP
     /* ====================  METHODS       ======================================= */
 
    /* ====================  DATA MEMBERS  ======================================= */
+    //! Reference temperature
+    valtype T = NaN;
+    //! Reference pressure 
+    valtype P = NaN;
+    //! Max and Min temperatures expanded ensemble 
+    valtype Tmax = T, Tmin = T;
+    //! Max and Min pressures expanded ensemble 
+    valtype Pmax = P, Pmin = P;
+    //! Initial lambda state id
+    int Linit = -1;
+    //! Free-energy-perturbation type
+    enum FEPType {NoFEP, Yes, Expanded, NFEPTypes} fepT = NFEPTypes;
     //! FEP type
     static const map<string, FEPType> str2fepT; 
     string fepTstr = "";
     //! Pull type
     enum PullType {
-      No, Umbrella, UmbrellaFlatBottom, Constraint, ConstantForce, Contact, NPullTypes
+      NoPull, Umbrella, UmbrellaFlatBottom, Constraint, ConstantForce, Contact, NPullTypes
     } pullT = NPullTypes;
     static const map<string, PullType> str2pullT; 
     string pullTstr = "";
@@ -83,8 +93,6 @@ class GMXMDP : public MDP
     int nstexpanded = -1;
     //! Temperature for doing Monte Carlo jump between FEP states 
     valtype Tmc = T;
-    //! Max and Min Temperatures for simulated tempering
-    valtype Tmax = T, Tmin = T;
     //! Contact lambdas
     vector<valtype> Lcnt1, Lcnt2, Lcnt3;
     //! Pull dimension
@@ -168,6 +176,12 @@ class GMXMDP : public MDP
         {"mc-temperature", Tmc},
 	{"sim-temp-high", Tmax}, 
 	{"sim-temp-low", Tmin}, 
+	//NOTE: 'sim-press-high' or 'sim-press-low'
+	//are not actually gromacs MDP options; I 
+	//put them here just because they can be set
+	//using setMDPABpair() function (see setAB())
+	{"sim-press-high", Pmax}, 
+	{"sim-press-low", Pmin}, 
       };  
       
       key2str = 
@@ -200,12 +214,12 @@ class GMXMDP : public MDP
   
       key2vvec =
       {
-        {"bonded-lambdas", Lbond},
-        {"mass-lambdas", Lmass},
-        {"vdw-lambdas", Lvdw},
-        {"coul-lambdas", Lcoul},
-        {"restraint-lambdas", Lrst},
-        {"temperature-lambdas", Ltemp},
+        {"bonded-lambdas", Ls[Lbond]},
+        {"mass-lambdas", Ls[Lmass]},
+        {"vdw-lambdas", Ls[Lvdw]},
+        {"coul-lambdas", Ls[Lcoul]},
+        {"restraint-lambdas", Ls[Lrst]},
+        {"temperature-lambdas", Ls[Ltemp]},
         {"umbrella-contact1-lambdas", Lcnt1},
         {"umbrella-contact2-lambdas", Lcnt2},
         {"umbrella-contact3-lambdas", Lcnt3},
