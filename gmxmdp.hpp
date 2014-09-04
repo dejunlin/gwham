@@ -60,12 +60,20 @@ class GMXMDP : public MDP
     /* ====================  METHODS       ======================================= */
 
    /* ====================  DATA MEMBERS  ======================================= */
+    //! Temperature coupling type
+    enum TType {NoT, YesT, NTTypes} TT = NTTypes;
+    static const map<string, TType> str2TT; 
+    string TTstr = "TTstr";
     //! Reference temperature
     valtype T = NaN;
-    //! Reference pressure 
-    valtype P = NaN;
     //! Max and Min temperatures expanded ensemble 
     valtype Tmax = T, Tmin = T;
+    //! Temperature coupling type
+    enum PType {NoP, YesP, NPTypes} PT = NPTypes;
+    static const map<string, PType> str2PT; 
+    string PTstr = "PTstr";
+    //! Reference pressure 
+    valtype P = NaN;
     //! Max and Min pressures expanded ensemble 
     valtype Pmax = P, Pmin = P;
     //! Initial lambda state id
@@ -74,19 +82,19 @@ class GMXMDP : public MDP
     enum FEPType {NoFEP, Yes, Expanded, NFEPTypes} fepT = NFEPTypes;
     //! FEP type
     static const map<string, FEPType> str2fepT; 
-    string fepTstr = "";
+    string fepTstr = "fepTstr";
     //! Pull type
     enum PullType {
       NoPull, Umbrella, UmbrellaFlatBottom, Constraint, ConstantForce, Contact, NPullTypes
     } pullT = NPullTypes;
     static const map<string, PullType> str2pullT; 
-    string pullTstr = "";
+    string pullTstr = "pullTstr";
     //! Pull geometry
     enum PullGeom {
       Distance, Direction, DirectionPeriodic, Cylinder, Position, NGeomTypes
     } geomT = NGeomTypes;
     static const map<string, PullGeom> str2geomT;
-    string geomTstr = "";
+    string geomTstr = "geomTstr";
     //! Output frequency in steps for dhdl file
     int nstdhdl = -1;
     //! Output frequency in steps for doing expanded ensemble
@@ -186,6 +194,10 @@ class GMXMDP : public MDP
       
       key2str = 
       {
+	{"tcoupl", TTstr},
+	{"Tcoupl", TTstr},
+	{"pcoupl", PTstr},
+	{"Pcoupl", PTstr},
         {"free-energy", fepTstr},
         {"pull", pullTstr},
         {"pull_geometry", geomTstr},
@@ -425,7 +437,10 @@ template < class T >
 typename enable_if<std::is_enum<T>::value, void>::type
 setMDPenum(const map<string, T>& str2enum, const string& str, T& optval) {
   const typename map<string,T>::const_iterator it = str2enum.find(str);
-  if(it != str2enum.end()) { optval = it->second; }
+  if(it == str2enum.end()) {
+    throw(MDP_Exception("Can't find enum for string: '"+str+"'"));
+  }
+  optval = it->second;
 };
 
 #endif

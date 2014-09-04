@@ -20,19 +20,41 @@
 #include "fileio.hpp"
 #include "fileio_utils.hpp"
 #include "typedefs.hpp"
+#include "hamiltonian.hpp"
 #include <regex>
 
 using namespace std;
 
+const map<string, GMXMDP::TType> GMXMDP::str2TT =
+{
+  {"TTstr", GMXMDP::NTTypes}, 
+  {"no", GMXMDP::NoT}, 
+  {"berendsen", GMXMDP::YesT}, 
+  {"nose-hoover", GMXMDP::YesT}, 
+  {"v-rescale", GMXMDP::YesT}, 
+};
+
+const map<string, GMXMDP::PType> GMXMDP::str2PT =
+{
+  {"PTstr", GMXMDP::NPTypes}, 
+  {"no", GMXMDP::NoP}, 
+  {"berendsen", GMXMDP::YesP}, 
+  {"Parrinello-Rahman", GMXMDP::YesP}, 
+  {"parrinello-rahman", GMXMDP::YesP}, 
+  {"MTTK", GMXMDP::YesP}, 
+};
+
 const map<string, GMXMDP::FEPType> GMXMDP::str2fepT = 
-    {
-      {"no", GMXMDP::NoFEP},
-      {"yes", GMXMDP::Yes},
-      {"expanded", GMXMDP::Expanded},
-    };
+{
+  {"fepTstr", GMXMDP::NFEPTypes},
+  {"no", GMXMDP::NoFEP},
+  {"yes", GMXMDP::Yes},
+  {"expanded", GMXMDP::Expanded},
+};
 
 const map<string, GMXMDP::PullType> GMXMDP::str2pullT = 
 {
+  {"pullTstr", GMXMDP::NPullTypes},
   {"no", GMXMDP::NoPull},
   {"umbrella", GMXMDP::Umbrella},
   {"umbrella-flat-bottom", GMXMDP::UmbrellaFlatBottom},
@@ -43,6 +65,7 @@ const map<string, GMXMDP::PullType> GMXMDP::str2pullT =
 
 const map<string, GMXMDP::PullGeom> GMXMDP::str2geomT = 
 {
+  {"geomTstr", GMXMDP::NGeomTypes},
   {"distance", GMXMDP::Distance},
   {"direction", GMXMDP::Direction},
   {"direction-periodic", GMXMDP::DirectionPeriodic},
@@ -80,9 +103,9 @@ GMXMDP::GMXMDP(const string& fname) : MDP(fname), ifinit(this->initopts()) {
       setenum();
       setmask();
       setpgrps();
-      for(uint k = 0; k < pgrps.size(); ++k) {
-        setMDPopt(i, ie, pgrps[k].key2val) || 
-        setMDPopt(i, ie, pgrps[k].key2vvec);
+      for(auto& pgrp : pgrps) {
+        setMDPopt(i, ie, pgrp.key2val) || 
+        setMDPopt(i, ie, pgrp.key2vvec);
       }
     }
     doublechk();
@@ -105,16 +128,22 @@ vector<valtype> GMXMDP::getlambdas() const {
 }
 
 void GMXMDP::checkgeneric() {
-  if(T != T) {
-    throw(MDP_Exception("Temperature is not set"));
+  if(TT == YesT && T != T) {
+    throw(MDP_Exception("Temperature coupling is on but temperature is not set"));
+  } else if(TT == NTTypes) {
+    TT = NoT;
   }
-  if(P != P) {
-    throw(MDP_Exception("Pressure is not set"));
+  if(PT == YesP && P != P) {
+    throw(MDP_Exception("Pressure coupling is on but Pressure is not set"));
+  } else if(PT == NPTypes) {
+    PT = NoP;
   }
+  if(PT == NoP) { P = 0; }
 }
 
 void GMXMDP::checkfep() {
-  if(fepT != NFEPTypes) {
+  if(fepT == NFEPTypes) { fepT = NoFEP; }
+  if(fepT != NoFEP) {
     if(getlambdas().size() == 0) {
       throw(MDP_Exception("FEP is activated but no lambda is set"));
     }
@@ -143,17 +172,30 @@ void GMXMDP::checkfep() {
 }
 
 void GMXMDP::checkpull() {
-  if(pullT != NPullTypes) {
-    if(npgrps < 0) {
-      throw(MDP_Exception("Pull is activated but no pull-group is defined"));
-    }
-    if(dim == 0) {
-      throw(MDP_Exception("Pull is activated but pull dimension is 0"));
-    }
-    if(pullT == Contact && pgrps.size() > 3) {
-      throw(MDP_Exception("Gromacs MDP can only have <= 3 contact groups for now"));
-    }
-  }
+  if(pullT == NPullTypes) { pullT = NoPull; }
+  switch(pullT) {
+    case NoPull: 
+      break;
+    case ConstantForce:
+    case Constraint:
+      throw(MDP_Exception("Constant-force or constraint pulling is not supported yet"));
+      break;
+    case Umbrella:
+    case UmbrellaFlatBottom:
+    case Contact:
+      if(npgrps < 0) {
+        throw(MDP_Exception("Pull is activated but no pull-group is defined"));
+      }
+      if(dim == 0) {
+        throw(MDP_Exception("Pull is activated but pull dimension is 0"));
+      }
+      if(pullT == Contact && pgrps.size() > 3) {
+        throw(MDP_Exception("Gromacs MDP can only have <= 3 contact groups for now"));
+      }
+      break;
+    default:
+      break;
+  } 
 }
 
 void GMXMDP::setAB() {
@@ -289,18 +331,23 @@ void GMXMDP::setexpand() {
   setpgrprstfuncts();
   //First temperature; only support linear scaling simulated tempering now
   Ts.clear();
-  for(const auto& L : Ls[Ltemp]) {Ts.emplace_back(Tmin + L*(Tmax-Tmin));}
-  //Then pressure; only linear scaling
+  if(TT == YesT) for(const auto& L : Ls[Ltemp]) {Ts.emplace_back(Tmin + L*(Tmax-Tmin));}
+  //Then pressure; NOTE: if PT == NoP, Ps == vector<valtype>(Nstates, 0.0)
   Ps.clear();
   for(const auto& L : Ls[Lpress]) {Ps.emplace_back(Pmin + L*(Pmax-Pmin));}
   //Then restraints
+  rstfuncts.clear();
   rstfuncts.resize(Nstates);
-  for(const auto& pgrp : pgrps) {
-    const auto& pgrprst = pgrp.rstfuncts;
-    for(uint i = 0; i < Nstates; ++i) {
-      rstfuncts[i].emplace_back(pgrprst[i]);
+  //if pullT == NoPull, rstfuncts == vector<vFunctVV>(Nstates, vFunctVV{})
+  if(pullT != NoPull) {
+    for(const auto& pgrp : pgrps) {
+      const auto& pgrprst = pgrp.rstfuncts;
+      for(uint i = 0; i < Nstates; ++i) {
+        rstfuncts[i].emplace_back(pgrprst[i]);
+      }
     }
   }
+  for(const auto& rstfunct : rstfuncts) Hs.emplace_back(rstfunct);
 }
 
 void GMXMDP::print() const {
@@ -314,10 +361,13 @@ void GMXMDP::print() const {
     printMDPopt(pgrp.key2val);
     printMDPopt(pgrp.key2vvec);
     uint i = 0;
-    for(const FunctVV& rstfunct : pgrp.rstfuncts) {
-      printf("#%27s%-3d = ", "Restraint Functor",i);
-      cout << rstfunct.getParams() << endl;
-      ++i;
+    for(const auto& H : Hs) {
+      printf("#%27s%-3d\n", "Hamiltonian",i++);
+      uint j = 0;
+      for(const auto& funct : H.getPotentialFuncts()) {
+        printf("#%27s%-3d = ", "Functor",j++);
+        cout << funct.getParams() << endl;
+      }
     }
   }
 };
@@ -328,6 +378,8 @@ void GMXMDP::setpgrps() {
     case NPullTypes:
       throw(MDP_Exception("Pull-type must be set before pull-group"));
       break;
+    case NoPull:
+      return;
     case Contact: {
       for(int k = 0; k < ncntgrps; ++k) { pgrps.emplace_back(k); }
       break; 
@@ -340,9 +392,11 @@ void GMXMDP::setpgrps() {
 };
 
 void GMXMDP::setenum() {
+  if(TT == NTTypes) { setMDPenum(str2TT, TTstr, TT); }
+  if(PT == NPTypes) { setMDPenum(str2PT, PTstr, PT); }
   if(fepT == NFEPTypes) { setMDPenum(str2fepT, fepTstr, fepT); }
   if(pullT == NPullTypes) { setMDPenum(str2pullT, pullTstr, pullT); }
-  if(geomT == NGeomTypes) { setMDPenum(str2geomT, geomTstr, geomT); }
+  if(pullT != NoPull && geomT == NGeomTypes) { setMDPenum(str2geomT, geomTstr, geomT); }
   if(pgrps.size() && pgrps[0].rstT == GMXPGRP::NRestraintTypes) {
     GMXPGRP::RestraintType rstT = GMXPGRP::NRestraintTypes;
     switch(pullT) {

@@ -21,6 +21,7 @@
 #include "typedefs.hpp"
 #include "exception.hpp"
 #include "functor.hpp"
+#include "hamiltonian.hpp"
 #include "metaprog_snippets.hpp"
 
 using namespace std;
@@ -60,7 +61,7 @@ class MDP
      * NOTE that we only support restraints and temperate 
      * now. TODO: For other FEP parameters, we need to have 
      * a vector of potential energy functors for each type 
-     * of FEP lambdas and populate them in MDP::setexpand()
+     * of FEP lambdas and add them to MDP::Hs via MDP::setexpand()
      */
     uint Nstates = 0;
     //! lambda parameters in Ls array
@@ -77,6 +78,8 @@ class MDP
     vector<valtype> Ts;
     //! Presssures
     vector<valtype> Ps;
+    //! Extra Hamiltonian
+    vector<Hamiltonian> Hs;
 
   public:
     /* ====================  LIFECYCLE     ======================================= */
@@ -95,6 +98,7 @@ class MDP
       kB = src.getkB();
       Ts = src.getTs();
       Ps = src.getPs();
+      Hs = src.getHs();
       Nstates = src.getNstates();
       Ls = src.getLs(); 
       rstfuncts.clear();
@@ -104,9 +108,10 @@ class MDP
       return *this;
     };
     /* ====================  ACCESSORS     ======================================= */
-    bool hasTemperature() const { return Ts.size(); }; 
-    bool hasPressure() const { return Ps.size(); }; 
+    bool hasTemperature() const { return Ts.size() != 0; }; 
+    bool hasPressure() const { return !iszero(Ps); }; 
     bool hasFEPLambda() const { return getlambdas().size() != 0; }; 
+    bool hasRestraint() const { return rstfuncts.size() != 0; };
     bool hasLbond() const { return !iszero(Ls[Lbond]); }
     bool hasLmass() const { return !iszero(Ls[Lmass]); }
     bool hasLvdw() const { return !iszero(Ls[Lvdw]); }
@@ -114,12 +119,12 @@ class MDP
     bool hasLrst() const { return !iszero(Ls[Lrst]); }
     bool hasLtemp() const { return !iszero(Ls[Ltemp]); }
     bool hasLpress() const { return !iszero(Ls[Lpress]); }
-    bool hasRestraint() const { return rstfuncts.size() != 0; };
     bool isExpandedEnsemble() const { return Nstates != 0; };
     const valtype& getkB() const { return kB; };
     const uint& getNstates() const { return Nstates; };
     const vector<valtype>& getTs() const { return Ts; }
     const vector<valtype>& getPs() const { return Ps; }
+    const vector<Hamiltonian>& getHs() const { return Hs; }
     const array<vector<valtype>, NFEPLambdas>& getLs() const { return Ls; }
     const vector<valtype>& getLbond() const { return Ls[Lbond]; }
     const vector<valtype>& getLmass() const { return Ls[Lmass]; }
