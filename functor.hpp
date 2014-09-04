@@ -107,7 +107,7 @@ class Functor <
  * ===  FUNCTION  ======================================================================
  *         Name:  Make_Functor 
  *  Description:  bind any arbituray function with any arbituary parameters into a 
- *                std::function object
+ *                std::function object. 
  * =====================================================================================
  */
 
@@ -133,6 +133,10 @@ auto Make_Functor ( Output (*const f)(Input...), Params&&... params )
   return Make_Functor_Impl(Index{}, f, forward<Params>(params)...);
 }		/* -----  end of template function Make_Functor  ----- */
 
+//! First argument is the return type; second argument is the pointer to a function
+//The rest are the parameters you want to bind into the resultant functor --
+//the number of parameters should be no larger than the number of arguments actually
+//taken by the function pointer
 template < class Functor, class Output, class ... Input, class ... Params >
 auto Make_Functor_Wrapper (Functor dummy, Output (*const f)(Input...), Params&&... params) 
   -> decltype (dummy)
