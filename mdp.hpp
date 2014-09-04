@@ -22,6 +22,7 @@
 #include "exception.hpp"
 #include "functor.hpp"
 #include "hamiltonian.hpp"
+#include "timeseries.hpp"
 #include "metaprog_snippets.hpp"
 
 using namespace std;
@@ -119,7 +120,7 @@ class MDP
     bool hasLrst() const { return !iszero(Ls[Lrst]); }
     bool hasLtemp() const { return !iszero(Ls[Ltemp]); }
     bool hasLpress() const { return !iszero(Ls[Lpress]); }
-    bool isExpandedEnsemble() const { return Nstates != 0; };
+    bool isExpandedEnsemble() const { return Nstates > 1; };
     const valtype& getkB() const { return kB; };
     const uint& getNstates() const { return Nstates; };
     const vector<valtype>& getTs() const { return Ts; }
@@ -146,6 +147,8 @@ class MDP
     /* ====================  MUTATORS      ======================================= */
 
     /* ====================  OPERATORS     ======================================= */
+    //! Time-series factory
+    virtual vector<TimeSeries> gents() const = 0;
 
   protected:
     /* ====================  METHODS       ======================================= */
