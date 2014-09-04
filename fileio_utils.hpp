@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <array>
 #include <iterator>
 #include <typeinfo>
 #include "exception.hpp"
@@ -112,5 +113,8 @@ T stosc(const string& input) {
   }
   return ans;
 };
+
+//! Get the prefix and suffix of a file name
+array<string, 2> getfnfixes(const string& entry);
 
 #endif

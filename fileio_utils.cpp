@@ -16,6 +16,8 @@
  * =====================================================================================
  */
 #include "fileio_utils.hpp"
+#include <regex>
+#include <array>
 
 //specialized parser for array of string -- NOTE that delims can still be defaulted to the one in the general template
 template <>
@@ -50,4 +52,13 @@ string trimcm(const string& input, const string& cm) {
 
 string trimltcm(const string& input, const string& cm, const string& lts) {
   return trimlt(trimcm(input, cm), lts);
+}
+
+array<string, 2> getfnfixes(const string& entry) {
+  const regex fnamebase(R"(^(.*)[.](.*?)$)");
+  auto i = sregex_token_iterator(entry.begin(), entry.end(), fnamebase, {1,2});
+  array<string, 2> ans;
+  ans[0] = *i++;
+  ans[1] = *i;
+  return ans;
 }
