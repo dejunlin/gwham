@@ -42,8 +42,9 @@ class ColumnProcessor
     /* ====================  OPERATORS     ======================================= */
     //! read from the iterator, point it to the right location for the next processor
     void operator()(vector<valtype>::const_iterator& it, vector<valtype>& output) const {
-      for(;;++it) {
-	ouptput.push_back(*it);
+      for(uint i = 0; i < Ncols; ++i) {
+	if(Masks & (1<<i)) { ouptput.push_back(*it); }
+	++it;
       }
     };
 
