@@ -55,6 +55,8 @@ class GMXMDP : public MDP
     /* ====================  MUTATORS      ======================================= */
 
     /* ====================  OPERATORS     ======================================= */
+    //! Time-series factory
+    virtual vector<TimeSeries> gents() const;
     
 
     /* ====================  METHODS       ======================================= */

@@ -427,3 +427,12 @@ void GMXMDP::setmask() {
     }
   }
 }
+
+vector<TimeSeries> GMXMDP::gents() const {
+  vector<TimeSeries> ans;
+  //If this is an expanded ensemble run, we need 
+  //dhdl.xvg files to tell the states of the system
+  if(isExpandedEnsemble()) {
+
+  }
+}
