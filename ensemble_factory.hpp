@@ -48,6 +48,9 @@ bool issize(const typename V<T, Vargs...>::size_type& expected, const V<T, Vargs
 void chkens(vpEnsemble& ens) {
   uint Qt = 0;
   for(auto& pens : ens) {
+    if(typeid(*pens) != typeid(*ens[0])) {
+      throw(MDP_Exception("Input MDP files must refer to systems of the same ensemble"));
+    }
     Qt |= pens->cmp(*ens[0]);
   }
 
@@ -73,18 +76,26 @@ void genens(const MDP& mdp, vpEnsemble& ens, bool combinestates) {
   //TODO: when we support expanded ensemble on other FEP parameter
   //set, we need to retrieve the corresponding vector of 
   //functors/parameters from the MDP object
-  const auto& rstfuncts = mdp.getrstfuncts();
+  const uint Nstates = mdp.getNstates();
   const auto& Ts = mdp.getTs();
   const auto& Ps = mdp.getPs();
-  const uint Nstates = mdp.getNstates();
+  const vector<Hamiltonian>& Hs = mdp.getHs();
 
   for(uint i = 0; i < Nstates; ++i) {
-    auto newpens = 
-        make_shared<NPT>(mdp.getkB(), 
-                         Hamiltonian(rstfuncts[i]),
-			   Ts[i],
-			   Ps[i]
-                        );
+    pEnsemble newpens;
+    if(mdp.hasTemperature() && mdp.hasPressure()) {
+      //NPT
+      newpens = make_shared<NPT>(mdp.getkB(), Hs[i], Ts[i], Ps[i]);
+    } else if(mdp.hasTemperature()) {
+      //NVT
+      newpens = make_shared<NVT>(mdp.getkB(), Hs[i], Ts[i]);
+    } else if(mdp.hasPressure()) {
+      //NPE
+      throw(MDP_Exception("Ensemble NPE not supported"));
+    }  else {
+      //NVE
+      newpens = make_shared<NVE>(mdp.getkB(), Hs[i]);
+    }
     //if true, we'll check if this new ensemble is equivalent to 
     //the ensemble we've already created -- if yes, we skip pushing
     //it into ens
