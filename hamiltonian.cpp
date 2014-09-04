@@ -28,6 +28,10 @@ Hamiltonian::Hamiltonian(vFunctVV&& _potentials) :
   Npot(potentials.size())
   {};
 
+Hamiltonian::Hamiltonian() :
+  Hamiltonian(vFunctVV{})
+  {};
+
 Hamiltonian::Hamiltonian(const Hamiltonian& _H) :
   Hamiltonian(_H.getPotentialFuncts())
   {};
@@ -35,6 +39,14 @@ Hamiltonian::Hamiltonian(const Hamiltonian& _H) :
 Hamiltonian::Hamiltonian(Hamiltonian&& _H) :
   Hamiltonian(std::move(_H.getPotentialFuncts()))
   {};
+
+Hamiltonian& Hamiltonian::operator=(const Hamiltonian& src) {
+  potentials.clear();
+  const auto& srcpots = src.getPotentialFuncts();
+  for(const auto& srcpot : srcpots) potentials.emplace_back(srcpot);
+  Npot = potentials.size();
+  return *this;
+}
 
 vFunctVV& Hamiltonian::getPotentialFuncts() {return potentials; }
 const vFunctVV& Hamiltonian::getPotentialFuncts() const {return potentials; }

@@ -26,10 +26,14 @@ class Hamiltonian {
     Hamiltonian(const vFunctVV& _potentials);
     //! Target move constructor
     Hamiltonian(vFunctVV&& _potentials);
+    //! Empty constructor
+    Hamiltonian();
     //! Copy constructor
     Hamiltonian(const Hamiltonian& _H);
     //! Move constructor
     Hamiltonian(Hamiltonian&& _H);
+    //! Assignment
+    Hamiltonian& operator=(const Hamiltonian& src);
     //! access the functors
     vFunctVV& getPotentialFuncts();
     const vFunctVV& getPotentialFuncts() const;
@@ -42,7 +46,7 @@ class Hamiltonian {
     //! potential energy functors
     vFunctVV potentials;
     //! Number of potential energy functors
-    const uint Npot;
+    uint Npot = 0;
 };
 
 #endif
