@@ -44,11 +44,13 @@ template <
            template <class...> class ParamsContainer,
            class ParamsContained,
 	   class ... ParamsContainerOther,
+	   class Tobj,
 	   class ... Params
          >
 class Functor < 
                 const Funct<Output(Arg...)>,
-                const ParamsContainer<ParamsContained, ParamsContainerOther...>, 
+                const ParamsContainer<ParamsContained, ParamsContainerOther...>,
+		Tobj,
 	        Params... 
 	      >
 {
@@ -67,20 +69,22 @@ class Functor <
     //! Construct from a functor and a parameter initializer list
     /** Note that the parameter type Tp must be brace-initializible 
      */
-    Functor (Tf _funct, initializer_list<ParamsContained> lparam) : Functor(forward<Tf>(_funct), Tp{lparam}) {};
+    Functor (Tf _funct, initializer_list<ParamsContained> lparam, Tobj* _pobj=nullptr) : Functor(forward<Tf>(_funct), Tp{lparam}, _pobj) {};
 
     //! Construct from a functor and a list of parameters
-    Functor (Tf _funct, Params... params) : Functor(forward<Tf>(_funct), Tp{forward<Params>(params)...}) {};
+    Functor (Tf _funct, Tobj* _pobj, Params... params) : Functor(forward<Tf>(_funct), Tp{forward<Params>(params)...}, _pobj) {};
 
     //! Copy construction
     Functor (const ThisType& src) : Functor(src.funct, src.params) {};
 
     //! Construct from a functor and a container of parameters -- Target constructor
-    Functor (Tf _funct, Tp _params) : 
-      funct(_funct), params(_params) {};
+    Functor (Tf _funct, Tp _params, Tobj* _pobj) : 
+      funct(_funct), params(_params), pobj(_pobj) {};
     /* ====================  ACCESSORS     ======================================= */
     //! Get the parameters
     Tp& getParams() const { return params; };
+    
+    const Tobj& getTobj() const { return *pobj; };
 
     /* ====================  OPERATORS     ======================================= */
     //! Evaluate the functor
@@ -101,6 +105,7 @@ class Functor <
     /* ====================  DATA MEMBERS  ======================================= */
     Tf funct;
     Tp params;
+    Tobj* pobj;
 }; /* ----------  end of template class Functor  ---------- */
 
 /* 
@@ -170,7 +175,7 @@ template < class Functor, class T, class Output, class ... Input, class ... Para
 auto Make_Functor_Wrapper (Functor dummy, T* pobj, Output (T::*const f)(Input...), Params&&... params) 
   -> decltype (dummy)
 {
-  return { Make_Functor(f, pobj, forward<Params>(params)...), {forward<Params>(params)...} };
+  return { Make_Functor(f, pobj, forward<Params>(params)...), {forward<Params>(params)...}, pobj };
 }
 
 /* 
