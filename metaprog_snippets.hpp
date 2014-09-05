@@ -41,30 +41,50 @@ template < size_t z > struct Last_Index<z> {
  *  Description:  The subset is defined by yet another sequence in Subset
  * =====================================================================================
  */
-//! Extract the N'th element
-template < class Superset, size_t N > struct Extract_One_Element{};
+//! Extract the N'th index 
+template < class Superset, size_t N > struct Extract_One_Index{};
 template < template <size_t...> class I, size_t n, size_t ... indices, size_t N > 
-struct Extract_One_Element<I<n, indices...>, N> {
-  constexpr static size_t value = Extract_One_Element<I<indices...>, N-1>::value;
+struct Extract_One_Index<I<n, indices...>, N> {
+  constexpr static size_t value = Extract_One_Index<I<indices...>, N-1>::value;
 };
 template < template <size_t...> class I, size_t n, size_t ... indices> 
-struct Extract_One_Element<I<n, indices...>, 1> {
+struct Extract_One_Index<I<n, indices...>, 1> {
   constexpr static size_t value = n;
 };
 
-//! Extract a sequence of element
-template < class Superset, class SubsetIDs, class Output  > struct Extract_Elements{};
+//! Extract a sequence of indices 
+template < class Superset, class SubsetIDs, class Output  > struct Extract_Indices{};
 template < size_t ... indices, size_t id1, size_t ... subsetids, size_t ... output, template <size_t...> class I >
-struct Extract_Elements< I<indices...>, I<id1, subsetids...>, I<output...> >  {
+struct Extract_Indices< I<indices...>, I<id1, subsetids...>, I<output...> >  {
   typedef I<indices...> Superset;
-  constexpr static size_t newelement = Extract_One_Element<Superset, id1>::value;
-  typedef typename Extract_Elements<Superset, I<subsetids...>, I<output..., newelement> >::type type;  
+  constexpr static size_t newelement = Extract_One_Index<Superset, id1>::value;
+  typedef typename Extract_Indices<Superset, I<subsetids...>, I<output..., newelement> >::type type;  
 };
 template < size_t ... indices, size_t ... output, template <size_t...> class I >
-struct Extract_Elements< I<indices...>, I<>, I<output...> >  {
+struct Extract_Indices< I<indices...>, I<>, I<output...> >  {
   typedef I<output...> type;  
 };
 
+//! Extract the N'th type
+template < size_t N, class ... T > struct Extract_One_Type {
+  static_assert(N <= sizeof...(T), "Extract_One_Type<T..., N> index out of bound");
+  typedef void type;
+};
+template < size_t N, class T1, class ... T > 
+struct Extract_One_Type<N, T1, T...> {
+  typedef Extract_One_Type<N-1, T...> NextIteration;
+  typedef typename NextIteration::type type;
+  static inline const type& get(const T1&, const T&...args) {
+    return NextIteration::get(args...); 
+  }
+};
+template < class T1, class ... T>
+struct Extract_One_Type<1, T1, T...> {
+  typedef T1 type;
+  static inline const type& get(const T1& a, const T&...) {
+    return a;
+  }
+};
 
 /*
  * =====================================================================================
