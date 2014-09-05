@@ -117,6 +117,10 @@ namespace std {
   struct is_placeholder< ::myplaceholder<i> > : public integral_constant<size_t, i>{};
 }
 
+//! This is the actual binder function that takes an list of index and parameters
+//and bind the parameters to the function by std::bind. The number of parameters 
+//is arbituray but must match the size of the index -- the trick is call std::bind
+//using parameter pack expansion of the index list
 template < size_t ... indices, template <size_t...> class I, class F, class ... Params >
 auto Make_Functor_Impl(I<indices...>, const F& f, Params&&... params) 
   -> decltype ( bind(f, forward<Params>(params)..., myplaceholder<indices+1>{}...) )
@@ -124,6 +128,9 @@ auto Make_Functor_Impl(I<indices...>, const F& f, Params&&... params)
   return bind(f, forward<Params>(params)..., myplaceholder<indices+1>{}...);
 }
 
+//! This function determines the number of parameters and make an 
+//index list mapping each parameter to a integral constant so that 
+//Make_Functor_Impl() can unroll the index list when calling std::bind
 template < class Output, class ... Input, class ... Params >
 auto Make_Functor ( Output (*const f)(Input...), Params&&... params ) 
   -> decltype ( Make_Functor_Impl(container_index<sizeof...(Input) - sizeof...(Params)>{}, f, forward<Params>(params)...) )
@@ -142,6 +149,28 @@ auto Make_Functor_Wrapper (Functor dummy, Output (*const f)(Input...), Params&&.
   -> decltype (dummy)
 {
   return { Make_Functor(f, forward<Params>(params)...), {forward<Params>(params)...} };
+}
+
+//! This is for binding member function of type T. It's the same 
+//as Make_Functor<Output, Input..., Params...> except that we have an 
+//extra argument for the class type that contains the function
+template < class T, class Output, class ... Input, class ... Params >
+auto Make_Functor ( Output (T::*const f)(Input...), T* pobj, Params&&... params ) 
+  -> decltype ( Make_Functor_Impl(container_index<sizeof...(Input) - sizeof...(Params)>{}, f, pobj, forward<Params>(params)...) )
+{
+  constexpr size_t Nph = sizeof...(Input) - sizeof...(Params);
+  using Index = container_index<Nph>;
+  return Make_Functor_Impl(Index{}, f, pobj, forward<Params>(params)...);
+}		/* -----  end of template function Make_Functor  ----- */
+
+//! This is for binding member function of type T. It's the same 
+//as Make_Functor<Output, Input..., Params...> except that we have an 
+//extra argument for the class type that contains the function
+template < class Functor, class T, class Output, class ... Input, class ... Params >
+auto Make_Functor_Wrapper (Functor dummy, T* pobj, Output (T::*const f)(Input...), Params&&... params) 
+  -> decltype (dummy)
+{
+  return { Make_Functor(f, pobj, forward<Params>(params)...), {forward<Params>(params)...} };
 }
 
 /* 
