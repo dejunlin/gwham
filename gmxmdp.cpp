@@ -301,6 +301,9 @@ void GMXMDP::doublechk() {
   checkfep();
   checkpull();
   setexpand();
+  if(!hasTemperature() && !hasPressure() && !hasRestraint()) {
+    throw(MDP_Exception("None of temperature, pressure and restraints is set. Why do you need this MDP file?"));
+  }
 };
 
 void GMXMDP::setLs() {
