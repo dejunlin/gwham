@@ -50,7 +50,7 @@ template <
 class Functor < 
                 const Funct<Output(Arg...)>,
                 const ParamsContainer<ParamsContained, ParamsContainerOther...>,
-		Tobj,
+		const Tobj,
 	        Params... 
 	      >
 {
@@ -59,32 +59,35 @@ class Functor <
     typedef const Funct<Output(Arg...)> Tf;
     //! parameters type
     typedef const ParamsContainer<ParamsContained, ParamsContainerOther...> Tp;
+    //! The type that contains the member function
+    typedef const Tobj To;
+    typedef const To* const cpTo;
     //! This functor type
-    typedef Functor<const Funct<Output(Arg...)>,const ParamsContainer<ParamsContained, ParamsContainerOther...>,Params...> ThisType;
+    typedef Functor<const Funct<Output(Arg...)>,const ParamsContainer<ParamsContained, ParamsContainerOther...>, To, Params...> ThisType;
 
     /* ====================  LIFECYCLE     ======================================= */
     //! Empty constructor
-    Functor() = default;
+    Functor() : Functor(Tf{}, Tp{}) {};
 
     //! Construct from a functor and a parameter initializer list
     /** Note that the parameter type Tp must be brace-initializible 
      */
-    Functor (Tf _funct, initializer_list<ParamsContained> lparam, Tobj* _pobj=nullptr) : Functor(forward<Tf>(_funct), Tp{lparam}, _pobj) {};
+    Functor (Tf _funct, initializer_list<ParamsContained> lparam, cpTo _pobj=nullptr) : Functor(forward<Tf>(_funct), Tp{lparam}, _pobj) {};
 
     //! Construct from a functor and a list of parameters
-    Functor (Tf _funct, Tobj* _pobj, Params... params) : Functor(forward<Tf>(_funct), Tp{forward<Params>(params)...}, _pobj) {};
+    Functor (Tf _funct, Params... params, cpTo _pobj=nullptr) : Functor(forward<Tf>(_funct), Tp{forward<Params>(params)...}, _pobj) {};
 
     //! Copy construction
-    Functor (const ThisType& src) : Functor(src.funct, src.params) {};
+    Functor (const ThisType& src) : Functor(src.funct, src.getParams(), src.getpobj()) {};
 
     //! Construct from a functor and a container of parameters -- Target constructor
-    Functor (Tf _funct, Tp _params, Tobj* _pobj) : 
+    Functor (Tf _funct, Tp _params, cpTo _pobj=nullptr) : 
       funct(_funct), params(_params), pobj(_pobj) {};
     /* ====================  ACCESSORS     ======================================= */
     //! Get the parameters
     Tp& getParams() const { return params; };
     
-    const Tobj& getTobj() const { return *pobj; };
+    cpTo& getpobj() const { return pobj; };
 
     /* ====================  OPERATORS     ======================================= */
     //! Evaluate the functor
@@ -97,7 +100,7 @@ class Functor <
     /** Note that this only compare the parameter sets against each other, which is 
      * in fact not enought to tell whether the 2 functors are different or not
      */
-    bool operator==(const ThisType& rhs) const { return this == &rhs || this->getParams() == rhs.getParams(); }
+    bool operator==(const ThisType& rhs) const { return this == &rhs || (this->params == rhs.getParams() && this->pobj == rhs.getpobj()); }
     bool operator!=(const ThisType& rhs) const { return !((*this)==rhs); }
   protected:
     /* ====================  METHODS       ======================================= */
@@ -105,7 +108,7 @@ class Functor <
     /* ====================  DATA MEMBERS  ======================================= */
     Tf funct;
     Tp params;
-    Tobj* pobj;
+    cpTo pobj;
 }; /* ----------  end of template class Functor  ---------- */
 
 /* 

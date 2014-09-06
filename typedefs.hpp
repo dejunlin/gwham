@@ -45,7 +45,7 @@ const valtype BoltzmannkJ = 0.0083144621;
 const valtype Boltzmannkcal = 0.0019872041;
 
 //! short-hand definition for scalar double -> scalar double function
-typedef Functor<const function<valtype(const valtype&)>, const vector<valtype>> FunctVV;
+typedef Functor<const function<valtype(const valtype&)>, const vector<valtype>, const void> FunctVV;
 
 //! short-hand for a vector of scalar functors
 typedef vector< FunctVV > vFunctVV;
