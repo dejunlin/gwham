@@ -86,6 +86,14 @@ struct Extract_One_Type<1, T1, T...> {
   }
 };
 
+template <>
+struct Extract_One_Type<1> {
+  typedef void type;
+  static inline type get() {
+    return;
+  }
+};
+
 /*
  * =====================================================================================
  *        Class:  Indices generator for constexpr integer 
