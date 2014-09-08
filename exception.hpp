@@ -41,4 +41,8 @@ class Ensemble_Factory_Exception : public General_Exception {
     Ensemble_Factory_Exception(const string& _msg) : General_Exception("Ensemble Factory exception: " + _msg) {};
 };
 
+class TimeSeries_Exception : public General_Exception {
+  public:
+    TimeSeries_Exception(const string& _msg) : General_Exception("TimeSeries exception: " + _msg) {};
+};
 #endif
