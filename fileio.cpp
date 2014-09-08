@@ -23,10 +23,10 @@ fileio::fileio(
   ls(_ls),
   le(_le),
   lc(0),
-  line(string()),
-  lines(vector<string>(0)),
   whitespaces(ws),
-  comments(cm)
+  comments(cm),
+  line(string()),
+  lines(vector<string>(0))
 {
   fopen();
 }
@@ -46,10 +46,10 @@ fileio::fileio(
   ls(_ls),
   le(_le),
   lc(0),
-  line(string()),
-  lines(vector<string>(0)),
   whitespaces(ws),
-  comments(cm)
+  comments(cm),
+  line(string()),
+  lines(vector<string>(0))
 {
 }
 
@@ -61,6 +61,8 @@ fileio::fileio(const fileio& _fio) :
   ls(_fio.ls),
   le(_fio.le),
   lc(_fio.lc),
+  whitespaces(_fio.whitespaces),
+  comments(_fio.comments),
   line(_fio.line),
   lines(_fio.lines)
 {
@@ -84,8 +86,7 @@ bool fileio::fopen() {
   fs.open(fname.c_str(),iomode);
   if(!fs.good()) {
     if(!ifperm) {
-      cerr << "Error opening file: " << fname << endl;
-      exit(-1);
+      throw(FILEIO_Exception("Error opening file: "+fname));
     } else {
       return false;
     }
@@ -97,7 +98,7 @@ bool fileio::fopen() {
 }
 
 bool fileio::emptyline() const {
-  return matchkey(trimltcm(line, comments, whitespaces), ""); 
+  return emptystr(line, comments); 
 }
 
 bool fileio::readaline() {

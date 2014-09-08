@@ -35,25 +35,6 @@ void parser<string>(vector<string>& output, const string& str, string delims) th
   delete[] str_c;
 }
 
-string trimlt(const string& input, const string& lts) {
-  const size_t strbegin = input.find_first_not_of(lts);
-  if(strbegin == string::npos) { return ""; }
-  const size_t strend = input.find_last_not_of(lts);
-  const size_t strrange = strend - strbegin + 1;
-  return input.substr(strbegin, strrange);
-}
-
-string trimcm(const string& input, const string& cm) {
-  const size_t strend = input.find_first_of(cm) - 1;
-  if(strend == string::npos) { return ""; }
-  const size_t strrange = strend + 1;
-  return input.substr(0, strrange);
-}
-
-string trimltcm(const string& input, const string& cm, const string& lts) {
-  return trimlt(trimcm(input, cm), lts);
-}
-
 array<string, 2> getfnfixes(const string& entry) {
   const regex fnamebase(R"(^(.*)[.](.*?)$)");
   auto i = sregex_token_iterator(entry.begin(), entry.end(), fnamebase, {1,2});
@@ -61,4 +42,9 @@ array<string, 2> getfnfixes(const string& entry) {
   ans[0] = *i++;
   ans[1] = *i;
   return ans;
+}
+
+bool emptystr(const string& input, const string& comments) {
+  const regex emptyregex(R"(^\s*[)"+comments+R"(]+.*\n*$|^\s*\n*$)");
+  return regex_match(input, emptyregex);
 }

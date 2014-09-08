@@ -21,15 +21,6 @@ string tostr(const T& input) {
   return ss.str();
 }
 
-//trim any leading and/or trailing 'lts' from input
-string trimlt(const string& input, const string& lts=" \t");
-
-//trim off trailing comments from input
-string trimcm(const string& input, const string& cm=";#@");
-
-//trim off both comments and whitespaces junks
-string trimltcm(const string& input, const string& cm=";#@", const string& lts=" \t"); 
-
 template <class Tp> 
 void strconverter(vector<Tp>& output, const vector<string>& input) throw(FILEIO_Exception)  {
   for(uint i = 0; i < input.size(); ++i) {
@@ -64,33 +55,6 @@ void parser(vector<Tp>& output, const string& str, string delims=" \t") throw(FI
 template <>
 void parser<string>(vector<string>& output, const string& str, string delims) throw(FILEIO_Exception);
 
-//case-sensitive comparison; NOTE std::string::compare() return 0 if and only if the two string match
-template <class T>
-bool matchkey(const string& entry, const T& key) {
-  const string& keystr = tostr(key);
-  return entry.compare(keystr) ? false : true; 
-};
-
-//same as matchkey() except that any trailing comments and leading/trailing whitespaces will be ignored
-template <class T>
-bool nocmmatchkey(const string& entry, const T& key, const string& cm=";#@") {
-  return matchkey(trimltcm(entry, cm), key);
-};
-
-
-//case-insensitive comparison 
-template <class T>
-bool cmatchkey(const string& entry, const T& key) {
-  const string& keystr = tostr(key);
-  return strcasecmp(entry.c_str(), keystr.c_str()) ? false : true; 
-};
-
-//same as cmatchkey except that any trailing comments and leading/trailing whitespaces will be ignored
-template <class T>
-bool nocmcmatchkey(const string& entry, const T& key, const string& cm=";#@") {
-  return cmatchkey(trimltcm(entry, cm), key);
-};
-
 template <class T>
 void setsc(const string& entry, T& output) {
   stringstream ss(entry);
@@ -116,5 +80,8 @@ T stosc(const string& input) {
 
 //! Get the prefix and suffix of a file name
 array<string, 2> getfnfixes(const string& entry);
+
+//! check if the input string is a comment or empty string
+bool emptystr(const string& input, const string& comments);
 
 #endif

@@ -42,6 +42,8 @@ class fileio {
     const linecounter ls; //parse the input file every this many of lines, starting from fileio::lb
     const linecounter le; //ending line of input file to be actually parsed
     linecounter lc; //number of lines actually read, excluding comments but including lines before fileio::lb
+    const string whitespaces;
+    const string comments;
     string line; //used by fileio::readbyline()
     vector<string> lines; //used by fileio::readall()
   private:
@@ -52,8 +54,6 @@ class fileio {
      */
     bool fopen();
     fstream fs; //fstream handle
-    const string whitespaces;
-    const string comments;
 };
 
 #endif
