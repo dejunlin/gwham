@@ -16,12 +16,13 @@
  * =====================================================================================
  */
 
+#include <regex>
 #include "gmxmdp.hpp"
 #include "fileio.hpp"
 #include "fileio_utils.hpp"
 #include "typedefs.hpp"
 #include "hamiltonian.hpp"
-#include <regex>
+#include "timeseries.hpp"
 
 using namespace std;
 
@@ -125,6 +126,10 @@ vector<valtype> GMXMDP::getlambdas() const {
   ans.insert(ans.end(), Lcnt2.begin(), Lcnt2.end());
   ans.insert(ans.end(), Lcnt3.begin(), Lcnt3.end());
   return ans;
+}
+
+vector<TimeSeries<valtype>> CreateTimeSeries() const {
+  
 }
 
 void GMXMDP::checkgeneric() {
@@ -428,14 +433,5 @@ void GMXMDP::setmask() {
       if(it->second) { dim |= 1 << i; } 
       else { dim &= (numeric_limits<int>::max() ^ (1 << i)); }
     }
-  }
-}
-
-vector<TimeSeries> GMXMDP::gents() const {
-  vector<TimeSeries> ans;
-  //If this is an expanded ensemble run, we need 
-  //dhdl.xvg files to tell the states of the system
-  if(isExpandedEnsemble()) {
-
   }
 }

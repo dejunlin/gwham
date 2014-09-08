@@ -147,8 +147,7 @@ class MDP
     /* ====================  MUTATORS      ======================================= */
 
     /* ====================  OPERATORS     ======================================= */
-    //! Time-series factory
-    virtual vector<TimeSeries> gents() const = 0;
+    virtual vector<TimeSeries<valtype>> CreateTimeSeries() const = 0;
 
   protected:
     /* ====================  METHODS       ======================================= */

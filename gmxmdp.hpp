@@ -18,12 +18,6 @@
  * =====================================================================================
  */
 
-#include "typedefs.hpp"
-#include "fileio.hpp"
-#include "fileio_utils.hpp"
-#include "exception.hpp"
-#include "mdp.hpp"
-#include "functor.hpp"
 #include <string>
 #include <string.h>
 #include <map>
@@ -31,6 +25,13 @@
 #include <iterator>
 #include <regex>
 #include <cmath>
+#include "typedefs.hpp"
+#include "fileio.hpp"
+#include "fileio_utils.hpp"
+#include "exception.hpp"
+#include "mdp.hpp"
+#include "functor.hpp"
+#include "timeseries.hpp"
 
 using namespace std;
 /*
@@ -55,8 +56,7 @@ class GMXMDP : public MDP
     /* ====================  MUTATORS      ======================================= */
 
     /* ====================  OPERATORS     ======================================= */
-    //! Time-series factory
-    virtual vector<TimeSeries> gents() const;
+    virtual vector<TimeSeries<valtype>> CreateTimeSeries() const;
     
 
     /* ====================  METHODS       ======================================= */
