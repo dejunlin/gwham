@@ -128,7 +128,7 @@ vector<valtype> GMXMDP::getlambdas() const {
   return ans;
 }
 
-vector<TimeSeries<valtype>> CreateTimeSeries() const {
+vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
   using TS = TimeSeries<valtype>;
   vector<TS> ans;
 
@@ -144,7 +144,7 @@ vector<TimeSeries<valtype>> CreateTimeSeries() const {
     }
     // we only need as much as the number samples in the x.xvg file
     const uint ls = nstdhdl > nstx ? 1 : uint(nstx/nstdhdl); 
-    ans.emplace_back(fileio(fstream::in, false, 0, ls, "#@"), 2, iNcol, 1);
+    ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), 2, iNcol, 1);
   }
 
   // for pull group, we need one x.xvg file
@@ -153,19 +153,21 @@ vector<TimeSeries<valtype>> CreateTimeSeries() const {
   switch(pullT) {
     case NoPull: 
       break;
-    case Contact:
+    case Contact: {
       uint Mask = 0;
-      for(int i = 1; i <= npgrps; ++i)  Mask |= (1<<i);
-      const uint iNcol = npgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, ls, "#@"), Mask, iNcol, npgrps);
+      for(int i = 1; i <= ncntgrps; ++i)  Mask |= (1<<i);
+      const uint iNcol = ncntgrps + 1;
+      ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), Mask, iNcol, ncntgrps);
       break;
-    default:
+    }
+    default: {
       uint Mask = 0;
       // for each pull-group, we have one column of x and one column of dx and we only need dx
       for(int i = 2; i <= 2*npgrps; i+=2)  Mask |= (1<<i);
       const uint iNcol = 2*npgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, ls, "#@"), Mask, iNcol, npgrps);
+      ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), Mask, iNcol, npgrps);
       break;
+    }
   }
   return ans;
 }
