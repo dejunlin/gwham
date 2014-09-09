@@ -148,6 +148,7 @@ vector<TimeSeries<valtype>> CreateTimeSeries() const {
   }
 
   // for pull group, we need one x.xvg file
+  // If nstdhdl is not set, we read all the x.xvg lines
   const uint ls = nstx > nstdhdl ? 1 : uint(nstdhdl/nstx);
   switch(pullT) {
     case NoPull: 
