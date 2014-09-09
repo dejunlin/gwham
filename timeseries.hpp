@@ -81,10 +81,12 @@ class TimeSeries
     linecounter operator()(const string& fname, const DATAPROCESSOR& dproc) {
       linecounter Nl = 0;
       if(!fio.fopen(fname)) { return Nl; }
+      vector<INPUT> out;
       while(fio.readaline()) {
 	const vector<double> cols(fio.line2val());
 	for(uint i = 0; i < vInput.size(); ++i) vInput[i] = cols[i];
-	dproc(vrInput);
+	for(const auto& r : vrInput) out.emplace_back(r.get());
+	dproc(out);
 	++Nl;
       }
     }
