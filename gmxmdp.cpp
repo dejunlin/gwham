@@ -150,7 +150,6 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
 
   // for pull group, we need one x.xvg file
   // If nstdhdl is not set, we read all the x.xvg lines
-  const linecounter ls = nstx > nstdhdl ? 1 : linecounter(nstdhdl/nstx);
   switch(pullT) {
     case NoPull: 
       break;
@@ -158,7 +157,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
       ulong Mask = 0;
       for(int i = 1; i <= ncntgrps; ++i)  Mask |= (1<<i);
       const ulong iNcol = ncntgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), Mask, iNcol, ncntgrps);
+      ans.emplace_back(fileio(fstream::in, false, 0, 1, MAXNLINE, "#@"), Mask, iNcol, ncntgrps);
       break;
     }
     default: {
@@ -166,7 +165,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
       // for each pull-group, we have one column of x and one column of dx and we only need dx
       for(int i = 2; i <= 2*npgrps; i+=2)  Mask |= (1<<i);
       const ulong iNcol = 2*npgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), Mask, iNcol, npgrps);
+      ans.emplace_back(fileio(fstream::in, false, 0, 1, MAXNLINE, "#@"), Mask, iNcol, npgrps);
       break;
     }
   }
