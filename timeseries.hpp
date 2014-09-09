@@ -84,6 +84,9 @@ class TimeSeries
       vector<INPUT> out;
       while(fio.readaline()) {
 	const vector<double> cols(fio.line2val());
+	if(cols.size() != iNcol) { 
+	  throw(TimeSeries_Exception("Wrong number of columns in time-series file: "+fname));
+	}
 	for(uint i = 0; i < vInput.size(); ++i) vInput[i] = cols[i];
 	for(const auto& r : vrInput) out.emplace_back(r.get());
 	dproc(out);
