@@ -14,8 +14,8 @@ fileio::fileio(
   const linecounter _lb, 
   const linecounter _ls, 
   const linecounter _le,
-  const string& cm,
-  const string& ws) :
+  const string& cm
+  ) :
   fname(_fname),
   iomode(mode),
   ifperm(perm),
@@ -23,7 +23,6 @@ fileio::fileio(
   ls(_ls),
   le(_le),
   lc(0),
-  whitespaces(ws),
   comments(cm),
   line(string()),
   lines(vector<string>(0))
@@ -37,8 +36,8 @@ fileio::fileio(
   const linecounter _lb, 
   const linecounter _ls, 
   const linecounter _le,
-  const string& cm,
-  const string& ws) :
+  const string& cm
+  ) :
   fname(string()),
   iomode(mode),
   ifperm(perm),
@@ -46,7 +45,6 @@ fileio::fileio(
   ls(_ls),
   le(_le),
   lc(0),
-  whitespaces(ws),
   comments(cm),
   line(string()),
   lines(vector<string>(0))
@@ -61,7 +59,6 @@ fileio::fileio(const fileio& _fio) :
   ls(_fio.ls),
   le(_fio.le),
   lc(_fio.lc),
-  whitespaces(_fio.whitespaces),
   comments(_fio.comments),
   line(_fio.line),
   lines(_fio.lines)

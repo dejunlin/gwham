@@ -10,8 +10,8 @@ using namespace std;
 
 class fileio {
   public:
-    fileio(const string& _fname, const ios_base::openmode& mode, const bool& perm=true, const linecounter _lb=0, const linecounter _ls=1, const linecounter _le=MAXNLINE, const string& cm="#@;", const string& ws=" \t\n\v\f\r");
-    fileio(const ios_base::openmode& mode, const bool& perm=true, const linecounter _lb=0, const linecounter _ls=1, const linecounter _le=MAXNLINE, const string& cm="#@;", const string& ws=" \t\n\v\f\r");
+    fileio(const string& _fname, const ios_base::openmode& mode, const bool& perm=true, const linecounter _lb=0, const linecounter _ls=1, const linecounter _le=MAXNLINE, const string& cm="#@;");
+    fileio(const ios_base::openmode& mode, const bool& perm=true, const linecounter _lb=0, const linecounter _ls=1, const linecounter _le=MAXNLINE, const string& cm="#@;");
     fileio(const fileio& _fio);
     //! if fileio::line contains only whitespaces
     bool emptyline() const;
@@ -42,7 +42,6 @@ class fileio {
     const linecounter ls; //parse the input file every this many of lines, starting from fileio::lb
     const linecounter le; //ending line of input file to be actually parsed
     linecounter lc; //number of lines actually read, excluding comments but including lines before fileio::lb
-    const string whitespaces;
     const string comments;
     string line; //used by fileio::readbyline()
     vector<string> lines; //used by fileio::readall()
