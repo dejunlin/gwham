@@ -37,10 +37,7 @@ class TimeSeries
   public:
     typedef TimeSeries<INPUT> ThisType;
     typedef std::reference_wrapper<INPUT> rINPUT;
-  protected:
-    /* ====================  METHODS       ======================================= */
-
-    /* ====================  DATA MEMBERS  ======================================= */
+    //! the file reader
     fileio fio;
     //! Mask indicates which columns are used; 
     const ulong Mask = 0;
@@ -48,6 +45,10 @@ class TimeSeries
     const ulong iNcol = 0;
     //! Total number of columns where are interested in
     const ulong oNcol = 0;
+  protected:
+    /* ====================  METHODS       ======================================= */
+
+    /* ====================  DATA MEMBERS  ======================================= */
     vector<INPUT> vInput;
     vector<rINPUT> vrInput;
 
@@ -55,7 +56,7 @@ class TimeSeries
     typedef decltype(TimeSeries<INPUT>::Mask) MaskT;
     constexpr static int Nbit = numeric_limits<MaskT>::digits;
     /* ====================  LIFECYCLE     ======================================= */
-    TimeSeries (fileio&& _fio, const uint _Mask, const uint _iNcol, const uint _oNcol) :
+    TimeSeries (fileio&& _fio, const ulong _Mask, const ulong _iNcol, const ulong _oNcol) :
       fio(std::move(_fio)), 
       Mask(_Mask),
       iNcol(_iNcol),
@@ -63,14 +64,16 @@ class TimeSeries
       vInput(vector<INPUT>(iNcol))
       { init(); };
 
-    TimeSeries (fileio& _fio, const uint _Mask, const uint _iNcol, const uint _oNcol) : 
+    TimeSeries (const fileio& _fio, const ulong _Mask, const ulong _iNcol, const ulong _oNcol) : 
       fio(_fio), 
       Mask(_Mask),
       iNcol(_iNcol),
       oNcol(_oNcol),
       vInput(vector<INPUT>(iNcol))
       { init(); };
-
+    
+    TimeSeries (const ThisType& src) :
+      TimeSeries(src.fio, src.Mask, src.iNcol, src.oNcol) {}; 
     /* ====================  ACCESSORS     ======================================= */
 
     /* ====================  MUTATORS      ======================================= */
@@ -85,10 +88,10 @@ class TimeSeries
       while(fio.readaline()) {
 	const vector<double> cols(fio.line2val());
 	if(cols.size() != iNcol) { 
-	  throw(TimeSeries_Exception("Wrong number of columns in time-series file: "+fname+" at line: '"+fio.line+"'"));
+	  throw(TimeSeries_Exception("Wrong number of columns in time-series file: "+fname+" at line: '"+fio.line+"'. Expected "+tostr(iNcol)+" but got "+tostr(cols.size())));
 	}
-	for(uint i = 0; i < vInput.size(); ++i) vInput[i] = cols[i];
-	for(uint i = 0; i < out.size(); ++i) out[i] = vrInput[i].get();
+	for(ulong i = 0; i < vInput.size(); ++i) vInput[i] = cols[i];
+	for(ulong i = 0; i < out.size(); ++i) out[i] = vrInput[i].get();
 	dproc(out);
 	++Nl;
       }
@@ -102,8 +105,8 @@ class TimeSeries
       }
 
       //This initialize the references to the columns in the input data
-      for(uint i = 0; i < iNcol; ++i) {
-	if(Mask & (1<<i)) {
+      for(ulong i = 0; i < iNcol; ++i) {
+	if(Mask & (1ul<<i)) {
 	  vrInput.emplace_back(vInput[i]);
 	}
       }
