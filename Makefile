@@ -68,7 +68,7 @@ fileio.o: fileio_utils.hpp fileio_utils.cpp fileio.hpp fileio.cpp
 gmxmdpio.o: fileio_utils.o fileio.o gmxmdpio.hpp gmxmdpio.cpp 
 	$(CC) $(CFLAGS) -c gmxmdpio.cpp
 
-gmxmdp.o: fileio_utils.o fileio.o mdp.hpp gmxmdp.hpp gmxmdp.cpp functor.hpp
+gmxmdp.o: fileio_utils.o fileio.o mdp.hpp gmxmdp.hpp gmxmdp.cpp functor.hpp timeseries.hpp
 	$(CC) $(CFLAGS) -c gmxmdp.cpp
 
 gwham_gromacs463_umb : $(OBJSGMX463UMB) 
