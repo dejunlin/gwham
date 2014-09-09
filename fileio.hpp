@@ -38,9 +38,9 @@ class fileio {
     string fname; //filename
     ios_base::openmode iomode; //read or write
     const bool ifperm; //if true, won't exit even though a file can't be opened
-    const linecounter lb; //beginning (from 1) line of input file to be actually parsed 
-    const linecounter ls; //parse the input file every this many of lines, starting from fileio::lb
-    const linecounter le; //ending line of input file to be actually parsed
+    linecounter lb; //beginning (from 1) line of input file to be actually parsed 
+    linecounter ls; //parse the input file every this many of lines, starting from fileio::lb
+    linecounter le; //ending line of input file to be actually parsed
     linecounter lc; //number of lines actually read, excluding comments but including lines before fileio::lb
     const string comments;
     string line; //used by fileio::readbyline()
