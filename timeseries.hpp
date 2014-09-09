@@ -81,14 +81,14 @@ class TimeSeries
     linecounter operator()(const string& fname, const DATAPROCESSOR& dproc) {
       linecounter Nl = 0;
       if(!fio.fopen(fname)) { return Nl; }
-      vector<INPUT> out;
+      vector<INPUT> out(vrInput.size());
       while(fio.readaline()) {
 	const vector<double> cols(fio.line2val());
 	if(cols.size() != iNcol) { 
 	  throw(TimeSeries_Exception("Wrong number of columns in time-series file: "+fname+" at line: '"+fio.line+"'"));
 	}
 	for(uint i = 0; i < vInput.size(); ++i) vInput[i] = cols[i];
-	for(const auto& r : vrInput) out.emplace_back(r.get());
+	for(uint i = 0; i < out.size(); ++i) out[i] = vrInput[i].get();
 	dproc(out);
 	++Nl;
       }
