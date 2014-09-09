@@ -129,7 +129,44 @@ vector<valtype> GMXMDP::getlambdas() const {
 }
 
 vector<TimeSeries<valtype>> CreateTimeSeries() const {
-  
+  using TS = TimeSeries<valtype>;
+  vector<TS> ans;
+
+  // for expanded ensemble, we need dhdl file
+  if(isExpandedEnsemble()) {
+    //! 1st column is time, 2nd is state id, 3rd is potential energy
+    //4 - 11 are dH/dLmass, dH/dLcoul, dH/dLvdw, dH/dLbond, dH/dLrst,
+    //dH/dLcnt1, dH/dLcnt2, dH/dLcnt3
+    //the rest ate the difference in potential energy of the Nstates
+    const uint iNcol = 3 + NFEPLambdas - 2 + 3 + Nstates;
+    if( (nstdhdl % nstx) && (nstx % nstdhdl) ) {
+      throw(MDP_Exception("Can't determine the exapnded-ensemble state because nstdhdl is not a multiple of nstx or nstx nor the other way around"));
+    }
+    // we only need as much as the number samples in the x.xvg file
+    const uint ls = nstdhdl > nstx ? 1 : uint(nstx/nstdhdl); 
+    ans.emplace_back(fileio(fstream::in, false, 0, ls, "#@"), 2, iNcol, 1);
+  }
+
+  // for pull group, we need one x.xvg file
+  const uint ls = nstx > nstdhdl ? 1 : uint(nstdhdl/nstx);
+  switch(pullT) {
+    case NoPull: 
+      break;
+    case Contact:
+      uint Mask = 0;
+      for(int i = 1; i <= npgrps; ++i)  Mask |= (1<<i);
+      const uint iNcol = npgrps + 1;
+      ans.emplace_back(fileio(fstream::in, false, 0, ls, "#@"), Mask, iNcol, npgrps);
+      break;
+    default:
+      uint Mask = 0;
+      // for each pull-group, we have one column of x and one column of dx and we only need dx
+      for(int i = 2; i <= 2*npgrps; i+=2)  Mask |= (1<<i);
+      const uint iNcol = 2*npgrps + 1;
+      ans.emplace_back(fileio(fstream::in, false, 0, ls, "#@"), Mask, iNcol, npgrps);
+      break;
+  }
+  return ans;
 }
 
 void GMXMDP::checkgeneric() {
