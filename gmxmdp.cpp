@@ -134,15 +134,20 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
 
   // for expanded ensemble, we need dhdl file
   if(isExpandedEnsemble()) {
+    //if nstexpanded is not a multiple of nstdhdl or the other way around
+    //we can't determine the lambda state
+    if( (nstdhdl % nstexpanded) && (nstexpanded % nstdhdl) ) {
+      throw(MDP_Exception("Can't determine the exapnded-ensemble state because nstdhdl is not a multiple of nstexpanded nor the other way around"));
+    }
+    if( (nstdhdl % nstx) && (nstx % nstdhdl) ) {
+      throw(MDP_Exception("Can't determine the exapnded-ensemble state of samples in x.xvg because nstdhdl is not a multiple of nstx nor the other way around"));
+    }
     //! 1st column is time, 2nd is state id, 3rd is potential energy
     //4 - 11 are dH/dLmass, dH/dLcoul, dH/dLvdw, dH/dLbond, dH/dLrst,
     //dH/dLcnt1, dH/dLcnt2, dH/dLcnt3
     //the rest are the difference in potential energy of the Nstates
     //plus the PV term (if pressure coupling is on)
     const linecounter iNcol = 3 + NFEPLambdas - 2 + 3 + Nstates + hasPressure();
-    if( (nstdhdl % nstx) && (nstx % nstdhdl) ) {
-      throw(MDP_Exception("Can't determine the exapnded-ensemble state because nstdhdl is not a multiple of nstx or nstx nor the other way around"));
-    }
     // we only need as much as the number samples in the x.xvg file
     const linecounter ls = nstdhdl > nstx ? 1 : linecounter(nstx/nstdhdl); 
     ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), 2, iNcol, 1);
