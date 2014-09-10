@@ -156,7 +156,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
   // If expanded-ensemble MC move is more frequent than nstdhdl, 
   // we can't tell the lambda state from nstdhdl except for those 
   // output every nstdhdl steps
-  const linecounter ls = nstexpanded < nstdhdl ? nstdhdl : 1;
+  const linecounter ls = (isExpandedEnsemble() && (nstexpanded < nstdhdl)) ? nstdhdl : 1;
   // for pull group, we need one x.xvg file
   // If nstdhdl is not set, we read all the x.xvg lines
   switch(pullT) {
