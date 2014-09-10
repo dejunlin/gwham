@@ -35,11 +35,11 @@ int main(int argc, char* argv[]) {
 
   vector<uint> nbins, nwins, dimprt;
   vector<valtype> hv, lv;
-  parser<uint>(nbins,nbinstr);
-  parser<uint>(nwins,nwinsstr);
-  parser<uint>(dimprt,dimprtstr);
-  parser<valtype>(hv,hvstr);
-  parser<valtype>(lv,lvstr);
+  split<uint>(nbins,nbinstr);
+  split<uint>(nwins,nwinsstr);
+  split<uint>(dimprt,dimprtstr);
+  split<valtype>(hv,hvstr);
+  split<valtype>(lv,lvstr);
 
   if(nbins.size() != hv.size() || hv.size() != lv.size() || lv.size() != nwins.size() || nwins.size() != dim) {
     cerr << "The size of nbins, hv, lv, nwins aren't all " << dim << endl;

@@ -59,13 +59,13 @@ int main(int argc, char* argv[]) {
   cout << endl;
 
   vector<uint> rcsmp, rcprt;
-  parser<uint>(rcsmp,rcsmpstr);
-  parser<uint>(rcprt,rcprtstr);
+  split<uint>(rcsmp,rcsmpstr);
+  split<uint>(rcprt,rcprtstr);
   vector<uint> nbins;
   vector<valtype> hv, lv;
-  parser<uint>(nbins,nbinstr);
-  parser<valtype>(hv,hvstr);
-  parser<valtype>(lv,lvstr);
+  split<uint>(nbins,nbinstr);
+  split<valtype>(hv,hvstr);
+  split<valtype>(lv,lvstr);
   
   //Check if the histogram parameters (nbins, hv, lv) make sense
   if(nbins.size() != hv.size() || hv.size() != lv.size()) {

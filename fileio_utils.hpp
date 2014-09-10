@@ -22,7 +22,7 @@ string tostr(const T& input) {
 }
 
 template <class Tp> 
-void strconverter(vector<Tp>& output, const vector<string>& input) throw(FILEIO_Exception)  {
+void strto(vector<Tp>& output, const vector<string>& input) throw(FILEIO_Exception)  {
   for(uint i = 0; i < input.size(); ++i) {
     istringstream iss(input[i]);
     vector<Tp> tmp((istream_iterator<Tp>(iss)), istream_iterator<Tp>());
@@ -37,23 +37,30 @@ void strconverter(vector<Tp>& output, const vector<string>& input) throw(FILEIO_
 
 //split a string into an array by delims
 template <class Tp> 
-void parser(vector<Tp>& output, const string& str, string delims=" \t") throw(FILEIO_Exception) {
+void split(vector<Tp>& output, const string& str, string delims=" \t") throw(FILEIO_Exception) {
   //first split str into a array of std::string
   vector<string> tmp;
-  parser<string>(tmp, str, delims);
+  split<string>(tmp, str, delims);
 
   //then parse each element into output
   try {
-    strconverter(output, tmp);
+    strto(output, tmp);
   } catch(FILEIO_Exception& fioex) {
     fioex.prepend("Error parsing string: '" + str + "' into a vector of type '" + typeid(Tp).name() + "' ");
     throw fioex;
   }
 }
 
-//specialized parser for array of string -- NOTE that delims can still be defaulted to the one in the general template
+//specialized split for array of string -- NOTE that delims can still be defaulted to the one in the general template
 template <>
-void parser<string>(vector<string>& output, const string& str, string delims) throw(FILEIO_Exception);
+void split<string>(vector<string>& output, const string& str, string delims) throw(FILEIO_Exception);
+
+template <class Tp>
+vector<Tp> split(const string& str, string delims=" \t") {
+  vector<Tp> ans;
+  split<Tp>(ans, str, delims);
+  return ans;
+}
 
 template <class T>
 void setsc(const string& entry, T& output) {
@@ -65,7 +72,7 @@ void setsc(const string& entry, T& output) {
 
 template <class T>
 void setvec(const string& entry, vector<T>& output) {
-  parser(output, entry); 
+  split(output, entry); 
 };
 
 template <class T>

@@ -217,7 +217,7 @@ uint mdp2pullpot::getpullgrpid(const string& directive, const string& str) const
 
 uint mdp2pullpot::getcontactgrpid(const string& str) const {
   vector<string> out;
-  parser<string>(out, str, "_");
+  split<string>(out, str, "_");
   return getpullgrpid("contactgroup",out[1]);
 }
 

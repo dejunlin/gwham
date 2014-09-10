@@ -126,19 +126,19 @@ void fileio::readall() {
 
 vector<valtype> fileio::line2val() const {
   vector<valtype> ans;
-  parser<valtype>(ans, line);
+  split<valtype>(ans, line);
   return ans;
 }
 
 vector<string> fileio::line2str() const {
   vector<string> ans;
-  parser<string>(ans, line);
+  split<string>(ans, line);
   return ans;
 }
 
 vector<string> fileio::line2str(const string& delims) const {
   vector<string> ans;
-  parser<string>(ans, line, delims);
+  split<string>(ans, line, delims);
   return ans;
 }
 

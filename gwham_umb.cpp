@@ -68,9 +68,9 @@ int main(int argc, char* argv[]) {
 
   vector<uint> nbins;
   vector<valtype> hv, lv;
-  parser<uint>(nbins,nbinstr);
-  parser<valtype>(hv,hvstr);
-  parser<valtype>(lv,lvstr);
+  split<uint>(nbins,nbinstr);
+  split<valtype>(hv,hvstr);
+  split<valtype>(lv,lvstr);
   //Check if the histogram parameters (nbins, hv, lv) make sense
   if(nbins.size() != hv.size() || hv.size() != lv.size()) {
     cerr << "The size of nbins, hv and lv don't match one another" << endl;
@@ -103,8 +103,8 @@ int main(int argc, char* argv[]) {
 
     //Set up the hamiltonian parameters
     vector<valtype> rstcenters, rstforces;
-    strconverter<valtype>(rstcenters, vector<string>(line.begin()+1, line.begin()+1+ndim));
-    strconverter<valtype>(rstforces, vector<string>(line.begin()+1+ndim, line.begin()+1+2*ndim));
+    strto<valtype>(rstcenters, vector<string>(line.begin()+1, line.begin()+1+ndim));
+    strto<valtype>(rstforces, vector<string>(line.begin()+1+ndim, line.begin()+1+2*ndim));
     vector<valtype> params;
     params.push_back(Boltzmannkcal);
     params.push_back(T);
