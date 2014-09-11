@@ -113,7 +113,8 @@ void genens(const MDP& mdp, vpEnsemble& ens, bool combinestates) {
 }
 
 template <class MDP>
-vpEnsemble MDP2Ensemble (const vector<MDP>& mdps, const bool combinestates)
+typename std::enable_if<!std::is_pointer<MDP>::value, vpEnsemble>::type
+MDP2Ensemble (const vector<MDP>& mdps, const bool combinestates)
 {
   vpEnsemble ans;
   for(const auto& mdp : mdps) {
@@ -126,8 +127,9 @@ vpEnsemble MDP2Ensemble (const vector<MDP>& mdps, const bool combinestates)
   return ans;
 }		/* -----  end of template function generate_ensemble  ----- */
 
-template <class MDP>
-vpEnsemble MDP2Ensemble (const vector<MDP*>& pmdps, const bool combinestates)
+template <class PMDP>
+typename std::enable_if<std::is_pointer<PMDP>::value, vpEnsemble>::type
+MDP2Ensemble (const vector<PMDP>& pmdps, const bool combinestates)
 {
   vpEnsemble ans;
   for(const auto& pmdp : pmdps) {
