@@ -126,4 +126,18 @@ vpEnsemble MDP2Ensemble (const vector<MDP>& mdps, const bool combinestates)
   return ans;
 }		/* -----  end of template function generate_ensemble  ----- */
 
+template <class MDP>
+vpEnsemble MDP2Ensemble (const vector<MDP*>& pmdps, const bool combinestates)
+{
+  vpEnsemble ans;
+  for(const auto& pmdp : pmdps) {
+    chkmdp(*pmdp);   
+    genens(*pmdp, ans, combinestates);
+  }
+  //! Check if we need to take care of temperature and pressure
+  chkens(ans);
+
+  return ans;
+}		/* -----  end of template function generate_ensemble  ----- */
+
 #endif
