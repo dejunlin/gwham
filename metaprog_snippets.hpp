@@ -18,7 +18,8 @@
  * =====================================================================================
  */
 #include <iostream>
-
+#include <memory>
+#include <type_traits>
 /*
  * =====================================================================================
  *        Class:  get the last element from parameter pack
@@ -290,6 +291,17 @@ template < class T > struct is_string : std::false_type {};
 template <typename charT, typename traits, typename Alloc>
 struct is_string<std::basic_string<charT, traits, Alloc> > : std::true_type {};
 
+
+/*
+ * =====================================================================================
+ *        Class:  Type trait of shared_ptr 
+ *  Description:  
+ * =====================================================================================
+ */
+namespace std {
+template < class T >
+struct is_pointer<std::shared_ptr<T>> : std::true_type {};
+}
 
 /*
  * =====================================================================================
