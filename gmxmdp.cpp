@@ -150,7 +150,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
     const linecounter iNcol = 3 + NFEPLambdas - 2 + 3 + Nstates + hasPressure();
     // we only need as much as the number samples in the x.xvg file
     const linecounter ls = nstdhdl > nstx ? 1 : linecounter(nstx/nstdhdl); 
-    ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), 2, iNcol, 1);
+    ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "dhdl.xvg", 2, iNcol, 1);
   }
 
   // If expanded-ensemble MC move is more frequent than nstdhdl, 
@@ -166,7 +166,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
       ulong Mask = 0;
       for(int i = 1; i <= ncntgrps; ++i)  Mask |= (1<<i);
       const ulong iNcol = ncntgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), Mask, iNcol, ncntgrps);
+      ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, ncntgrps);
       break;
     }
     default: {
@@ -174,7 +174,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
       // for each pull-group, we have one column of x and one column of dx and we only need dx
       for(int i = 2; i <= 2*npgrps; i+=2)  Mask |= (1<<i);
       const ulong iNcol = 2*npgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), Mask, iNcol, npgrps);
+      ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, npgrps);
       break;
     }
   }

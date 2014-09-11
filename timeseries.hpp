@@ -39,6 +39,8 @@ class TimeSeries
     typedef std::reference_wrapper<INPUT> rINPUT;
     //! the file reader
     fileio fio;
+    //! file name suffix
+    const string fnsuffix;
     //! Mask indicates which columns are used; 
     const ulong Mask = 0;
     //! Total number of columns in input (should be <= the number of digits in Mask)
@@ -56,16 +58,18 @@ class TimeSeries
     typedef decltype(TimeSeries<INPUT>::Mask) MaskT;
     constexpr static int Nbit = numeric_limits<MaskT>::digits;
     /* ====================  LIFECYCLE     ======================================= */
-    TimeSeries (fileio&& _fio, const ulong _Mask, const ulong _iNcol, const ulong _oNcol) :
-      fio(std::move(_fio)), 
+    TimeSeries (fileio&& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol) :
+      fio(std::move(_fio)),
+      fnsuffix(_fnsuffix),
       Mask(_Mask),
       iNcol(_iNcol),
       oNcol(_oNcol),
       vInput(vector<INPUT>(iNcol))
       { init(); };
 
-    TimeSeries (const fileio& _fio, const ulong _Mask, const ulong _iNcol, const ulong _oNcol) : 
+    TimeSeries (const fileio& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol) : 
       fio(_fio), 
+      fnsuffix(_fnsuffix),
       Mask(_Mask),
       iNcol(_iNcol),
       oNcol(_oNcol),
@@ -73,7 +77,7 @@ class TimeSeries
       { init(); };
     
     TimeSeries (const ThisType& src) :
-      TimeSeries(src.fio, src.Mask, src.iNcol, src.oNcol) {}; 
+      TimeSeries(src.fio, src.fnsuffix, src.Mask, src.iNcol, src.oNcol) {}; 
     /* ====================  ACCESSORS     ======================================= */
 
     /* ====================  MUTATORS      ======================================= */
