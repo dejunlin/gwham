@@ -57,7 +57,9 @@ class GMXMDP : public MDP
 
     /* ====================  OPERATORS     ======================================= */
     virtual vector<TimeSeries<valtype>> CreateTimeSeries() const;
-    
+    static pMDP CreateMDP(const string& fname) {
+      return make_shared<GMXMDP>(fname);
+    }
 
     /* ====================  METHODS       ======================================= */
 
