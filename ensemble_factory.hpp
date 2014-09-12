@@ -86,7 +86,7 @@ genens(const PMDP& pmdp, vpEnsemble& ens, multimap<PMDP, uint>& pmdp2ipens, bool
   }
 }
 
-void chkens(vpEnsemble& ens) {
+uint chkens(const vpEnsemble& ens) {
   uint Qt = 0;
   for(auto& pens : ens) {
     if(typeid(*pens) != typeid(*ens[0])) {
@@ -94,7 +94,11 @@ void chkens(vpEnsemble& ens) {
     }
     Qt |= pens->cmp(*ens[0]);
   }
+  return Qt;
+}
 
+void adjustens(vpEnsemble& ens) {
+  const uint Qt = chkens(ens);
   //! If pressures are consistent, down cast the pointer to NVT 
   if(!(Qt & (1<<Ensemble::DPressure))) {
     for(auto& pens : ens) { 
@@ -109,7 +113,7 @@ void chkens(vpEnsemble& ens) {
       auto _pens = dynamic_pointer_cast<NVE>(pens);
       _pens->getH().getPotentialFuncts().emplace_back(Make_Functor_Wrapper(FunctVV{}, Linear<valtype>, 1.0, 0.0)); 
     }
-  } 
+  }
 }
 
 template <class PMDP>
@@ -121,8 +125,8 @@ MDP2Ensemble (const vector<PMDP>& pmdps, multimap<PMDP, uint>& pmdp2ipens, const
     chkmdp(pmdp);   
     genens(pmdp, ans, pmdp2ipens, combinestates);
   }
-  //! Check if we need to take care of temperature and pressure
-  chkens(ans);
+  //! adjust ensembles if we need to take care of temperature and pressure
+  adjustens(ans);
 
   return ans;
 }		/* -----  end of template function generate_ensemble  ----- */

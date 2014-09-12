@@ -127,7 +127,8 @@ int main(int argc, char* argv[]) {
 
   //create the time-series readers
   for(const auto& pmdp : pmdps) {
-    auto vts = pmdp->CreateTimeSeries();
+    // if temperature are different among ensembles, we need to read potential energy
+    auto vts = pmdp->CreateTimeSeries(chkens(pens)&(1<<Ensemble::DTemperature));
 
     cout << "#require " << vts.size() << " types of time-serie files for " << pmdp->fname << " : ";
     for(const auto& ts : vts) {

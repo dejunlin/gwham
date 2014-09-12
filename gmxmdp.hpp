@@ -56,7 +56,7 @@ class GMXMDP : public MDP
     /* ====================  MUTATORS      ======================================= */
 
     /* ====================  OPERATORS     ======================================= */
-    virtual vector<TimeSeries<valtype>> CreateTimeSeries() const;
+    virtual vector<TimeSeries<valtype>> CreateTimeSeries(const bool& requirepot) const;
     static pMDP CreateMDP(const string& fname) {
       return make_shared<GMXMDP>(fname);
     }
@@ -99,8 +99,10 @@ class GMXMDP : public MDP
     } geomT = NGeomTypes;
     static const map<string, PullGeom> str2geomT;
     string geomTstr = "geomTstr";
+    //! Output frequency in steps for edr file
+    int nstenergy = 1000;
     //! Output frequency in steps for dhdl file
-    int nstdhdl = -1;
+    int nstdhdl = 100;
     //! Output frequency in steps for doing expanded ensemble
     int nstexpanded = -1;
     //! Temperature for doing Monte Carlo jump between FEP states 
@@ -113,9 +115,9 @@ class GMXMDP : public MDP
     //! Pull dimension
     int dim = 0;
     //! Output frequency in steps for pulled quantity 
-    int nstx = -1;
+    int nstx = 10;
     //! Output frequency in steps for pulling forces
-    int nstf = -1;
+    int nstf = 1;
     //! Number of pull groups
     int npgrps = -1;
     //! Number of contact groups
@@ -217,6 +219,7 @@ class GMXMDP : public MDP
       key2int =
       {
         {"init-lambda-state", Linit},
+        {"nstenergy", nstenergy},
         {"nstdhdl", nstdhdl},
         {"nstexpanded", nstexpanded},
         {"pull_nstxout", nstx},

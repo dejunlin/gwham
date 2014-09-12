@@ -17,12 +17,14 @@
  */
 
 #include <regex>
+#include <algorithm>
 #include "gmxmdp.hpp"
 #include "fileio.hpp"
 #include "fileio_utils.hpp"
 #include "typedefs.hpp"
 #include "hamiltonian.hpp"
 #include "timeseries.hpp"
+#include "metaprog_snippets.hpp"
 
 using namespace std;
 
@@ -128,20 +130,21 @@ vector<valtype> GMXMDP::getlambdas() const {
   return ans;
 }
 
-vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
+vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) const {
   using TS = TimeSeries<valtype>;
   vector<TS> ans;
-
+  
+  //if we need potential energy, the frequency to read ener.xvg and x.xvg is 
+  //the least common multiple of the 2 
+  uint nstcv = requirepot ? LCM(uint(nstx), uint(nstenergy)) : nstx; 
+ 
   // for expanded ensemble, we need dhdl file
   if(isExpandedEnsemble()) {
-    //if nstexpanded is not a multiple of nstdhdl or the other way around
-    //we can't determine the lambda state
-    if( (nstdhdl % nstexpanded) && (nstexpanded % nstdhdl) ) {
-      throw(MDP_Exception("Can't determine the exapnded-ensemble state because nstdhdl is not a multiple of nstexpanded nor the other way around"));
-    }
-    if( (nstdhdl % nstx) && (nstx % nstdhdl) ) {
-      throw(MDP_Exception("Can't determine the exapnded-ensemble state of samples in x.xvg because nstdhdl is not a multiple of nstx nor the other way around"));
-    }
+    // If expanded-ensemble MC move is more frequent than nstdhdl, 
+    // we can't tell the lambda state from nstdhdl except for those 
+    // output every nstdhdl steps
+    const uint nstdhdlcv = LCM(uint(nstdhdl), uint(nstcv));
+    nstcv = nstdhdlcv;
     //! 1st column is time, 2nd is state id, 3rd is potential energy
     //4 - 11 are dH/dLmass, dH/dLcoul, dH/dLvdw, dH/dLbond, dH/dLrst,
     //dH/dLcnt1, dH/dLcnt2, dH/dLcnt3
@@ -149,14 +152,11 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
     //plus the PV term (if pressure coupling is on)
     const linecounter iNcol = 3 + NFEPLambdas - 2 + 3 + Nstates + hasPressure();
     // we only need as much as the number samples in the x.xvg file
-    const linecounter ls = nstdhdl > nstx ? 1 : linecounter(nstx/nstdhdl); 
+    const linecounter ls = linecounter(nstdhdlcv/nstdhdl); 
     ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "dhdl.xvg", 2, iNcol, 1);
   }
 
-  // If expanded-ensemble MC move is more frequent than nstdhdl, 
-  // we can't tell the lambda state from nstdhdl except for those 
-  // output every nstdhdl steps
-  const linecounter ls = (isExpandedEnsemble() && (nstexpanded < nstdhdl)) ? nstdhdl : 1;
+  const linecounter lsx = linecounter(nstcv/nstx);
   // for pull group, we need one x.xvg file
   // If nstdhdl is not set, we read all the x.xvg lines
   switch(pullT) {
@@ -166,7 +166,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
       ulong Mask = 0;
       for(int i = 1; i <= ncntgrps; ++i)  Mask |= (1<<i);
       const ulong iNcol = ncntgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, ncntgrps);
+      ans.emplace_back(fileio(fstream::in, false, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, ncntgrps);
       break;
     }
     default: {
@@ -174,10 +174,20 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries() const {
       // for each pull-group, we have one column of x and one column of dx and we only need dx
       for(int i = 2; i <= 2*npgrps; i+=2)  Mask |= (1<<i);
       const ulong iNcol = 2*npgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, npgrps);
+      ans.emplace_back(fileio(fstream::in, false, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, npgrps);
       break;
     }
   }
+  
+  // If we need to read potential energy
+  if(requirepot) {
+    const linecounter lse = linecounter(nstcv/nstenergy);
+    const ulong Mask = 2; 
+    const ulong iNcol = 2;
+    const ulong oNcol = 1;
+    ans.emplace_back(fileio(fstream::in, false, 0, lse, MAXNLINE, "#@"), "ener.xvg", Mask, iNcol, oNcol);
+  }
+
   return ans;
 }
 

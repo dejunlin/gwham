@@ -147,7 +147,7 @@ class MDP
     /* ====================  MUTATORS      ======================================= */
 
     /* ====================  OPERATORS     ======================================= */
-    virtual vector<TimeSeries<valtype>> CreateTimeSeries() const = 0;
+    virtual vector<TimeSeries<valtype>> CreateTimeSeries(const bool& requirepot) const = 0;
 
   protected:
     /* ====================  METHODS       ======================================= */
