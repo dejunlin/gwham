@@ -156,6 +156,15 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
     ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "dhdl.xvg", 2, iNcol, 1);
   }
 
+  // If we need to read potential energy
+  if(requirepot) {
+    const linecounter lse = linecounter(nstcv/nstenergy);
+    const ulong Mask = 2; 
+    const ulong iNcol = 2;
+    const ulong oNcol = 1;
+    ans.emplace_back(fileio(fstream::in, false, 0, lse, MAXNLINE, "#@"), "ener.xvg", Mask, iNcol, oNcol);
+  }
+
   const linecounter lsx = linecounter(nstcv/nstx);
   // for pull group, we need one x.xvg file
   // If nstdhdl is not set, we read all the x.xvg lines
@@ -179,15 +188,6 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
     }
   }
   
-  // If we need to read potential energy
-  if(requirepot) {
-    const linecounter lse = linecounter(nstcv/nstenergy);
-    const ulong Mask = 2; 
-    const ulong iNcol = 2;
-    const ulong oNcol = 1;
-    ans.emplace_back(fileio(fstream::in, false, 0, lse, MAXNLINE, "#@"), "ener.xvg", Mask, iNcol, oNcol);
-  }
-
   return ans;
 }
 
