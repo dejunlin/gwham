@@ -259,6 +259,14 @@ struct has_memfn_emplace_back {
   template < class T, void (T::*)(typename T::value_type&) = &T::emplace_back >
   struct type {};
 };
+
+//! This class check if a class T has member function 
+// T::type get() const 
+struct has_memfn_get {
+  template < class T, typename T::type& (T::*)() const = &T::get >
+  struct type {};
+};
+
 //!This class check if a class T can be iterated using nested const_iterator 
 struct can_be_const_iterate {
   template < class T, 
@@ -321,6 +329,20 @@ check_if<C, can_be_const_iterate>::value
 operator<< (S& stream, const C& input) 
 {
   for(auto& e : input) stream << e << ' ';
+  return stream;
+}	/* -----  end of template function operator<<  ----- */
+
+template <class S, class C>
+typename std::enable_if<
+check_if<C, has_memfn_get>::value
+&& check_if<
+            decltype( std::declval<C>().get() ), 
+	    can_be_streamed<S>
+	   >::value
+,S&>::type
+operator<< (S& stream, const C& input) 
+{
+  stream << input.get() << ' ';
   return stream;
 }	/* -----  end of template function operator<<  ----- */
 
