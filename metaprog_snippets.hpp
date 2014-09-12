@@ -20,6 +20,7 @@
 #include <iostream>
 #include <memory>
 #include <type_traits>
+#include <utility>
 /*
  * =====================================================================================
  *        Class:  get the last element from parameter pack
@@ -322,5 +323,59 @@ operator<< (S& stream, const C& input)
   for(auto& e : input) stream << e << ' ';
   return stream;
 }	/* -----  end of template function operator<<  ----- */
+
+
+/*
+ * =====================================================================================
+ *     Function: Greatest common divisor 
+ *  Description: binary method
+ * =====================================================================================
+ */
+
+//This function get the number of trailing zeros of an unsigned intgral 
+template <class T>
+typename std::enable_if<std::is_integral<T>::value && std::is_unsigned<T>::value, T>::type
+ctz(T a) 
+{
+  T shift = 0;
+  for(; a & 1 == 0; ++shift) a >> 1;
+}
+
+#ifdef __GNUC__
+#define CTZ(x) __builtin_ctz(x) 
+#else
+#define CTZ(x) ctz(x)
+#endif 
+
+template <class T>
+typename std::enable_if<std::is_integral<T>::value && std::is_unsigned<T>::value, T>::type
+GCD ( T a, T b )
+{
+  const T zero = T(0);
+  if(a == zero) return a;
+  if(b == zero) return b;
+  const T shift = CTZ(a|b);
+  a >>= CTZ(a);
+  do {
+    b >>= CTZ(b);
+    if(a>b) { std::swap(a,b); }
+    b -= a;
+  } while ( b != 0 );				/* -----  end do-while  ----- */
+  return a << shift;
+}		/* -----  end of template function GCD  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  LCM
+ *  Description:  Largets common multiple
+ * =====================================================================================
+ */
+template <class T>
+typename std::enable_if<std::is_integral<T>::value && std::is_unsigned<T>::value, T>::type
+LCM ( T a, T b )
+{
+  return a*b/GCD(a,b);
+}		/* -----  end of function LCM  ----- */
 
 #endif
