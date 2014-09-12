@@ -86,19 +86,21 @@ genens(const PMDP& pmdp, vpEnsemble& ens, multimap<PMDP, uint>& pmdp2ipens, bool
   }
 }
 
-uint chkens(const vpEnsemble& ens) {
+template < class pE >
+typename std::enable_if<is_pointer<pE>::value, uint>::type
+cmpens(const vector<pE>& pens) {
   uint Qt = 0;
-  for(auto& pens : ens) {
-    if(typeid(*pens) != typeid(*ens[0])) {
-      throw(MDP_Exception("Input MDP files must refer to systems of the same ensemble"));
+  for(auto& pen : pens) {
+    if(typeid(*pen) != typeid(*pens[0])) {
+      throw(Ensemble_Factory_Exception("Compared ensembles are not the same ensemble"));
     }
-    Qt |= pens->cmp(*ens[0]);
+    Qt |= pen->cmp(*pens[0]);
   }
   return Qt;
 }
 
 void adjustens(vpEnsemble& ens) {
-  const uint Qt = chkens(ens);
+  const uint Qt = cmpens(ens);
   //! If pressures are consistent, down cast the pointer to NVT 
   if(!(Qt & (1<<Ensemble::DPressure))) {
     for(auto& pens : ens) { 
