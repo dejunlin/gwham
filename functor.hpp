@@ -63,7 +63,7 @@ class Functor <
     typedef const Tobj To;
     typedef const To* const cpTo;
     //! This functor type
-    typedef Functor<const Funct<Output(Arg...)>,const ParamsContainer<ParamsContained, ParamsContainerOther...>, To, Params...> ThisType;
+    typedef Functor<Tf, Tp, To, Params...> ThisType;
 
     /* ====================  LIFECYCLE     ======================================= */
     //! Empty constructor
