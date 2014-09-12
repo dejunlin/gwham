@@ -45,4 +45,9 @@ class TimeSeries_Exception : public General_Exception {
   public:
     TimeSeries_Exception(const string& _msg) : General_Exception("TimeSeries exception: " + _msg) {};
 };
+
+class MDP_Factory_Exception : public General_Exception {
+  public:
+    MDP_Factory_Exception(const string& _msg) : General_Exception("MDP Factory exception: " + _msg) {};
+};
 #endif
