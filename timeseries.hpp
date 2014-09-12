@@ -99,6 +99,7 @@ class TimeSeries
 	dproc(out);
 	++Nl;
       }
+      return Nl;
     }
 
   private:
