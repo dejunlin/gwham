@@ -47,6 +47,8 @@ class TimeSeries
     const ulong iNcol = 0;
     //! Total number of columns where are interested in
     const ulong oNcol = 0;
+    //! How many units of time per line of this time-series correspond to
+    const ulong nst = 0;
   protected:
     /* ====================  METHODS       ======================================= */
 
@@ -58,26 +60,28 @@ class TimeSeries
     typedef decltype(TimeSeries<INPUT>::Mask) MaskT;
     constexpr static int Nbit = numeric_limits<MaskT>::digits;
     /* ====================  LIFECYCLE     ======================================= */
-    TimeSeries (fileio&& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol) :
+    TimeSeries (fileio&& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol, const ulong _nst) :
       fio(std::move(_fio)),
       fnsuffix(_fnsuffix),
       Mask(_Mask),
       iNcol(_iNcol),
       oNcol(_oNcol),
+      nst(_nst),
       vInput(vector<INPUT>(iNcol))
       { init(); };
 
-    TimeSeries (const fileio& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol) : 
+    TimeSeries (const fileio& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol, const ulong _nst) : 
       fio(_fio), 
       fnsuffix(_fnsuffix),
       Mask(_Mask),
       iNcol(_iNcol),
       oNcol(_oNcol),
+      nst(_nst),
       vInput(vector<INPUT>(iNcol))
       { init(); };
     
     TimeSeries (const ThisType& src) :
-      TimeSeries(src.fio, src.fnsuffix, src.Mask, src.iNcol, src.oNcol) {}; 
+      TimeSeries(src.fio, src.fnsuffix, src.Mask, src.iNcol, src.oNcol, src.nst) {}; 
     /* ====================  ACCESSORS     ======================================= */
 
     /* ====================  MUTATORS      ======================================= */

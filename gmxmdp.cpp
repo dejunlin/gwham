@@ -140,11 +140,11 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
  
   // for expanded ensemble, we need dhdl file
   if(isExpandedEnsemble()) {
+    const uint nstdhdlcv = LCM(uint(nstdhdl), uint(nstcv));
     // If expanded-ensemble MC move is more frequent than nstdhdl, 
     // we can't tell the lambda state from nstdhdl except for those 
     // output every nstdhdl steps
-    const uint nstdhdlcv = LCM(uint(nstdhdl), uint(nstcv));
-    nstcv = nstdhdlcv;
+    nstcv = (nstexpanded % nstdhdl) ? nstdhdlcv : nstcv;
     //! 1st column is time, 2nd is state id, 3rd is potential energy
     //4 - 11 are dH/dLmass, dH/dLcoul, dH/dLvdw, dH/dLbond, dH/dLrst,
     //dH/dLcnt1, dH/dLcnt2, dH/dLcnt3
@@ -153,7 +153,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
     const linecounter iNcol = 3 + NFEPLambdas - 2 + 3 + Nstates + hasPressure();
     // we only need as much as the number samples in the x.xvg file
     const linecounter ls = linecounter(nstdhdlcv/nstdhdl); 
-    ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "dhdl.xvg", 2, iNcol, 1);
+    ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "dhdl.xvg", 2, iNcol, 1, nstdhdl);
   }
 
   // If we need to read potential energy
@@ -162,7 +162,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
     const ulong Mask = 2; 
     const ulong iNcol = 2;
     const ulong oNcol = 1;
-    ans.emplace_back(fileio(fstream::in, false, 0, lse, MAXNLINE, "#@"), "ener.xvg", Mask, iNcol, oNcol);
+    ans.emplace_back(fileio(fstream::in, false, 0, lse, MAXNLINE, "#@"), "ener.xvg", Mask, iNcol, oNcol, nstenergy);
   }
 
   const linecounter lsx = linecounter(nstcv/nstx);
@@ -175,7 +175,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
       ulong Mask = 0;
       for(int i = 1; i <= ncntgrps; ++i)  Mask |= (1<<i);
       const ulong iNcol = ncntgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, ncntgrps);
+      ans.emplace_back(fileio(fstream::in, false, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, ncntgrps, nstx);
       break;
     }
     default: {
@@ -183,7 +183,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
       // for each pull-group, we have one column of x and one column of dx and we only need dx
       for(int i = 2; i <= 2*npgrps; i+=2)  Mask |= (1<<i);
       const ulong iNcol = 2*npgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, npgrps);
+      ans.emplace_back(fileio(fstream::in, false, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, npgrps, nstx);
       break;
     }
   }
