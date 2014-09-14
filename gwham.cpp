@@ -23,34 +23,98 @@ using namespace std;
 typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
-void HistogramCV(histogram& hist, uint& N, const vector<valtype>& input) {
+void HistogramCV(histogram& hist, linecounter& N, const vector<valtype>& input) {
   if(hist.bin(input) != hist.end()) ++N; 
 }
 
-void HistogramCV(vector<histogram>& hists, uint& N, vector<uint>::const_iterator& itstate, vector<valtype>::const_iterator itpot, const vector<valtype>& input) {
+void HistogramExpECV(vector<histogram>& hists, vector<linecounter>& Ns, vector<uint>::const_iterator& itstate, const linecounter nststates, linecounter& count, vector<valtype>::const_iterator& itpot, const vector<valtype>& input) {
   const auto& state = *itstate;
+  ++count;
+  if(!(count % nststates)) ++itstate;
   auto& hist = hists[state];
   const auto& pot = *itpot;
+  ++itpot;
+  vector<valtype> data = input;
+  data.push_back(pot);
+  HistogramCV(hist, Ns[state], data);
+}
+
+void HistogramExpCV(vector<histogram>& hists, vector<linecounter>& Ns, vector<uint>::const_iterator& itstate, const linecounter nststates, linecounter& count, const vector<valtype>& input) {
+  const auto& state = *itstate;
+  ++count;
+  if(!(count % nststates)) ++itstate;
+  auto& hist = hists[state];
+  HistogramCV(hist, Ns[state], input);
+}
+
+void HistogramECV(histogram& hist, linecounter& N, vector<valtype>::const_iterator& itpot, const vector<valtype>& input) {
+  const auto& pot = *itpot;
+  ++itpot;
   vector<valtype> data = input;
   data.push_back(pot);
   HistogramCV(hist, N, data);
-  ++itstate;
-  ++itpot;
 }
 
-void HistogramCV(vector<histogram>& hists, uint& N, vector<uint>::const_iterator& itstate, const vector<valtype>& input) {
-  const auto& state = *itstate;
-  auto& hist = hists[state];
-  HistogramCV(hist, N, input);
-  ++itstate;
+template < class T, class TS >
+void vecfromTS(vector<T>& ans, TS& ts, uint nrun, string fnprefix) {
+  const auto& fnsuffix = ts.fnsuffix;
+  for(uint i = 0; i < nrun; ++i) {
+    const string fts = fnprefix + "_" + tostr(i) + fnsuffix;
+    ts(fts, [&ans] (const vector<valtype>& input) 
+            {
+              ans.emplace_back(input.front());
+            }
+      );
+  }
 }
 
-void HistogramCV(histogram& hist, uint& N, vector<valtype>::const_iterator itpot, const vector<valtype>& input) {
-  const auto& pot = *itpot;
-  vector<valtype> data = input;
-  data.push_back(pot);
-  HistogramCV(hist, N, data);
-  ++itpot;
+template < class vTSit, class PMDP, class H > 
+vector<linecounter> histfromTS(
+    vTSit& it, 
+    const PMDP& pmdp, 
+    const multimap<PMDP, uint>& pmdp2ihist, 
+    vector<H>& hists, 
+    const uint& nrun, 
+    string fnprefix, 
+    const vector<uint>& states, 
+    const vector<valtype>& pot) 
+{
+  using namespace std::placeholders;
+
+  auto itstate = states.cbegin(); 
+  auto itpot = pot.cbegin();
+
+  function<void(const vector<valtype>&)> histogrammer;
+  vector<linecounter> Nsamples(hists.size(), 0);
+  linecounter count = 0;
+  if(states.size()) {
+    //Here we assume the states time-series is the previous one or the one 
+    //before if we have to deal with potential energy
+    auto prevts = it;
+    --prevts;
+    if(pot.size()) { --prevts; }
+    const linecounter nststates = linecounter(prevts->nst * prevts->fio.ls / (it->nst * it->fio.ls));
+    if(pot.size()) {
+	histogrammer = std::bind(&HistogramExpECV, ref(hists), ref(Nsamples), ref(itstate), nststates, ref(count), ref(itpot), _1); 
+    } else {
+	histogrammer = std::bind(&HistogramExpCV, ref(hists), ref(Nsamples), ref(itstate), nststates, ref(count), _1); 
+    }
+  } else {
+    const uint ihist = pmdp2ihist.find(pmdp)->second;
+    if(pot.size()) {
+	histogrammer = std::bind(&HistogramECV, ref(hists[ihist]), ref(Nsamples[ihist]), ref(itpot), _1); 
+    } else {
+	histogrammer = std::bind(&HistogramCV, ref(hists[ihist]), ref(Nsamples[ihist]), _1); 
+    }
+  }
+
+  auto& ts = *it;
+  const auto& fnsuffix = ts.fnsuffix;
+  for(uint i = 0; i < nrun; ++i) {
+    const string fts = fnprefix + "_" + tostr(i) + fnsuffix;
+    ts(fts, histogrammer); 
+  }
+  return Nsamples;
 }
 
 int main(int argc, char* argv[]) {
@@ -137,8 +201,8 @@ int main(int argc, char* argv[]) {
   vector<histogram> hists{pens.size(), histogram{ndim, nbins, hv, lv}};
 
   //create the time-series readers
+  const bool needpotential = cmpens(pens)&(1<<Ensemble::DTemperature);
   for(const auto& pmdp : pmdps) {
-    const bool needpotential = cmpens(pens)&(1<<Ensemble::DTemperature);
     // if temperature are different among ensembles, we need to read potential energy
     auto vts = pmdp->CreateTimeSeries(needpotential);
 
@@ -159,65 +223,24 @@ int main(int argc, char* argv[]) {
     decltype(vts)::iterator it = vts.begin();
     // For exapnded ensemble, we need to read the state time-series first
     vector<uint> states;
-    auto itstate = states.begin(); 
     if(pmdp->isExpandedEnsemble()) {
       // state time-series is always the first one
-      auto& ts = *it;
-      const auto tssuffix = ts.fnsuffix;
-      for(uint i = 0; i < nrun; ++i) {
-	const string fts = tsprefix + "_" + tostr(i) + tssuffix;
-	ts(fts, [&states] (const vector<valtype>& input) 
-	        {
-		  states.emplace_back(input.front());
-		}
-          );
-      }
+      vecfromTS(states, *it, nrun, tsprefix); 
       ++it;
     }
 
     vector<valtype> pot;
-    auto itpot = pot.begin();
     if(needpotential) {
       // potential energy time-series 
-      auto& ts = *it;
-      const auto tssuffix = ts.fnsuffix;
-      for(uint i = 0; i < nrun; ++i) {
-	const string fts = tsprefix + "_" + tostr(i) + tssuffix;
-	ts(fts, [&pot] (const vector<valtype>& input) 
-	        {
-		  pot.emplace_back(input.front());
-		}
-          );
-      }
+      vecfromTS(pot, *it, nrun, tsprefix);
       ++it;
     }
-    
+
     //finally we histogram the cv; we first build a histogrammer depends 
     //on whether we are doing expanded ensemble and/or if we need to 
     //deal with potential energy
-    function<void(const vector<valtype>& input)> cvhistogrammer;
-    using namespace std::placeholders;
-    uint Nsamples = 0;
-    if(states.size()) {
-      if(pot.size()) {
-	cvhistogrammer = std::bind(static_cast<void(*)(vector<histogram>&, uint&, vector<uint>::const_iterator&, vector<valtype>::const_iterator, const vector<valtype>&)>(&HistogramCV), ref(hists), ref(Nsamples), ref(itstate), ref(itpot), _1); 
-      } else {
-	cvhistogrammer = std::bind(&HistogramCV, ref(hists), ref(Nsamples), ref(itstate), _1); 
-      }
-    } else {
-      const uint ihist = pmdp2ipens.find(pmdp)->second;
-      if(pot.size()) {
-	cvhistogrammer = std::bind(&HistogramCV, ref(hists[ihist]), ref(Nsamples), ref(itpot), _1); 
-      } else {
-	cvhistogrammer = std::bind(&HistogramCV, ref(hists[ihist]), ref(Nsamples), _1); 
-      }
-    }
-
-    auto& ts = *it;
-    const auto tssuffix = ts.fnsuffix;
-    for(uint i = 0; i < nrun; ++i) {
-      const string fts = tsprefix + "_" + tostr(i) + tssuffix;
-      ts(fts, cvhistogrammer); 
-    }
+    const auto Nsamples = histfromTS(it, pmdp, pmdp2ipens, hists, nrun, tsprefix, states, pot); 
   }
+  for(const auto& h : hists) h.print();
+  
 }
