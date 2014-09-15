@@ -82,7 +82,7 @@ const map<string, bool> GMXMDP::str2dim =
   {"N", 0},
 };
 
-GMXMDP::GMXMDP(const string& fname) : MDP(fname), ifinit(this->initopts()) {
+GMXMDP::GMXMDP(const string& fname) : MDP(fname, BoltzmannkJ), ifinit(this->initopts()) {
   fileio fio(fname, fstream::in, 1, 0, 1, MAXNLINE, ";");
 
   /** The followings the expected regex pattern for scalar and vector options in mdp
@@ -418,6 +418,7 @@ void GMXMDP::setexpand() {
 }
 
 void GMXMDP::print() const {
+  printf("%15s%15.9lf\n", "kB = ", kB);
   printMDPopt(key2val);
   printMDPopt(key2int);
   printMDPopt(key2str);
@@ -427,14 +428,17 @@ void GMXMDP::print() const {
     printf("#%27s%-3d\n", "Pull-group",pgrp.gid);
     printMDPopt(pgrp.key2val);
     printMDPopt(pgrp.key2vvec);
-    uint i = 0;
-    for(const auto& H : Hs) {
-      printf("#%27s%-3d\n", "Hamiltonian",i++);
-      uint j = 0;
-      for(const auto& funct : H.getPotentialFuncts()) {
-        printf("#%27s%-3d = ", "Functor",j++);
-        cout << funct.getParams() << endl;
+  }
+  uint i = 0;
+  for(const auto& H : Hs) {
+    printf("#%27s%-3d\n", "Hamiltonian",i++);
+    uint j = 0;
+    for(const auto& funct : H.getPotentialFuncts()) {
+      printf("#%27s%-3d = ", "Functor",j++);
+      for(const auto x : funct.getParams()) {
+	printf("%15.8lf", x);
       }
+      cout << endl;
     }
   }
 };

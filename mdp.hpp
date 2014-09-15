@@ -84,13 +84,18 @@ class MDP
 
   public:
     /* ====================  LIFECYCLE     ======================================= */
-    //! constructor
+    //! constructor (target)
+    MDP (const string& _fname, const valtype& _kB) : 
+      fname(_fname),
+      kB(_kB)
+      {};
+    //! constructor (kB in kcal/mol)
     MDP (const string& _fname) : 
-      fname(_fname)
+      MDP(_fname, Boltzmannkcal)
       {};
     //! copy constructor
     MDP (const MDP& src) : 
-      MDP(src.fname)
+      MDP(src.fname, src.kB)
       {
 	*this = src;
       };
