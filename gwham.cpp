@@ -118,8 +118,8 @@ void histfromTS(
 }
 
 int main(int argc, char* argv[]) {
-  string cmdline("#Usage: gwham sysname mdpsuffixes nwin nrun rcprint nbins hv lv tol rcvbegin rcvstride rcvend fseeds\n");
-  if (argc != 14) {
+  string cmdline("#Usage: gwham sysname mdpsuffixes nwin nrun rcprint nbins hv lv tol rcvbegin rcvstride rcvend mdp0prefixes fseeds\n");
+  if (argc != 15) {
     cerr << cmdline;
     exit(-1);
   }
@@ -149,6 +149,8 @@ int main(int argc, char* argv[]) {
   const uint rcvstride = atoi(argv[k++]); 
   //last line to read (excluding comment-lines) in the x.xvg files
   const uint rcvend = atoi(argv[k++]); 
+  //the PMF or any analysis will be done in the ensembles specified by these MDP files
+  const vector<string> mdp0prefixes = split<string>(argv[k++]);
   //provide a file which contains seeding dimensionless free energy of 
   //each state in one line seperated by spaces
   //(could be a file that doesn't exist, in which case the program will just seed the free energy to zero)
@@ -271,28 +273,35 @@ int main(int argc, char* argv[]) {
   
   //calculate the probability density
   //we can have the user specify which ensemble we want to probability to be calculated in
-  auto pMDP0 = pmdps[0];
-  pMDP0->getHs().clear();
+  const vector<pMDP> pmdp0s = CreateMDPs(mdp0prefixes, mdpsuffixes, suffix2MDP);
   multimap<pMDP, uint> pmdp2ipens0;
-  auto pE0 = MDP2Ensemble({pMDP0}, pmdp2ipens0, 1);
-  auto rho = wham.calrho(rcprt, pE0.front());
-  const auto kB = pMDP0->getkB();
-  const auto T = pMDP0->getTs().front();
-  //Normalize the probability (just for comparision with other programs)
-  printf("#%10s%30s%30s%30s\n","Bin","Vals","PMF","RhoNormalized");
-  valtype sum = 0.0;
-  narray::iterator itmax = rho.begin();
-  for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
-    if(it->second > itmax->second) { itmax = it;}
-    sum += it->second;
-  }
-  for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
-    const coordtype bin = it->first;
-    const vector<valtype> val = rho.coord2val(bin);
-    const valtype pmf = kB*T*log(it->second/itmax->second);
-    const valtype rhonorm = it->second/sum;
-    for(uint i = 0; i < bin.size(); ++i) { printf("%10d",bin[i]);}
-    for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}
-    printf("%30.15lf%30.15lf\n",pmf,rhonorm);
+  auto pE0s = MDP2Ensemble(pmdp0s, pmdp2ipens0, 1);
+  
+  for(const auto& pmdp0 : pmdp0s) {
+    if(pmdp0->isExpandedEnsemble()) { 
+      throw(General_Exception("Can't calculate probability density in a expanded ensemble. Check files in mdp0prefixes"));
+    }
+    const auto iens = pmdp2ipens0.find(pmdp0)->second;
+    const auto pE0 = pE0s[iens];
+    auto rho = wham.calrho(rcprt, pE0);
+    const auto kB = pmdp0->getkB();
+    const auto T = pmdp0->getTs().front();
+    //Normalize the probability (just for comparision with other programs)
+    printf("#%10s%30s%30s%30s\n","Bin","Vals","PMF","RhoNormalized");
+    valtype sum = 0.0;
+    narray::iterator itmax = rho.begin();
+    for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
+      if(it->second > itmax->second) { itmax = it;}
+      sum += it->second;
+    }
+    for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
+      const coordtype bin = it->first;
+      const vector<valtype> val = rho.coord2val(bin);
+      const valtype pmf = kB*T*log(it->second/itmax->second);
+      const valtype rhonorm = it->second/sum;
+      for(uint i = 0; i < bin.size(); ++i) { printf("%10d",bin[i]);}
+      for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}
+      printf("%30.15lf%30.15lf\n",pmf,rhonorm);
+    }
   }
 }
