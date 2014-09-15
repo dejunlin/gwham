@@ -12,6 +12,7 @@ class Ensemble {
     enum Qt {DkB, DHamiltonian, DTemperature, DPressure};
     Ensemble();
     Ensemble(const valtype _kB);
+    Ensemble(const Ensemble& src);
     //! return the dimensionless total energy (in the unit of kB*T)
     /*  NOTE that there's no bound-check nor any guarantee that 
      *  the user necessarily supplies the right number of parameters
@@ -39,6 +40,7 @@ class Ensemble {
 class NVE : public virtual Ensemble {
   public:
     NVE(const valtype _kB, const Hamiltonian& _H);
+    NVE(const NVE& src);
     //! NVE::ener() returns the energy not weighted by kB*T
     virtual valtype ener(const vector<valtype>& vals) const;
     //! Compare the parameters of two ensembles
@@ -55,6 +57,7 @@ class NVE : public virtual Ensemble {
 class NVT : public virtual NVE {
   public:
     NVT(const valtype _kB, const Hamiltonian& _H, const valtype _T);
+    NVT(const NVT& src);
     virtual valtype ener(const vector<valtype>& vals) const; 
     //! Compare the parameters of two ensembles
     virtual uint cmp(const Ensemble& src) const;
@@ -69,6 +72,7 @@ class NVT : public virtual NVE {
 class NPT : public virtual NVT {
   public:
     NPT(const valtype _kB, const Hamiltonian& _H, const valtype _T,  const valtype _P);
+    NPT(const NPT& src);
     //! Compare the parameters of two ensembles
     virtual uint cmp(const Ensemble& src) const;
     //! return the pressure

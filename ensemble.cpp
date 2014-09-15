@@ -15,6 +15,10 @@ Ensemble::Ensemble(const valtype _kB):
   kB(_kB)
   {}
 
+Ensemble::Ensemble(const Ensemble& src) :
+  Ensemble(src.getkB())
+  {}
+
 uint Ensemble::cmp(const Ensemble& src) const {
   return uint(kB != src.getkB()) << DkB;
 };
@@ -30,6 +34,10 @@ bool Ensemble::operator!=(const Ensemble& src) const {
 NVE::NVE(const valtype _kB, const Hamiltonian& _H) :
   Ensemble(_kB),
   H(_H)
+  {}
+
+NVE::NVE(const NVE& src) :
+  NVE(src.getkB(), src.getH())
   {}
 
 uint NVE::cmp(const Ensemble& src) const {
@@ -56,6 +64,10 @@ NVT::NVT(const valtype _kB, const Hamiltonian& _H, const valtype _T):
   T(_T)
   {}
 
+NVT::NVT(const NVT& src) :
+  NVT(src.getkB(), src.getH(), src.getT())
+  {}
+
 uint NVT::cmp(const Ensemble& src) const {
   uint Qt = NVE::cmp(src);
   if(this == &src) { return Qt; }
@@ -78,6 +90,10 @@ NPT::NPT(const valtype _kB, const Hamiltonian& _H, const valtype _T, const valty
   NVE(_kB, _H),
   NVT(_kB, _H, _T),
   P(_P)
+  {}
+
+NPT::NPT(const NPT& src) :
+  NPT(src.getkB(), src.getH(), src.getT(), src.getP())
   {}
 
 uint NPT::cmp(const Ensemble& src) const {
