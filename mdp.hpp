@@ -131,6 +131,7 @@ class MDP
     const vector<valtype>& getTs() const { return Ts; }
     const vector<valtype>& getPs() const { return Ps; }
     const vector<Hamiltonian>& getHs() const { return Hs; }
+    vector<Hamiltonian>& getHs() { return Hs; }
     const array<vector<valtype>, NFEPLambdas>& getLs() const { return Ls; }
     const vector<valtype>& getLbond() const { return Ls[Lbond]; }
     const vector<valtype>& getLmass() const { return Ls[Lmass]; }
