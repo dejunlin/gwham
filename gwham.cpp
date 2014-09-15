@@ -17,6 +17,7 @@
 #include "gmxmdp.hpp"
 #include "ensemble_factory.hpp"
 #include "mdp_factory.hpp"
+#include "gwham.hpp"
 
 using namespace std;
 
@@ -69,8 +70,9 @@ void vecfromTS(vector<T>& ans, TS& ts, uint nrun, string fnprefix) {
 }
 
 template < class vTSit, class PMDP, class H > 
-vector<linecounter> histfromTS(
-    vTSit& it, 
+void histfromTS(
+    vTSit& it,
+    vector<linecounter>& Nsamples,
     const PMDP& pmdp, 
     const multimap<PMDP, uint>& pmdp2ihist, 
     vector<H>& hists, 
@@ -85,7 +87,6 @@ vector<linecounter> histfromTS(
   auto itpot = pot.cbegin();
 
   function<void(const vector<valtype>&)> histogrammer;
-  vector<linecounter> Nsamples(hists.size(), 0);
   linecounter count = 0;
   if(states.size()) {
     //Here we assume the states time-series is the previous one or the one 
@@ -114,7 +115,6 @@ vector<linecounter> histfromTS(
     const string fts = fnprefix + "_" + tostr(i) + fnsuffix;
     ts(fts, histogrammer); 
   }
-  return Nsamples;
 }
 
 int main(int argc, char* argv[]) {
@@ -199,7 +199,8 @@ int main(int argc, char* argv[]) {
 
   //create histogram (1 for each ensemble)
   vector<histogram> hists{pens.size(), histogram{ndim, nbins, hv, lv}};
-
+  // total number of valid samples
+  vector<linecounter> Nsamples(hists.size(), 0);
   //create the time-series readers
   const bool needpotential = cmpens(pens)&(1<<Ensemble::DTemperature);
   for(const auto& pmdp : pmdps) {
@@ -239,8 +240,59 @@ int main(int argc, char* argv[]) {
     //finally we histogram the cv; we first build a histogrammer depends 
     //on whether we are doing expanded ensemble and/or if we need to 
     //deal with potential energy
-    const auto Nsamples = histfromTS(it, pmdp, pmdp2ipens, hists, nrun, tsprefix, states, pot); 
+    histfromTS(it, Nsamples, pmdp, pmdp2ipens, hists, nrun, tsprefix, states, pot); 
   }
+  cout << "#Number of samples: " << Nsamples << endl;
   for(const auto& h : hists) h.print();
   
+  //read the seeding free energy from file
+  fileio fio_fseeds(fseedsstr, std::fstream::in, 1, 1, 1, 1);
+  vector<valtype> fseeds(0);
+  if(fio_fseeds.readaline()) { fseeds = fio_fseeds.line2val(); }
+
+  //build records of what bins in the histograms are non-zero
+  map<coordtype, vector<uint> > record;
+  for(uint i = 0; i < hists.size(); ++i) {
+    typename histogram::iterator it;
+    for(it = hists[i].begin(); it != hists[i].end(); ++it) {
+      const coordtype coord = it->first;
+      record[coord].push_back(i);
+    }
+  }
+  for(map<coordtype,vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
+    const auto& coord = it->first;
+    const auto& histid = it->second;
+    const auto& vals = hists[histid[0]].coord2val(coord);
+    cout << "#Bin: " << coord << " " << vals; 
+    cout << " is contributed from " << histid.size() << " histograms: " << histid << endl;
+  }
+
+  WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds);
+  
+  //calculate the probability density
+  //we can have the user specify which ensemble we want to probability to be calculated in
+  auto pMDP0 = pmdps[0];
+  pMDP0->getHs().clear();
+  multimap<pMDP, uint> pmdp2ipens0;
+  auto pE0 = MDP2Ensemble({pMDP0}, pmdp2ipens0, 1);
+  auto rho = wham.calrho(rcprt, pE0.front());
+  const auto kB = pMDP0->getkB();
+  const auto T = pMDP0->getTs().front();
+  //Normalize the probability (just for comparision with other programs)
+  printf("#%10s%30s%30s%30s\n","Bin","Vals","PMF","RhoNormalized");
+  valtype sum = 0.0;
+  narray::iterator itmax = rho.begin();
+  for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
+    if(it->second > itmax->second) { itmax = it;}
+    sum += it->second;
+  }
+  for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
+    const coordtype bin = it->first;
+    const vector<valtype> val = rho.coord2val(bin);
+    const valtype pmf = kB*T*log(it->second/itmax->second);
+    const valtype rhonorm = it->second/sum;
+    for(uint i = 0; i < bin.size(); ++i) { printf("%10d",bin[i]);}
+    for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}
+    printf("%30.15lf%30.15lf\n",pmf,rhonorm);
+  }
 }

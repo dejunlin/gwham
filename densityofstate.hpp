@@ -1,4 +1,4 @@
-#include "hamiltonian.hpp"
+#include "ensemble.hpp"
 #include "typedefs.hpp"
 #include <map>
 #include <vector>
@@ -32,8 +32,8 @@ class DensityOfState {
 		     					    
                      const vector<histogram>& hists,  
                      const vector<narray>& g,  
-		     const vector<Hamiltonian<ensemble>* >& V, 
-		     const vector<vector<uint> >& N, 
+		     const vpEnsemble& V, 
+		     const vector<vector<linecounter> >& N, 
 		     const vector<valtype>& f,
 		     vector<valtype>& newf 
 		    );
@@ -41,8 +41,8 @@ class DensityOfState {
     void operator() (
     		     const map<coordtype, vector<uint> >& record, 
                      const vector<histogram>& hists,  
-		     const vector<Hamiltonian<ensemble>* >& V, 
-		     const vector<vector<uint> >& N, 
+		     const vpEnsemble& V, 
+		     const vector<vector<linecounter> >& N, 
 		     const vector<valtype>& f,
 		     vector<valtype>& newf 
 		    ); 
@@ -53,8 +53,8 @@ class DensityOfState {
     void operator() (
     		     const map<coordtype, vector<uint> >& record, 
                      const vector<histogram>& hists,  
-		     const vector<Hamiltonian<ensemble>* >& V, 
-		     const vector<uint>& N, 
+		     const vpEnsemble& V, 
+		     const vector<linecounter>& N, 
 		     const vector<valtype>& f,
 		     vector<valtype>& newf
 		    );
@@ -83,8 +83,8 @@ void DensityOfState<ensemble,histogram,narray>::operator () (
     		     	      const map<coordtype, vector<uint> >& record, 
                               const vector<histogram>& hists,  
                               const vector<narray>& g, 
-         		      const vector<Hamiltonian<ensemble>* >& V, 
-         		      const vector<vector<uint> >& N, 
+         		      const vpEnsemble& V, 
+         		      const vector<vector<linecounter> >& N, 
          		      const vector<valtype>& f,
 			      vector<valtype>& newf
          		                   ) 
@@ -131,8 +131,8 @@ template<class ensemble, class histogram, class narray>
 void DensityOfState<ensemble,histogram,narray>::operator () (
     		     	      const map<coordtype, vector<uint> >& record, 
                               const vector<histogram>& hists,  
-         		      const vector<Hamiltonian<ensemble>* >& V, 
-         		      const vector<vector<uint> >& N, 
+         		      const vpEnsemble& V, 
+         		      const vector<vector<linecounter> >& N, 
          		      const vector<valtype>& f,
 			      vector<valtype>& newf
          		                   ) 
@@ -179,8 +179,8 @@ template<class ensemble, class histogram, class narray>
 void DensityOfState<ensemble,histogram,narray>::operator () (
     		     	      const map<coordtype, vector<uint> >& record, 
                               const vector<histogram>& hists,  
-         		      const vector<Hamiltonian<ensemble>* >& V, 
-         		      const vector<uint>& N, 
+         		      const vpEnsemble& V, 
+         		      const vector<linecounter>& N, 
          		      const vector<valtype>& f,
 			      vector<valtype>& newf
          		                   ) 

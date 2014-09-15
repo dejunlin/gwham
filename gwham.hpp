@@ -9,39 +9,39 @@
 
 using namespace std;
 
-//histogram class must provide public member function 'coord2val' that maps a coordinate to corresponding value
-//histogram class must have member variable 'binsize' which is the size of bin along each dimension 
-//narray class must have square bracket operator that maps a index (coordinate) to an element
-//narray class must have member iterator type
-//narray class must have member function find(coordtype) which given a coordinate return the iterator it points at
-//narray class must have member function end() which return the past-the-end iterator
-template <class ensemble, class histogram, class narray>
+//HISTOGRAM class must provide public member function 'coord2val' that maps a coordinate to corresponding value
+//HISTOGRAM class must have member variable 'binsize' which is the size of bin along each dimension 
+//NARRAY class must have square bracket operator that maps a index (coordinate) to an element
+//NARRAY class must have member iterator type
+//NARRAY class must have member function find(coordtype) which given a coordinate return the iterator it points at
+//NARRAY class must have member function end() which return the past-the-end iterator
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
 class WHAM {
-  typedef DensityOfState<ensemble,histogram,narray> DOStype;
+  typedef DensityOfState<PENSEMBLE,HISTOGRAM,NARRAY> DOStype;
   typedef DOStype* DOSptr;
   public:
     //!perform WHAM iteration and update the density of state
     /**
      * @param[in] record record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
-     * @param[in] hists Generic histogram for each trajectory
+     * @param[in] hists Generic HISTOGRAM for each trajectory
      * @param[in] g Statistical inefficiency for each trajectory
      * @param[in] V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
      * @param[in] N N[k][l] is the number of samples the k'th trajectory visiting the l'th state. 
      * @param[in] tol Tolerance for WHAM iteration 
      */
     WHAM(const map<coordtype, vector<uint> >& _record, 
-         const vector<histogram>& hists,  
-         const vector<narray>& g,  
-	 const vector<Hamiltonian<ensemble>* >& V, 
-         const vector<vector<uint> >& N, 
+         const vector<HISTOGRAM>& hists,  
+         const vector<NARRAY>& g,  
+	 const vector<PENSEMBLE>& V, 
+         const vector<vector<linecounter> >& N, 
 	 const valtype _tol,
 	 const vector<valtype>& fseeds = vector<valtype>(0)
 	);
     //! same as the one above except we assume all elements in g[m][k] are the same for all k given m
     WHAM(const map<coordtype, vector<uint> >& _record, 
-         const vector<histogram>& hists,  
-	 const vector<Hamiltonian<ensemble>* >& V, 
-         const vector<vector<uint> >& N, 
+         const vector<HISTOGRAM>& hists,  
+	 const vector<PENSEMBLE>& V, 
+         const vector<vector<linecounter> >& N, 
 	 const valtype _tol, 
 	 const vector<valtype>& fseeds = vector<valtype>(0)
 	);
@@ -50,20 +50,20 @@ class WHAM {
      * @param[in] N N[k] is the number of samples in the k'th trajectory/state. 
      */
     WHAM(const map<coordtype, vector<uint> >& _record, 
-         const vector<histogram>& hists,  
-	 const vector<Hamiltonian<ensemble>* >& V, 
-         const vector<uint>& N, 
+         const vector<HISTOGRAM>& hists,  
+	 const vector<PENSEMBLE>& V, 
+         const vector<linecounter>& N, 
 	 const valtype _tol, 
 	 const vector<valtype>& fseeds = vector<valtype>(0)
 	);
     //! Based on the density of state, calculate a new set of free energies
-    void calnewf(vector<valtype>& f, const vector<Hamiltonian<ensemble>* >& _V) const;
+    void calnewf(vector<valtype>& f, const vector<PENSEMBLE>& _V) const;
     //!calculate PMF in Hamiltonian _V along the dimension in DOS as specified by dim
-    narray calrho(const vector<uint>& dim, const Hamiltonian<ensemble>& _V) const;
-    //!Calculate the inconsistency between the i'th consensus histogram and the corresponding raw histogram  
-    valtype whamvsrawi(const uint& i, const narray& rho) const;
+    NARRAY calrho(const vector<uint>& dim, const pEnsemble& _V) const;
+    //!Calculate the inconsistency between the i'th consensus HISTOGRAM and the corresponding raw HISTOGRAM  
+    valtype whamvsrawi(const uint& i, const NARRAY& rho) const;
     //!just loop over WHAM::whamvsrawi for all i
-    vector<valtype> whamvsraw(const narray& rho) const;
+    vector<valtype> whamvsraw(const NARRAY& rho) const;
     //!given coordinate in index space, calculate the corresponding real-space coordinate
     const vector<valtype> coord2val(const coordtype& coord) const;
     //!given coordinate in index space along the specified dimension, calculate the corresponding real-space coordinate
@@ -79,23 +79,23 @@ class WHAM {
      bool endit(const vector<valtype>& newf, const ulong& count); 
      //!record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
      const map<coordtype, vector<uint> >* record;
-     //!Generic histogram for each trajectory
-     const vector<histogram>* const hists;
+     //!Generic HISTOGRAM for each trajectory
+     const vector<HISTOGRAM>* const hists;
      //!Statistical inefficiency for each trajectory
-     const vector<narray>* const g;
+     const vector<NARRAY>* const g;
      //!V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
-     const vector<Hamiltonian<ensemble>* >* const V;
+     const vector<PENSEMBLE>* const V;
      //!N[k][l] is the number of samples the k'th trajectory visiting the l'th state
-     const vector<vector<uint> >* const N;
+     const vector<vector<linecounter> >* const N;
      //!N1[k] is the number of samples the k'th trajectory has, assuming each trajectory visits 1 state 
-     const vector<uint>* const N1;
+     const vector<linecounter>* const N1;
      //!Tolerance for WHAM iteration
      const valtype tol;
-     //!bin-size of each dimension of the histogram
+     //!bin-size of each dimension of the HISTOGRAM
      const vector<valtype> binsize;
-     //!lower bound in real space of the histogram
+     //!lower bound in real space of the HISTOGRAM
      const vector<valtype> lv;
-     //!number of dimension of the histogram
+     //!number of dimension of the HISTOGRAM
      const uint dim;
      //!f[i] is the dimensionless free energy of state i 
      vector<valtype> f;
@@ -103,12 +103,12 @@ class WHAM {
      DOStype DOS;
 };
 
-template <class ensemble, class histogram, class narray>
-WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _record, 
-                                      const vector<histogram>& _hists,  
-                                      const vector<narray>& _g,  
-	                              const vector<Hamiltonian<ensemble>* >& _V, 
-                                      const vector<vector<uint> >& _N, 
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _record, 
+                                      const vector<HISTOGRAM>& _hists,  
+                                      const vector<NARRAY>& _g,  
+	                              const vector<PENSEMBLE>& _V, 
+                                      const vector<vector<linecounter> >& _N, 
 	                              const double _tol, 
                                       const vector<valtype>& fseeds 
 	                             ):
@@ -142,11 +142,11 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   } while(!endit(newf,count)); 
 }
 
-template <class ensemble, class histogram, class narray>
-WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _record, 
-                                      const vector<histogram>& _hists,  
-	                              const vector<Hamiltonian<ensemble>* >& _V, 
-                                      const vector<vector<uint> >& _N, 
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _record, 
+                                      const vector<HISTOGRAM>& _hists,  
+	                              const vector<PENSEMBLE>& _V, 
+                                      const vector<vector<linecounter> >& _N, 
 	                              const double _tol, 
                                       const vector<valtype>& fseeds 
 	                             ):
@@ -180,11 +180,11 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   } while(!endit(newf,count)); 
 }
 
-template <class ensemble, class histogram, class narray>
-WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _record, 
-                                      const vector<histogram>& _hists,  
-	                              const vector<Hamiltonian<ensemble>* >& _V, 
-                                      const vector<uint>& _N, 
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _record, 
+                                      const vector<HISTOGRAM>& _hists,  
+	                              const vector<PENSEMBLE>& _V, 
+                                      const vector<linecounter>& _N, 
 	                              const double _tol, 
                                       const vector<valtype>& fseeds 
 	                             ):
@@ -218,8 +218,8 @@ WHAM<ensemble,histogram,narray>::WHAM(const map<coordtype, vector<uint> >& _reco
   } while(!endit(newf,count));
 }
 
-template <class ensemble, class histogram, class narray>
-void WHAM<ensemble,histogram,narray>::calnewf(vector<valtype>& newf, const vector<Hamiltonian<ensemble>* >& _V) const {
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::calnewf(vector<valtype>& newf, const vector<PENSEMBLE>& _V) const {
   for(uint l = 0; l < newf.size(); ++l) {
     double expmf = 0.0;
     /*cout <<"#calnewf: state ensemble_params" << endl;
@@ -251,8 +251,8 @@ void WHAM<ensemble,histogram,narray>::calnewf(vector<valtype>& newf, const vecto
   shiftf(newf);
 }
 
-template <class ensemble, class histogram, class narray>
-bool WHAM<ensemble,histogram,narray>::endit(const vector<valtype>& newf, const ulong& count) {
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+bool WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::endit(const vector<valtype>& newf, const ulong& count) {
   if(count > MAXIT) {
     cerr << "Max number of iteration " << MAXIT << " is reached. Quit\n";
     printfree();
@@ -272,8 +272,8 @@ bool WHAM<ensemble,histogram,narray>::endit(const vector<valtype>& newf, const u
   return true;
 }
 
-template <class ensemble, class histogram, class narray>
-void WHAM<ensemble,histogram,narray>::shiftf(vector<valtype>& newf) const {
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::shiftf(vector<valtype>& newf) const {
   /*valtype favg = 0.0;
   valtype fmax = -9999999999, fmin = 9999999999;
   for(uint i = 0; i < newf.size(); ++i) {
@@ -291,16 +291,16 @@ void WHAM<ensemble,histogram,narray>::shiftf(vector<valtype>& newf) const {
   }
 }
 
-template <class ensemble, class histogram, class narray>
-void WHAM<ensemble,histogram,narray>::printfree() const {
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::printfree() const {
   printf("#%10s%30s\n","State","DimensionlessFreeEnergy");
   for(uint i = 0; i < f.size(); ++i) {
     printf("#%10d%30.15lf\n",i,f[i]);
   }
 }
 
-template <class ensemble, class histogram, class narray>
-narray WHAM<ensemble,histogram,narray>::calrho(const vector<uint>& _dim, const Hamiltonian<ensemble>& _V) const {
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+NARRAY WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::calrho(const vector<uint>& _dim, const pEnsemble& _V) const {
 
   if(_dim.size() > dim) {
     cerr << "The number of dimension can't be larger than " << dim << endl;
@@ -328,13 +328,13 @@ narray WHAM<ensemble,histogram,narray>::calrho(const vector<uint>& _dim, const H
     //binsize_sub /= binsize[dimindex];
   }
 
-  narray rho(DOS.getdosarr(),_dim);
+  NARRAY rho(DOS.getdosarr(),_dim);
   //Again we only loop through non-zero elements of DOS
   for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
     const coordtype coord = it->first;
     const vector<uint> histids = it->second;
     const vector<valtype> vals = coord2val(coord);
-    const valtype exparg = -_V.ener(vals);
+    const valtype exparg = -_V->ener(vals);
     //if(exparg > MAXEXPARG ) { cerr << "In WHAM::calrho: exp("<<exparg<<") will overflow!\n"; exit(-1); }
     //else if(exparg < MINEXPARG) { continue; }
     const valtype weight = exp(exparg);
@@ -349,7 +349,7 @@ narray WHAM<ensemble,histogram,narray>::calrho(const vector<uint>& _dim, const H
     //cout << "#DOS[coord] = " << DOS[coord] << " exparg = " << exparg << " weight = " << weight << " binsize_sub = " << binsize_sub << endl;
     const valtype rhov = DOS[coord]*weight; //There should be a binsize factor here but if we only care about relative probability (density), it cancels out in the ratio
                                             //The reason why I didn't multiply with the binsize factor is that it could get very large in multidimensional cases
-    const typename narray::iterator rhoit = rho.find(rhocoord);
+    const typename NARRAY::iterator rhoit = rho.find(rhocoord);
     if( rhoit != rho.end()) {
       rho[rhocoord] += rhov;
     }
@@ -361,39 +361,39 @@ narray WHAM<ensemble,histogram,narray>::calrho(const vector<uint>& _dim, const H
 }
 
 
-template <class ensemble, class histogram, class narray>
-valtype WHAM<ensemble,histogram,narray>::whamvsrawi(const uint& i, const narray& rho) const {
-  const histogram hist = (*hists)[i];
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+valtype WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::whamvsrawi(const uint& i, const NARRAY& rho) const {
+  const HISTOGRAM hist = (*hists)[i];
   const valtype sum = hist.sum();
   const valtype Qinv = exp(f[i]); //this is the inverse of the partition function 
-  const Hamiltonian<ensemble>* const Vi = (*V)[i];
-  typename histogram::const_iterator it;
-  valtype eita = 0; //eita in equation 41 from reference DOI: 10.1002/jcc.21989
+  const pEnsemble Vi = (*V)[i];
+  typename HISTOGRAM::const_iterator it;
+  valtype eta = 0; //eta in equation 41 from reference DOI: 10.1002/jcc.21989
   for(it = hist.begin(); it != hist.end(); ++it) {
-    //this is the raw normalized histogram from i'th simulation
+    //this is the raw normalized HISTOGRAM from i'th simulation
     const valtype praw = it->second/sum;
-    //next we calculate the consensus histogram from the WHAM distribution
+    //next we calculate the consensus HISTOGRAM from the WHAM distribution
     const coordtype coord = it->first;
     const vector<valtype> vals = hist.coord2val(coord);
     const valtype pwham = Qinv * exp(-Vi->ener(vals)) * rho[coord];
-    //then we calculate eita, the relative entropy between praw and pwham
-    eita += praw * log(praw/pwham);
+    //then we calculate eta, the relative entropy between praw and pwham
+    eta += praw * log(praw/pwham);
   }
-  return eita;
+  return eta;
 }
 
-template <class ensemble, class histogram, class narray>
-vector<valtype> WHAM<ensemble,histogram,narray>::whamvsraw(const narray& rho) const {
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+vector<valtype> WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::whamvsraw(const NARRAY& rho) const {
   const uint K = (*hists).size();
-  vector<valtype> eitas;
+  vector<valtype> etas;
   for(uint i = 0; i < K; ++i) {
-    eitas.push_back(whamvsrawi(i, rho));
+    etas.push_back(whamvsrawi(i, rho));
   }
-  return eitas;
+  return etas;
 }
 
-template <class ensemble, class histogram, class narray>
-const vector<valtype> WHAM<ensemble,histogram,narray>::coord2val(const coordtype& coord) const {
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+const vector<valtype> WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::coord2val(const coordtype& coord) const {
   vector<valtype> vals;
   for(uint i = 0; i < dim; ++i) {
     vals.push_back(lv[i]+(coord[i]+0.5)*binsize[i]);
@@ -401,8 +401,8 @@ const vector<valtype> WHAM<ensemble,histogram,narray>::coord2val(const coordtype
   return vals;
 }
 
-template <class ensemble, class histogram, class narray>
-const vector<valtype> WHAM<ensemble,histogram,narray>::coord2val(const vector<uint>& _dim, const coordtype& coord) const {
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+const vector<valtype> WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::coord2val(const vector<uint>& _dim, const coordtype& coord) const {
   vector<valtype> vals;
   for(uint i = 0; i < coord.size(); ++i) {
     const uint dimindex = _dim[i];
