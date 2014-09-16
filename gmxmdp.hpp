@@ -254,7 +254,6 @@ class GMXMDP::GMXPGRP {
   //! target constructor
   GMXPGRP(const uint& _gid) : 
     gid(_gid), gidstr(tostr(gid)),
-    kB(BoltzmannkJ),
     ifinit(this->initopts())
   {};
   //! copy constructor
