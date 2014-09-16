@@ -101,10 +101,14 @@ cmpens(const vector<pE>& pens) {
 
 void adjustens(vpEnsemble& ens) {
   const uint Qt = cmpens(ens);
-  //! If pressures are consistent, down cast the pointer to NVT 
+  //! If pressures are consistent, try down-casting the pointer to NVT 
   if(!(Qt & (1<<Ensemble::DPressure))) {
     for(auto& pens : ens) { 
       auto _pens = dynamic_pointer_cast<NVT>(pens);
+      if(_pens == nullptr) {
+	//reaching here means the pens is pointer to upper class of NVT
+	break;
+      }
       pens.reset();
       pens = make_shared<NVT>(_pens->getkB(), _pens->getH(), _pens->getT()); 
     }
