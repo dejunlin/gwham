@@ -53,8 +53,7 @@ class TimeSeries
     /* ====================  METHODS       ======================================= */
 
     /* ====================  DATA MEMBERS  ======================================= */
-    vector<INPUT> vInput;
-    vector<rINPUT> vrInput;
+    vector<uint> colids;
 
   public:
     typedef decltype(TimeSeries<INPUT>::Mask) MaskT;
@@ -66,8 +65,7 @@ class TimeSeries
       Mask(_Mask),
       iNcol(_iNcol),
       oNcol(_oNcol),
-      nst(_nst),
-      vInput(vector<INPUT>(iNcol))
+      nst(_nst)
       { init(); };
 
     TimeSeries (const fileio& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol, const ulong _nst) : 
@@ -76,8 +74,7 @@ class TimeSeries
       Mask(_Mask),
       iNcol(_iNcol),
       oNcol(_oNcol),
-      nst(_nst),
-      vInput(vector<INPUT>(iNcol))
+      nst(_nst)
       { init(); };
     
     TimeSeries (const ThisType& src) :
@@ -92,14 +89,13 @@ class TimeSeries
     linecounter operator()(const string& fname, const DATAPROCESSOR& dproc) {
       linecounter Nl = 0;
       if(!fio.fopen(fname)) { return Nl; }
-      vector<INPUT> out(vrInput.size());
+      vector<INPUT> out(colids.size(),INPUT{0});
       while(fio.readaline()) {
 	const vector<double> cols(fio.line2val());
 	if(cols.size() != iNcol) { 
 	  throw(TimeSeries_Exception("Wrong number of columns in time-series file: "+fname+" at line: '"+fio.line+"'. Expected "+tostr(iNcol)+" but got "+tostr(cols.size())));
 	}
-	for(ulong i = 0; i < vInput.size(); ++i) vInput[i] = cols[i];
-	for(ulong i = 0; i < out.size(); ++i) out[i] = vrInput[i].get();
+	for(uint i = 0; i < colids.size(); ++i) { out[i] = cols[colids[i]]; }
 	dproc(out);
 	++Nl;
       }
@@ -116,7 +112,7 @@ class TimeSeries
       //This initialize the references to the columns in the input data
       for(ulong i = 0; i < iNcol; ++i) {
 	if(Mask & (1ul<<i)) {
-	  vrInput.emplace_back(vInput[i]);
+	  colids.emplace_back(i);
 	}
       }
     }
