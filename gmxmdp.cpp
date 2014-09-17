@@ -418,7 +418,7 @@ void GMXMDP::setexpand() {
 }
 
 void GMXMDP::print() const {
-  printf("%15s%15.9lf\n", "kB = ", kB);
+  printf("#%15s%15.9lf\n", "kB = ", kB);
   printMDPopt(key2val);
   printMDPopt(key2int);
   printMDPopt(key2str);
