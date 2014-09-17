@@ -22,40 +22,22 @@ class WHAM {
   public:
     //!perform WHAM iteration and update the density of state
     /**
-     * @param[in] record record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
+     * @param[in] _record record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
      * @param[in] hists Generic HISTOGRAM for each trajectory
-     * @param[in] g Statistical inefficiency for each trajectory
+     * @param[in] _g[k][coord] Statistical inefficiency of the k'th trajectory in bin coord
      * @param[in] V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
      * @param[in] N N[k][l] is the number of samples the k'th trajectory visiting the l'th state. 
      * @param[in] tol Tolerance for WHAM iteration 
      */
     WHAM(const map<coordtype, vector<uint> >& _record, 
-         const vector<HISTOGRAM>& hists,  
-         const vector<NARRAY>& g,  
-	 const vector<PENSEMBLE>& V, 
-         const vector<vector<linecounter> >& N, 
-	 const valtype _tol,
-	 const vector<valtype>& fseeds = vector<valtype>(0)
-	);
-    //! same as the one above except we assume all elements in g[m][k] are the same for all k given m
-    WHAM(const map<coordtype, vector<uint> >& _record, 
-         const vector<HISTOGRAM>& hists,  
-	 const vector<PENSEMBLE>& V, 
-         const vector<vector<linecounter> >& N, 
+         const vector<HISTOGRAM>& _hists, 
+	 const vector<PENSEMBLE>& _V, 
+         const vector<linecounter>& _N, 
 	 const valtype _tol, 
-	 const vector<valtype>& fseeds = vector<valtype>(0)
+	 const vector<valtype>& fseeds = vector<valtype>(0),
+	 const vector<NARRAY>& _g = vector<NARRAY>{0}
 	);
-    //! same as the one above except we further assume each trajectory only visit 1 state
-    /** This means that V.size() == hists.size() 
-     * @param[in] N N[k] is the number of samples in the k'th trajectory/state. 
-     */
-    WHAM(const map<coordtype, vector<uint> >& _record, 
-         const vector<HISTOGRAM>& hists,  
-	 const vector<PENSEMBLE>& V, 
-         const vector<linecounter>& N, 
-	 const valtype _tol, 
-	 const vector<valtype>& fseeds = vector<valtype>(0)
-	);
+
     //! Based on the density of state, calculate a new set of free energies
     void calnewf(vector<valtype>& f, const vector<PENSEMBLE>& _V) const;
     //!calculate PMF in Hamiltonian _V along the dimension in DOS as specified by dim
@@ -85,10 +67,8 @@ class WHAM {
      const vector<NARRAY>* const g;
      //!V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
      const vector<PENSEMBLE>* const V;
-     //!N[k][l] is the number of samples the k'th trajectory visiting the l'th state
-     const vector<vector<linecounter> >* const N;
-     //!N1[k] is the number of samples the k'th trajectory has, assuming each trajectory visits 1 state 
-     const vector<linecounter>* const N1;
+     //!N[k] is the number of samples the k'th trajectory has, assuming each trajectory visits 1 state 
+     const vector<linecounter>* const N;
      //!Tolerance for WHAM iteration
      const valtype tol;
      //!bin-size of each dimension of the HISTOGRAM
@@ -106,94 +86,17 @@ class WHAM {
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
 WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _record, 
                                       const vector<HISTOGRAM>& _hists,  
-                                      const vector<NARRAY>& _g,  
-	                              const vector<PENSEMBLE>& _V, 
-                                      const vector<vector<linecounter> >& _N, 
-	                              const double _tol, 
-                                      const vector<valtype>& fseeds 
-	                             ):
-				     record(&_record),
-				     hists(&_hists),
-				     g(&_g),
-				     V(&_V),
-				     N(&_N),
-				     N1(NULL),
-				     tol(_tol),
-				     binsize((*hists)[0].getbinsize()),
-				     lv((*hists)[0].getlv()),
-				     dim(binsize.size()),
-				     f(vector<valtype>(V->size(),0.0)),
-				     DOS(DOStype((*hists)[0]))
-{
-  if(fseeds.size() == f.size()) {
-    f = fseeds;
-    cout << "# Seeding WHAM iteration with free energies: ";
-    copy(fseeds.begin(), fseeds.end(), ostream_iterator<valtype>(cout, " "));
-    cout << endl;
-  }
-  //perform the WHAM iteration
-  ulong count = 0;
-  vector<double> newf(f);
-  do {
-    ++count;
-    DOS(*record, *hists, *g, *V, *N, f,newf);
-    //calnewf(newf,V);
-    shiftf(newf);
-  } while(!endit(newf,count)); 
-}
-
-template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
-WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _record, 
-                                      const vector<HISTOGRAM>& _hists,  
-	                              const vector<PENSEMBLE>& _V, 
-                                      const vector<vector<linecounter> >& _N, 
-	                              const double _tol, 
-                                      const vector<valtype>& fseeds 
-	                             ):
-				     record(&_record),
-				     hists(&_hists),
-				     g(NULL),
-				     V(&_V),
-				     N(&_N),
-				     N1(NULL),
-				     tol(_tol),
-				     binsize((*hists)[0].getbinsize()),
-				     lv((*hists)[0].getlv()),
-				     dim(binsize.size()),
-				     f(vector<valtype>(V->size(),0.0)),
-				     DOS(DOStype((*hists)[0]))
-{
-  if(fseeds.size() == f.size()) {
-    f = fseeds;
-    cout << "# Seeding WHAM iteration with free energies: ";
-    copy(fseeds.begin(), fseeds.end(), ostream_iterator<valtype>(cout, " "));
-    cout << endl;
-  }
-  //perform the WHAM iteration
-  ulong count = 0;
-  vector<double> newf(f);
-  do {
-    ++count;
-    DOS(*record, *hists, *V, *N, f, newf);
-    //calnewf(newf,V);
-    shiftf(newf);
-  } while(!endit(newf,count)); 
-}
-
-template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
-WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _record, 
-                                      const vector<HISTOGRAM>& _hists,  
 	                              const vector<PENSEMBLE>& _V, 
                                       const vector<linecounter>& _N, 
 	                              const double _tol, 
-                                      const vector<valtype>& fseeds 
+                                      const vector<valtype>& fseeds,
+                                      const vector<NARRAY>& _g 
 	                             ):
 				     record(&_record),
 				     hists(&_hists),
-				     g(NULL),
+				     g(_g.size() ? &_g : nullptr),
 				     V(&_V),
-				     N(NULL),
-				     N1(&_N),
+				     N(&_N),
 				     tol(_tol),
 				     binsize((*hists)[0].getbinsize()),
 				     lv((*hists)[0].getlv()),
@@ -210,12 +113,21 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   //perform the WHAM iteration
   ulong count = 0;
   vector<double> newf(f);
-  do {
-    ++count;
-    DOS(*record, *hists, *V, *N1, f, newf);
-    //calnewf(newf,V);
-    shiftf(newf);
-  } while(!endit(newf,count));
+  if(g == nullptr) {
+    do {
+      ++count;
+      DOS(*record, *hists, *V, *N, f, newf);
+      //calnewf(newf,V);
+      shiftf(newf);
+    } while(!endit(newf,count));
+  } else {
+    do {
+      ++count;
+      DOS(*record, *hists, *V, *N, f, newf, *g);
+      //calnewf(newf,V);
+      shiftf(newf);
+    } while(!endit(newf,count));
+  }
 }
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
