@@ -206,6 +206,7 @@ int main(int argc, char* argv[]) {
   //create the time-series readers
   const bool needpotential = cmpens(pens)&(1<<Ensemble::DTemperature);
   for(const auto& pmdp : pmdps) {
+    pmdp->print();
     // if temperature are different among ensembles, we need to read potential energy
     auto vts = pmdp->CreateTimeSeries(needpotential);
 
@@ -297,11 +298,11 @@ int main(int argc, char* argv[]) {
     for(narray::iterator it = rho.begin(); it != rho.end(); ++it) {
       const coordtype bin = it->first;
       const vector<valtype> val = rho.coord2val(bin);
-      const valtype pmf = kB*T*log(it->second/itmax->second);
+      const valtype pmf = -kB*T*log(it->second/itmax->second);
       const valtype rhonorm = it->second/sum;
       for(uint i = 0; i < bin.size(); ++i) { printf("%10d",bin[i]);}
       for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}
-      printf("%30.15lf%30.15lf\n",pmf,rhonorm);
+      printf("%30.15lf%30.15le\n",pmf,rhonorm);
     }
   }
 }
