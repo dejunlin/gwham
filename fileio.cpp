@@ -94,23 +94,6 @@ bool fileio::fopen() {
   }
 }
 
-bool fileio::emptyline() const {
-  return emptystr(line, comments); 
-}
-
-bool fileio::readaline() {
-  line.clear();
-  while(getline(fs, line)) {
-    if(emptyline()) { line.clear(); continue; }
-    ++lc;
-    if(lc < lb) { line.clear(); continue; }
-    else if(lc > le) { line.clear(); break; }
-    else if(lc % ls) { line.clear(); continue; }
-    break;
-  }
-  return !line.empty();
-}
-
 void fileio::readall() {
   line.clear();
   while(getline(fs, line)) {
@@ -122,24 +105,6 @@ void fileio::readall() {
     lines.push_back(line);
     line.clear();
   }
-}
-
-vector<valtype> fileio::line2val() const {
-  vector<valtype> ans;
-  split<valtype>(ans, line);
-  return ans;
-}
-
-vector<string> fileio::line2str() const {
-  vector<string> ans;
-  split<string>(ans, line);
-  return ans;
-}
-
-vector<string> fileio::line2str(const string& delims) const {
-  vector<string> ans;
-  split<string>(ans, line, delims);
-  return ans;
 }
 
 const vector<string>& fileio::getlines() const { return lines; }

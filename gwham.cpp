@@ -24,10 +24,18 @@ using namespace std;
 typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
+inline
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
 void HistogramCV(histogram& hist, linecounter& N, const vector<valtype>& input) {
   if(hist.bin(input) != hist.end()) ++N; 
 }
 
+inline
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
 void HistogramExpECV(vector<histogram>& hists, vector<linecounter>& Ns, vector<uint>::const_iterator& itstate, const linecounter nststates, linecounter& count, vector<valtype>::const_iterator& itpot, const vector<valtype>& input) {
   const auto& state = *itstate;
   ++count;
@@ -40,6 +48,10 @@ void HistogramExpECV(vector<histogram>& hists, vector<linecounter>& Ns, vector<u
   HistogramCV(hist, Ns[state], data);
 }
 
+inline
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
 void HistogramExpCV(vector<histogram>& hists, vector<linecounter>& Ns, vector<uint>::const_iterator& itstate, const linecounter nststates, linecounter& count, const vector<valtype>& input) {
   const auto& state = *itstate;
   ++count;
@@ -48,6 +60,10 @@ void HistogramExpCV(vector<histogram>& hists, vector<linecounter>& Ns, vector<ui
   HistogramCV(hist, Ns[state], input);
 }
 
+inline
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
 void HistogramECV(histogram& hist, linecounter& N, vector<valtype>::const_iterator& itpot, const vector<valtype>& input) {
   const auto& pot = *itpot;
   ++itpot;
@@ -57,6 +73,10 @@ void HistogramECV(histogram& hist, linecounter& N, vector<valtype>::const_iterat
 }
 
 template < class T, class TS >
+inline
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
 void vecfromTS(vector<T>& ans, TS& ts, uint nrun, string fnprefix) {
   const auto& fnsuffix = ts.fnsuffix;
   for(uint i = 0; i < nrun; ++i) {
@@ -69,8 +89,12 @@ void vecfromTS(vector<T>& ans, TS& ts, uint nrun, string fnprefix) {
   }
 }
 
-template < class vTSit, class PMDP, class H > 
-void histfromTS(
+template < class vTSit, class PMDP, class H >
+inline
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
+void histfromTS (
     vTSit& it,
     vector<linecounter>& Nsamples,
     const PMDP& pmdp, 
@@ -144,11 +168,11 @@ int main(int argc, char* argv[]) {
   //tolerance for WHAM iteration
   const double tol = atof(argv[k++]);
   //first line to read (excluding comment-lines) in the x.xvg files
-  const uint rcvbegin = atoi(argv[k++]);
+  const linecounter rcvbegin = atoi(argv[k++]);
   //Only read every stride lines (excluding comment-lines) in the x.xvg files
-  const uint rcvstride = atoi(argv[k++]); 
+  const linecounter rcvstride = atoi(argv[k++]); 
   //last line to read (excluding comment-lines) in the x.xvg files
-  const uint rcvend = atoi(argv[k++]); 
+  const linecounter rcvend = atoi(argv[k++]); 
   //the PMF or any analysis will be done in the ensembles specified by these MDP files
   const vector<string> mdp0prefixes = split<string>(argv[k++]);
   //provide a file which contains seeding dimensionless free energy of 

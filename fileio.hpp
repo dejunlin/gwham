@@ -13,10 +13,62 @@ class fileio {
     fileio(const string& _fname, const ios_base::openmode& mode, const bool& perm=true, const linecounter _lb=0, const linecounter _ls=1, const linecounter _le=MAXNLINE, const string& cm="#@;");
     fileio(const ios_base::openmode& mode, const bool& perm=true, const linecounter _lb=0, const linecounter _ls=1, const linecounter _le=MAXNLINE, const string& cm="#@;");
     fileio(const fileio& _fio);
+
     //! if fileio::line contains only whitespaces
-    bool emptyline() const;
-    //! read one line at a time and cache it into fileio::line 
-    bool readaline(); 
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
+    bool emptyline() const { return emptystr(line, comments); }
+
+    //! skip empty lines 
+    /** this will read the first non-empty line into fileio::line
+     */
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
+    void skipemptylns() {
+      while(getline(fs, line)) {
+        if(emptyline()) { continue; }
+	else { break; }
+      }
+    }
+
+    //! read one line at a time and cache it into fileio::line
+    /** This assumes in the input file all the empty lines are 
+     * in the head of the files and are already skipped
+     * and that you need every line from the file, 
+     * i.e., lb:ls:le = 0:1:MAXNLINE
+     */
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
+    bool readeveryline() {
+      getline(fs, line);
+      ++lc;
+      return !line.empty();
+    }
+
+    //! read one line at a time and cache it into fileio::line
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
+    bool readaline() {
+      line.clear();
+      while(getline(fs, line)) {
+        if(emptyline()) { continue; }
+        ++lc;
+        if(lc < lb) { line.clear(); continue; }
+        else if(lc > le) { line.clear(); break; }
+        else if(lc % ls) { line.clear(); continue; }
+        break;
+      }
+      return !line.empty();
+    }
+
     //! read all lines and cached them into fileio::lines
     void readall();
     //! just open a file handle with the mode specified at instantiation
@@ -24,11 +76,25 @@ class fileio {
     //! just open a file handle
     bool fopen(const string& _fname, const ios_base::openmode& mode);
     //! break line into vector of valtype 
-    vector<valtype> line2val() const;
-    //! break line into vector of string using spaces as deliminator 
-    vector<string> line2str() const;
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
+    vector<valtype> line2val() const {
+      vector<valtype> ans;
+      split<valtype>(ans, line);
+      return ans;
+    };
     //! break line into vector of string using specified deliminator 
-    vector<string> line2str(const string& delims) const;
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
+    vector<string> line2str(const string& delims=" \t") const {
+      vector<string> ans;
+      split<string>(ans, line, delims);
+      return ans;
+    }
     //! return fileio::line for read-only
     const string& getln() const;
     //! return fileio::lines for read-only

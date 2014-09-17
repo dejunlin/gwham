@@ -85,8 +85,12 @@ class TimeSeries
 
     /* ====================  OPERATORS     ======================================= */
     //! Read a file and process them using the DATAPROCESSOR object
+    /** This is the same as the TimeSeries::operator() except that 
+     * the number of input columns will be checked for every line,
+     * which is slow
+     */
     template < class DATAPROCESSOR >
-    linecounter operator()(const string& fname, const DATAPROCESSOR& dproc) {
+    linecounter read(const string& fname, const DATAPROCESSOR& dproc) {
       linecounter Nl = 0;
       if(!fio.fopen(fname)) { return Nl; }
       vector<INPUT> out(colids.size(),INPUT{0});
@@ -98,6 +102,31 @@ class TimeSeries
 	for(uint i = 0; i < colids.size(); ++i) { out[i] = cols[colids[i]]; }
 	dproc(out);
 	++Nl;
+      }
+      return Nl;
+    }
+
+    //! Read a file and process them using the DATAPROCESSOR object
+    template < class DATAPROCESSOR >
+    linecounter operator()(const string& fname, const DATAPROCESSOR& dproc) {
+      linecounter Nl = 0;
+      if(!fio.fopen(fname)) { return Nl; }
+      vector<INPUT> out(colids.size(),INPUT{0});
+      if(fio.lb == 0 && fio.ls == 1 && fio.le >= MAXNLINE) {
+        fio.skipemptylns();
+        do {
+          const vector<double> cols(fio.line2val());
+          for(uint i = 0; i < colids.size(); ++i) { out[i] = cols[colids[i]]; }
+          dproc(out);
+          ++Nl;
+        } while(fio.readeveryline());
+      } else {
+        while(fio.readaline()) {
+          const vector<double> cols(fio.line2val());
+          for(uint i = 0; i < colids.size(); ++i) { out[i] = cols[colids[i]]; }
+          dproc(out);
+          ++Nl;
+        }
       }
       return Nl;
     }
