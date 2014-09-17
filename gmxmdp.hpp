@@ -345,8 +345,8 @@ class GMXMDP::GMXPGRP {
       {"pull-vec" + gidstr, vec},
       {"pull-init" + gidstr, init},
       {"pull-initB" + gidstr, initB},
-      {"pull_contactgroup" + gidstr + "_nc0", nc0},
-      {"pull_contactgroup" + gidstr + "_nc0B", nc0B},
+      {"pull_contactgroup" + gidstr + "_nc0", init},
+      {"pull_contactgroup" + gidstr + "_nc0B", initB},
     };
     return true;
   }
