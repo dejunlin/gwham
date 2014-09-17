@@ -38,8 +38,6 @@ class WHAM {
 	 const vector<NARRAY>& _g = vector<NARRAY>{0}
 	);
 
-    //! Based on the density of state, calculate a new set of free energies
-    void calnewf(vector<valtype>& f, const vector<PENSEMBLE>& _V) const;
     //!calculate PMF in Hamiltonian _V along the dimension in DOS as specified by dim
     NARRAY calrho(const vector<uint>& dim, const pEnsemble& _V) const;
     //!Calculate the inconsistency between the i'th consensus HISTOGRAM and the corresponding raw HISTOGRAM  
@@ -117,50 +115,15 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     do {
       ++count;
       DOS(*record, *hists, *V, *N, f, newf);
-      //calnewf(newf,V);
       shiftf(newf);
     } while(!endit(newf,count));
   } else {
     do {
       ++count;
       DOS(*record, *hists, *V, *N, f, newf, *g);
-      //calnewf(newf,V);
       shiftf(newf);
     } while(!endit(newf,count));
   }
-}
-
-template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
-void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::calnewf(vector<valtype>& newf, const vector<PENSEMBLE>& _V) const {
-  for(uint l = 0; l < newf.size(); ++l) {
-    double expmf = 0.0;
-    /*cout <<"#calnewf: state ensemble_params" << endl;
-    cout << "#" << l << " ";
-    const vector<valtype> params = _V[l]->getens()->getparams();
-    copy(params.begin(),params.end(),ostream_iterator<valtype>(cout," ")); cout << endl;
-    cout <<"#calnewf: vals ener" << endl;*/
-
-    /*cout <<"#state RC energy DOS expmf\n";
-    cout <<"#be " << l << endl;*/
-    //Here we only loop through non-zero elements of DOS
-    for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
-      const coordtype coord = it->first;
-      const vector<uint> histids = it->second;
-      const vector<valtype> vals = coord2val(coord);
-      //calculate f[l] for all l
-      const valtype exparg = -_V[l]->ener(vals);
-      /*cout << "#";
-      copy(vals.begin(),vals.end(),ostream_iterator<valtype>(cout," "));
-      cout << " " << exparg << endl;*/
-      //if(exparg > MAXEXPARG ) { cerr << "In WHAM::calnewf: exp("<<exparg<<") will overflow!\n"; exit(-1); }
-      //else if(exparg < MINEXPARG) { continue; }
-      expmf += DOS[coord]*exp(exparg); //There should be a bin-size term here but it cancels out with the same term the denumerator of DOS
-      //cout << "#" << l << " " << vals[0] << " " << -exparg << " " << DOS[coord] << " " << expmf << endl;
-    }
-    //cout << "#ed " << newf[l] << endl;
-    newf[l] = -log(expmf);
-  }
-  shiftf(newf);
 }
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
