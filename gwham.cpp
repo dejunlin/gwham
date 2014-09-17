@@ -168,11 +168,11 @@ int main(int argc, char* argv[]) {
   //tolerance for WHAM iteration
   const double tol = atof(argv[k++]);
   //first line to read (excluding comment-lines) in the x.xvg files
-  const linecounter rcvbegin = atoi(argv[k++]);
+  const linecounter rcvbegin = stoul(argv[k++]);
   //Only read every stride lines (excluding comment-lines) in the x.xvg files
-  const linecounter rcvstride = atoi(argv[k++]); 
+  const linecounter rcvstride = stoul(argv[k++]); 
   //last line to read (excluding comment-lines) in the x.xvg files
-  const linecounter rcvend = atoi(argv[k++]); 
+  const linecounter rcvend = stoul(argv[k++]); 
   //the PMF or any analysis will be done in the ensembles specified by these MDP files
   const vector<string> mdp0prefixes = split<string>(argv[k++]);
   //provide a file which contains seeding dimensionless free energy of 
@@ -180,6 +180,8 @@ int main(int argc, char* argv[]) {
   //(could be a file that doesn't exist, in which case the program will just seed the free energy to zero)
   const string fseedsstr = string(argv[k++]);  
   
+  cout << rcvbegin << " " << rcvstride << " " << rcvend << endl;
+
   cout << cmdline;
   cout << "# ";
   for(int i = 0; i < argc; ++i) {
