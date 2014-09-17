@@ -101,11 +101,11 @@ bool fileio::emptyline() const {
 bool fileio::readaline() {
   line.clear();
   while(getline(fs, line)) {
-    if(emptyline()) { continue; }
+    if(emptyline()) { line.clear(); continue; }
     ++lc;
     if(lc < lb) { line.clear(); continue; }
-    if(lc % ls) { line.clear(); continue; }
-    if(lc > le) { line.clear(); break; }
+    else if(lc > le) { line.clear(); break; }
+    else if(lc % ls) { line.clear(); continue; }
     break;
   }
   return !line.empty();
@@ -114,11 +114,11 @@ bool fileio::readaline() {
 void fileio::readall() {
   line.clear();
   while(getline(fs, line)) {
-    if(emptyline()) { continue; }
+    if(emptyline()) { line.clear(); continue; }
     ++lc;
     if(lc < lb) { continue; }
-    if(lc % ls) { continue; }
-    if(lc > le) { break; }
+    else if(lc > le) { break; }
+    else if(lc % ls) { continue; }
     lines.push_back(line);
     line.clear();
   }
