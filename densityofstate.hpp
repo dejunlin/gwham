@@ -27,12 +27,11 @@ class DensityOfState {
      * @param[in] f Free energy of states. Total number of elements is the total number of states considered 
      */
     void operator() (
-    		     const map<coordtype, vector<uint> >& record, 
-                     const vector<histogram>& hists,  
-		     const vpEnsemble& V, 
-		     const vector<linecounter>& N, 
-		     const vector<valtype>& f,
-		     vector<valtype>& newf
+    		      const narray& C, 
+                      const vector<narray>& expmH,  
+                      const vector<narray>& Ng,  
+ 		      const vector<valtype>& expf,
+		      vector<valtype>& newexpf
 		    );
     //! read only accessor operator 
     valtype operator[](const coordtype& coord) const { return DOS[coord]; };
@@ -57,25 +56,26 @@ DensityOfState<ensemble,histogram,narray>::DensityOfState(const histogram& hist)
 template<class ensemble, class histogram, class narray>
 void DensityOfState<ensemble,histogram,narray>::operator () (
     		     	      const narray& C, 
-                              const vector<narray>& expH,  
+                              const vector<narray>& expmH,  
                               const vector<narray>& Ng,  
          		      const vector<valtype>& expf,
 			      vector<valtype>& newexpf
          		                   ) 
 {
-  newexpf = vector<valtype>{newexpf.size(), 0.0};
+  newexpf.assign(newexpf.size(), 0.0);
   //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
-  for(narray::const_iterator it = C.begin(); it != C.end(); ++it) {
+  for(typename narray::const_iterator it = C.begin(); it != C.end(); ++it) {
     const auto& coord = it->first;
     const auto& num = it->second;
     valtype denum = 0.0;
     for(uint k = 0; k < Ng.size(); ++k) {
-      denum += Ng[k][coord] * expf[k] * expH[k][coord]
+      denum += Ng[k][coord] * expf[k] * expmH[k][coord];
     }
     const valtype dos = num/denum;
     DOS[coord] = dos;
-    for(uint l = 0; l < newexpf.size(): ++l) {
-      newexpf[l] += dos*expH[l][coord];
+    for(uint l = 0; l < newexpf.size(); ++l) {
+      newexpf[l] += dos*expmH[l][coord];
     }
   }
+  for(auto& x : newexpf) { x = 1/x; }
 }

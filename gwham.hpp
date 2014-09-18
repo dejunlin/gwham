@@ -50,17 +50,17 @@ class WHAM {
     const vector<valtype> coord2val(const coordtype& coord) const;
     //!given coordinate in index space along the specified dimension, calculate the corresponding real-space coordinate
     const vector<valtype> coord2val(const vector<uint>& _dim, const coordtype& coord) const;
-    //!shift all the free energies (argument newf)by a constant so that newf[0] is always zero 
-    void shiftf(vector<valtype>& newf) const;
+    //!shift all the free energies (argument newexpf)by a constant so that newexpf[0] is always zero 
+    void shiftf(vector<valtype>& newexpf) const;
     //!print out all free energies
     void printfree() const;
   private:
      //!max number of iterations
      static const ulong MAXIT = 1000000;
-     //!check if WHAM iteration should end; also update WHAM::f if not end
-     bool endit(const vector<valtype>& newf, const ulong& count); 
+     //!check if WHAM iteration should end; also update WHAM::expf if not end
+     bool endit(const vector<valtype>& newexpf, const ulong& count); 
      //!record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
-     const map<coordtype, vector<uint> >* record;
+     const map<coordtype, vector<uint> >* const record;
      //!Generic HISTOGRAM for each trajectory
      const vector<HISTOGRAM>* const hists;
      //!Statistical inefficiency for each trajectory
@@ -77,8 +77,8 @@ class WHAM {
      const vector<valtype> lv;
      //!number of dimension of the HISTOGRAM
      const uint dim;
-     //!f[i] is the dimensionless free energy of state i 
-     vector<valtype> f;
+     //!expf[i] is the exponential of the dimensionless free energy of state i 
+     vector<valtype> expf;
      //! Density of state as well as a functor that caclulates it
      DOStype DOS;
 };
@@ -101,27 +101,29 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
 				     binsize((*hists)[0].getbinsize()),
 				     lv((*hists)[0].getlv()),
 				     dim(binsize.size()),
-				     f(vector<valtype>(V->size(),0.0)),
-				     DOS(DOStype((*hists)[0]))
+				     expf(vector<valtype>(V->size(),1.0)),
+				     DOS({(*hists)[0]})
 {
-  if(fseeds.size() == f.size()) {
-    f = fseeds;
+  if(fseeds.size() == expf.size()) {
+    for(uint i = 0; i < fseeds.size(); ++i) { expf[i] = exp(fseeds[i]); }
     cout << "# Seeding WHAM iteration with free energies: " << fseeds << endl;
   }
   //first we also precaculate g-weighted number-of-samples here
-  vector<NARRAY> Ng{hists.size(), DOS.getdosarr()};
+  vector<HISTOGRAM> h{*hists};
+  vector<NARRAY> Ng{hists->size(), DOS.getdosarr()};
   if(g != nullptr) {
-    for(uint i = 0; i < hists->size(); ++i) {
-      auto& hist = (*hists)[i];
-      for(NARRAY::iterator it = hist.begin(); it != hist.end(); ++it) {
-        const auto& gtmp = g[i][it->first];
+    for(uint i = 0; i < h.size(); ++i) {
+      auto& hist = h[i];
+      for(typename HISTOGRAM::iterator it = hist.begin(); it != hist.end(); ++it) {
+	const auto& coord = it->first;
+        const auto& gtmp = (*g)[i][coord];
 	it->second /= gtmp;
 	Ng[i][coord] = (*N)[i]/gtmp;
       }
     }
   }
   //then we cache all the energy 
-  vector<NARRAY> expH{hists->size(), DOS.getdosarr()};
+  vector<NARRAY> expmH{hists->size(), DOS.getdosarr()};
   NARRAY C{DOS.getdosarr()};
   //Again we only loop through non-zero elements of DOS
   for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
@@ -129,41 +131,41 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     const vector<uint> histids = it->second;
     const vector<valtype> vals = coord2val(coord);
     for(const auto& k : histids) {
-      const NARRAY::iterator it = C.find(coord);
-      if(it == C.end()) { C[coord] = hists[k][coord]; } 
-      else { *it += hists[k][coord]; }
+      const typename NARRAY::iterator itc = C.find(coord);
+      if(itc == C.end()) { C[coord] = h[k][coord]; } 
+      else { itc->second += h[k][coord]; }
       const auto& exparg = -(*V)[k]->ener(vals);
       if(exparg > MAXEXPARG) {
 	throw(General_Exception("exp("+tostr(exparg)+") will overflow"));
       } else if(exparg < MINEXPARG) {
-        expH[k][coord] = 0;
+        expmH[k][coord] = 0;
 	continue;
       }
-      expH[k][coord] = exp(-(*V)[k]->ener(vals));
+      expmH[k][coord] = exp(-(*V)[k]->ener(vals));
     }
   }
 
   //perform the WHAM iteration
   ulong count = 0;
-  vector<double> newexpf(f);
+  vector<double> newexpf(expf);
   do {
     ++count;
-    DOS(C, expH, Ng, f, newexpf);
+    DOS(C, expmH, Ng, expf, newexpf);
     shiftf(newexpf);
   } while(!endit(newexpf,count));
 }
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
-bool WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::endit(const vector<valtype>& newf, const ulong& count) {
+bool WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::endit(const vector<valtype>& newexpf, const ulong& count) {
   if(count > MAXIT) {
     cerr << "Max number of iteration " << MAXIT << " is reached. Quit\n";
     printfree();
     exit(-1);
   }
   if(count % 100 == 0) { cout << "#At the " << count << "'th iteration\n"; printfree(); } 
-  for(uint i = 0; i < newf.size(); ++i) {
-    if(fabs((newf[i] - f[i])/f[i]) > tol) {
-      f = newf;
+  for(uint i = 0; i < newexpf.size(); ++i) {
+    if(fabs(log(newexpf[i])/log(expf[i])-1) > tol) {
+      expf = newexpf;
       return false;
     }
   }
@@ -175,29 +177,17 @@ bool WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::endit(const vector<valtype>& newf, const 
 }
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
-void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::shiftf(vector<valtype>& newf) const {
-  /*valtype favg = 0.0;
-  valtype fmax = -9999999999, fmin = 9999999999;
-  for(uint i = 0; i < newf.size(); ++i) {
-    favg += newf[i];
-    if(newf[i] > fmax) { fmax = newf[i];}
-    else if(newf[i] < fmin) { fmin = newf[i]; }
-  }
-  favg /= newf.size();
-  cout << "#Shift all f by " << favg << " with fmax = " << fmax << " and fmin = " << fmin << endl;
-  for(uint i = 0; i < newf.size(); ++i) {
-    newf[i] -= favg;
-  }*/
-  for(int i = newf.size()-1; i >= 0; --i) {
-    newf[i] -= newf[0];
+void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::shiftf(vector<valtype>& newexpf) const {
+  for(int i = newexpf.size()-1; i >= 0; --i) {
+    newexpf[i] /= newexpf[0];
   }
 }
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
 void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::printfree() const {
   printf("#%10s%30s\n","State","DimensionlessFreeEnergy");
-  for(uint i = 0; i < f.size(); ++i) {
-    printf("#%10d%30.15lf\n",i,f[i]);
+  for(uint i = 0; i < expf.size(); ++i) {
+    printf("#%10d%30.15lf\n",i,log(expf[i]));
   }
 }
 
@@ -267,7 +257,7 @@ template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
 valtype WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::whamvsrawi(const uint& i, const NARRAY& rho) const {
   const HISTOGRAM hist = (*hists)[i];
   const valtype sum = hist.sum();
-  const valtype Qinv = exp(f[i]); //this is the inverse of the partition function 
+  const valtype Qinv = expf[i]; //this is the inverse of the partition function 
   const pEnsemble Vi = (*V)[i];
   typename HISTOGRAM::const_iterator it;
   valtype eta = 0; //eta in equation 41 from reference DOI: 10.1002/jcc.21989
