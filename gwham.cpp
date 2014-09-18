@@ -180,8 +180,6 @@ int main(int argc, char* argv[]) {
   //(could be a file that doesn't exist, in which case the program will just seed the free energy to zero)
   const string fseedsstr = string(argv[k++]);  
   
-  cout << rcvbegin << " " << rcvstride << " " << rcvend << endl;
-
   cout << cmdline;
   cout << "# ";
   for(int i = 0; i < argc; ++i) {
