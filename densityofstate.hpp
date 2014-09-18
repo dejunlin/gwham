@@ -26,13 +26,36 @@ class DensityOfState {
      * @param[in] N N[k] is the number of samples in the k'th trajectory/state. 
      * @param[in] f Free energy of states. Total number of elements is the total number of states considered 
      */
+
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
     void operator() (
     		      const narray& C, 
                       const vector<narray>& expmH,  
                       const vector<narray>& Ng,  
  		      const vector<valtype>& expf,
 		      vector<valtype>& newexpf
-		    );
+		    )
+    {
+      newexpf.assign(newexpf.size(), 0.0);
+      //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
+      for(typename narray::const_iterator it = C.begin(); it != C.end(); ++it) {
+        const auto& coord = it->first;
+        const auto& num = it->second;
+        valtype denum = 0.0;
+        for(uint k = 0; k < Ng.size(); ++k) {
+          denum += Ng[k][coord] * expf[k] * expmH[k][coord];
+        }
+        const valtype dos = num/denum;
+        DOS[coord] = dos;
+        for(uint l = 0; l < newexpf.size(); ++l) {
+          newexpf[l] += dos*expmH[l][coord];
+        }
+      }
+      for(auto& x : newexpf) { x = 1/x; }
+    }
     //! read only accessor operator 
     valtype operator[](const coordtype& coord) const { return DOS[coord]; };
     //! return DOS
@@ -52,30 +75,3 @@ template<class ensemble, class histogram, class narray>
 DensityOfState<ensemble,histogram,narray>::DensityOfState(const histogram& hist)
   : DOS(narray(hist.getdim(),hist.getnelms(),hist.gethv(),hist.getlv())) 
   {}
-
-template<class ensemble, class histogram, class narray>
-void DensityOfState<ensemble,histogram,narray>::operator () (
-    		     	      const narray& C, 
-                              const vector<narray>& expmH,  
-                              const vector<narray>& Ng,  
-         		      const vector<valtype>& expf,
-			      vector<valtype>& newexpf
-         		                   ) 
-{
-  newexpf.assign(newexpf.size(), 0.0);
-  //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
-  for(typename narray::const_iterator it = C.begin(); it != C.end(); ++it) {
-    const auto& coord = it->first;
-    const auto& num = it->second;
-    valtype denum = 0.0;
-    for(uint k = 0; k < Ng.size(); ++k) {
-      denum += Ng[k][coord] * expf[k] * expmH[k][coord];
-    }
-    const valtype dos = num/denum;
-    DOS[coord] = dos;
-    for(uint l = 0; l < newexpf.size(); ++l) {
-      newexpf[l] += dos*expmH[l][coord];
-    }
-  }
-  for(auto& x : newexpf) { x = 1/x; }
-}
