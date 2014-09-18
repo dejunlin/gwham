@@ -3,6 +3,8 @@
 
 #include "densityofstate.hpp"
 #include "hamiltonian.hpp"
+#include "exception.hpp"
+#include "fileio_utils.hpp"
 #include <stdlib.h>
 #include <iterator>
 #include <vector>
@@ -104,26 +106,51 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
 {
   if(fseeds.size() == f.size()) {
     f = fseeds;
-    cout << "# Seeding WHAM iteration with free energies: ";
-    copy(fseeds.begin(), fseeds.end(), ostream_iterator<valtype>(cout, " "));
-    cout << endl;
+    cout << "# Seeding WHAM iteration with free energies: " << fseeds << endl;
   }
+  //first we also precaculate g-weighted number-of-samples here
+  vector<NARRAY> Ng{hists.size(), DOS.getdosarr()};
+  if(g != nullptr) {
+    for(uint i = 0; i < hists->size(); ++i) {
+      auto& hist = (*hists)[i];
+      for(NARRAY::iterator it = hist.begin(); it != hist.end(); ++it) {
+        const auto& gtmp = g[i][it->first];
+	it->second /= gtmp;
+	Ng[i][coord] = (*N)[i]/gtmp;
+      }
+    }
+  }
+  //then we cache all the energy 
+  vector<NARRAY> expH{hists->size(), DOS.getdosarr()};
+  NARRAY C{DOS.getdosarr()};
+  //Again we only loop through non-zero elements of DOS
+  for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
+    const coordtype coord = it->first;
+    const vector<uint> histids = it->second;
+    const vector<valtype> vals = coord2val(coord);
+    for(const auto& k : histids) {
+      const NARRAY::iterator it = C.find(coord);
+      if(it == C.end()) { C[coord] = hists[k][coord]; } 
+      else { *it += hists[k][coord]; }
+      const auto& exparg = -(*V)[k]->ener(vals);
+      if(exparg > MAXEXPARG) {
+	throw(General_Exception("exp("+tostr(exparg)+") will overflow"));
+      } else if(exparg < MINEXPARG) {
+        expH[k][coord] = 0;
+	continue;
+      }
+      expH[k][coord] = exp(-(*V)[k]->ener(vals));
+    }
+  }
+
   //perform the WHAM iteration
   ulong count = 0;
-  vector<double> newf(f);
-  if(g == nullptr) {
-    do {
-      ++count;
-      DOS(*record, *hists, *V, *N, f, newf);
-      shiftf(newf);
-    } while(!endit(newf,count));
-  } else {
-    do {
-      ++count;
-      DOS(*record, *hists, *V, *N, f, newf, *g);
-      shiftf(newf);
-    } while(!endit(newf,count));
-  }
+  vector<double> newexpf(f);
+  do {
+    ++count;
+    DOS(C, expH, Ng, f, newexpf);
+    shiftf(newexpf);
+  } while(!endit(newexpf,count));
 }
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
