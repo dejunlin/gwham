@@ -112,6 +112,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   vector<HISTOGRAM> h{*hists};
   vector<NARRAY> Ng{hists->size(), DOS.getdosarr()};
   if(g != nullptr) {
+    cout << "g-weighting...\n";
     for(uint i = 0; i < h.size(); ++i) {
       auto& hist = h[i];
       for(typename HISTOGRAM::iterator it = hist.begin(); it != hist.end(); ++it) {
@@ -119,6 +120,14 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
         const auto& gtmp = (*g)[i][coord];
 	it->second /= gtmp;
 	Ng[i][coord] = (*N)[i]/gtmp;
+      }
+    }
+  } else {
+    for(uint i = 0; i < h.size(); ++i) {
+      auto& hist = h[i];
+      for(typename HISTOGRAM::iterator it = hist.begin(); it != hist.end(); ++it) {
+	const auto& coord = it->first;
+	Ng[i][coord] = (*N)[i];
       }
     }
   }
