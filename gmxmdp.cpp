@@ -175,7 +175,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
       ulong Mask = 0;
       for(int i = 1; i <= ncntgrps; ++i)  Mask |= (1<<i);
       const ulong iNcol = ncntgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, ncntgrps, nstx);
+      ans.emplace_back(fileio(fstream::in, false, 1, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, ncntgrps, nstx);
       break;
     }
     default: {
@@ -183,7 +183,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
       // for each pull-group, we have one column of x and one column of dx and we only need dx
       for(int i = 2; i <= 2*npgrps; i+=2)  Mask |= (1<<i);
       const ulong iNcol = 2*npgrps + 1;
-      ans.emplace_back(fileio(fstream::in, false, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, npgrps, nstx);
+      ans.emplace_back(fileio(fstream::in, false, 1, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, npgrps, nstx);
       break;
     }
   }
