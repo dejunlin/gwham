@@ -35,9 +35,10 @@ class fileio {
       }
     }
 
-    //! read one line at a time and cache it into fileio::line
-    /** This assumes in the input file all the empty lines are 
+    //! Read a time-series style file without line number check
+    /** Assume in the input file all the empty lines are 
      * in the head of the files and are already skipped
+     * and no such empty lines should occur for the rest 
      * and that you need every line from the file, 
      * i.e., lb:ls:le = 0:1:MAXNLINE
      */
@@ -45,8 +46,45 @@ class fileio {
     #ifdef __GNUC__
     __attribute__((always_inline))
     #endif
-    bool readeveryline() {
+    bool readtsnb() {
       getline(fs, line);
+      ++lc;
+      return !line.empty();
+    }
+
+    //! Read a time-series style file
+    /** Assume in the input file all the empty lines are 
+     * in the head of the files and are already skipped
+     * and no such empty lines should occur for the rest
+     */
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
+    bool readts() {
+      while(getline(fs, line)) {
+        ++lc;
+        if(lc < lb) { line.clear(); continue; }
+        else if(lc > le) { line.clear(); break; }
+        else if(lc % ls) { line.clear(); continue; }
+        break;
+      }
+      return !line.empty();
+    }
+
+    //! read one line at a time and cache it into fileio::line
+    /** This assumes that you need every line from the file, 
+     * i.e., lb:ls:le = 0:1:MAXNLINE
+     */
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
+    bool readalinenb() {
+      while(getline(fs, line)) {
+        if(emptyline()) { continue; }
+	else { break; }
+      };
       ++lc;
       return !line.empty();
     }

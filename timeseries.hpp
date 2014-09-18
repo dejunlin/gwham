@@ -127,14 +127,15 @@ class TimeSeries
           for(uint i = 0; i < colids.size(); ++i) { out[i] = cols[colids[i]]; }
           dproc(out);
           ++Nl;
-        } while(fio.readeveryline());
+        } while(fio.readtsnb());
       } else {
-        while(fio.readaline()) {
+        fio.skipemptylns();
+        do {
           const vector<double> cols(fio.line2val());
           for(uint i = 0; i < colids.size(); ++i) { out[i] = cols[colids[i]]; }
           dproc(out);
           ++Nl;
-        }
+        } while(fio.readts());
       }
       return Nl;
     }
