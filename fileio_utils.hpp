@@ -22,7 +22,7 @@ string tostr(const T& input) {
 }
 
 template <class Tp> 
-void strto(vector<Tp>& output, const vector<string>& input) throw(FILEIO_Exception)  {
+void strto(vector<Tp>& output, const vector<string>& input) {
   for(uint i = 0; i < input.size(); ++i) {
     istringstream iss(input[i]);
     vector<Tp> tmp((istream_iterator<Tp>(iss)), istream_iterator<Tp>());
@@ -35,9 +35,20 @@ void strto(vector<Tp>& output, const vector<string>& input) throw(FILEIO_Excepti
   }
 }
 
+//split a string into an array by empty spaces
+template <class Tp> 
+void split(vector<Tp>& output, const string& str) {
+  istringstream iss(str);
+  Tp val;
+  do {
+    iss >> val;
+    output.emplace_back(val);
+  } while (iss);
+}
+
 //split a string into an array by delims
 template <class Tp> 
-void split(vector<Tp>& output, const string& str, string delims=" \t") throw(FILEIO_Exception) {
+void split(vector<Tp>& output, const string& str, string delims) {
   //first split str into a array of std::string
   vector<string> tmp;
   split<string>(tmp, str, delims);
@@ -53,7 +64,7 @@ void split(vector<Tp>& output, const string& str, string delims=" \t") throw(FIL
 
 //specialized split for array of string -- NOTE that delims can still be defaulted to the one in the general template
 template <>
-void split<string>(vector<string>& output, const string& str, string delims) throw(FILEIO_Exception);
+void split<string>(vector<string>& output, const string& str, string delims);
 
 template <class Tp>
 vector<Tp> split(const string& str, string delims=" \t") {

@@ -21,7 +21,7 @@
 
 //specialized split for array of string -- NOTE that delims can still be defaulted to the one in the general template
 template <>
-void split<string>(vector<string>& output, const string& str, string delims) throw(FILEIO_Exception) {
+void split<string>(vector<string>& output, const string& str, string delims) {
   char * str_c = new char[str.size()+1];
   str_c[str.size()] = '\0';
   memcpy(str_c,str.c_str(),str.size());
