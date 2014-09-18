@@ -90,6 +90,10 @@ class TimeSeries
      * which is slow
      */
     template < class DATAPROCESSOR >
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
     linecounter read(const string& fname, const DATAPROCESSOR& dproc) {
       linecounter Nl = 0;
       if(!fio.fopen(fname)) { return Nl; }
@@ -108,6 +112,10 @@ class TimeSeries
 
     //! Read a file and process them using the DATAPROCESSOR object
     template < class DATAPROCESSOR >
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
     linecounter operator()(const string& fname, const DATAPROCESSOR& dproc) {
       linecounter Nl = 0;
       if(!fio.fopen(fname)) { return Nl; }
