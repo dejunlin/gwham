@@ -5,6 +5,7 @@
 #include "hamiltonian.hpp"
 #include "mc.hpp"
 #include "fileio_utils.hpp"
+#include <algorithm>
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
@@ -20,7 +21,7 @@ int main(int argc, char* argv[]) {
 
   cout << "# mc dim nbins hv lv nwins nsteps stepsize tol dim_prt\n";
   cout << "# ";
-  copy(argv,argv+argc,ostream_iterator<char*>(cout," "));
+  for_each(argv, argv+argc, [] (char* arg) { cout << "'" << arg << "' "; });
   cout << endl;
 
   const uint dim = atoi(argv[1]);
@@ -28,7 +29,7 @@ int main(int argc, char* argv[]) {
   const string hvstr = string(argv[3]); 
   const string lvstr = string(argv[4]); 
   const string nwinsstr = string(argv[5]); 
-  const uint nsteps = atoi(argv[6]);
+  const linecounter nsteps = stoul(argv[6]);
   const valtype stepsize = atof(argv[7]);
   const valtype tol = atof(argv[8]);
   const string dimprtstr = string(argv[9]);
@@ -65,11 +66,7 @@ int main(int argc, char* argv[]) {
   //const nobias bias(dim);
   const valtype spring = 0.2;
   const vector<valtype> k(dim,spring);
-  vector<Hamiltonian<RST>* > V;
-  vector<valtype> rstparams;
-  rstparams.push_back(kB);
-  rstparams.push_back(T);
-  rstparams.insert(rstparams.end(),k.begin(),k.end());
+  vpEnsemble V;
   
   narray windows(dim,nwins,hv,lv);
   const ulong nwins_tot = windows.getnelms_tot();
@@ -82,9 +79,11 @@ int main(int argc, char* argv[]) {
     MC<potpoly_dblwell,harmonic> mc(kB,T,pot,bias,nsteps,stepsize);
     mc(wincentr,hists[i]);
     
-    rstparams.resize(2+dim);
-    rstparams.insert(rstparams.end(),wincentr.begin(),wincentr.end());
-    V.push_back(new Hamiltonian<RST>(rstparams));
+    vFunctVV functors;
+    for(uint j = 0; j < dim; ++j) {
+      functors.emplace_back(Make_Functor_Wrapper(FunctVV{}, Quadratic<valtype>, k[j]/2, wincentr[j], 0.0));
+    }
+    V.emplace_back(make_shared<NVT>(kB, Hamiltonian{functors}, T));
   }
 
   histogram hist_sum(dim,nbins,hv,lv);
@@ -110,13 +109,8 @@ int main(int argc, char* argv[]) {
   cout << "#Histogram_tot: " << endl;
   hist_sum.print();*/
 
-  WHAM<RST,histogram,narray> wham(record,hists,V,vector<uint>(nwins_tot,nsteps),tol);
-  rstparams.resize(2);
-  const vector<valtype> k0(dim,0.0);
-  const vector<valtype> r0(dim,0.0);
-  rstparams.insert(rstparams.end(),k0.begin(),k0.end());
-  rstparams.insert(rstparams.end(),r0.begin(),r0.end());
-  Hamiltonian<RST> V0(rstparams);
+  WHAM<pEnsemble,histogram,narray> wham(record,hists,V,vector<linecounter>(nwins_tot,nsteps),tol);
+  pEnsemble V0 = make_shared<NVT>(kB, Hamiltonian{}, T);
   /*vector<uint> rhodim(dim,0);
   for(uint i = 0; i < dim; ++i) { rhodim[i] = i; }*/
   narray rho = wham.calrho(dimprt,V0);
@@ -165,7 +159,4 @@ int main(int argc, char* argv[]) {
     dpmf_hist.bin(vector<valtype>(1,dpmf[i]));
   }
   dpmf_hist.print();
-  for(uint i = 0; i < wincentrs.size(); ++i) {
-    delete V[i];
-  }
 }
