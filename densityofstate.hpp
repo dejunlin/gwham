@@ -3,7 +3,7 @@
 #include "fileio_utils.hpp"
 #include <map>
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
