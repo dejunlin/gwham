@@ -88,7 +88,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
                                       const vector<HISTOGRAM>& _hists,  
 	                              const vector<PENSEMBLE>& _V, 
                                       const vector<linecounter>& _N, 
-	                              const double _tol, 
+	                              const valtype _tol, 
                                       const vector<valtype>& fseeds,
                                       const vector<NARRAY>& _g 
 	                             ):
@@ -159,7 +159,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
 
   //perform the WHAM iteration
   ulong count = 0;
-  vector<double> newexpf(expf);
+  vector<valtype> newexpf(expf);
   do {
     vector<typename NARRAY::const_iterator> itsNg, itsexpmH;
     for_each(Ng.begin(), Ng.end(), [&itsNg](const NARRAY& narr) { itsNg.emplace_back(narr.begin()); });

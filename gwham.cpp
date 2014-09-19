@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
   //lower bounds in each dimension
   const vector<valtype> lv = split<valtype>(argv[k++]); 
   //tolerance for WHAM iteration
-  const double tol = atof(argv[k++]);
+  const valtype tol = atof(argv[k++]);
   //first line to read (excluding comment-lines) in the x.xvg files
   const linecounter rcvbegin = stoul(argv[k++]);
   //Only read every stride lines (excluding comment-lines) in the x.xvg files

@@ -99,7 +99,7 @@ class TimeSeries
       if(!fio.fopen(fname)) { return Nl; }
       vector<INPUT> out(colids.size(),INPUT{0});
       while(fio.readaline()) {
-	const vector<double> cols(fio.line2val());
+	const vector<valtype> cols(fio.line2val());
 	if(cols.size() != iNcol) { 
 	  throw(TimeSeries_Exception("Wrong number of columns in time-series file: "+fname+" at line: '"+fio.line+"'. Expected "+tostr(iNcol)+" but got "+tostr(cols.size())));
 	}
@@ -123,7 +123,7 @@ class TimeSeries
       if(fio.lb == 0 && fio.ls == 1 && fio.le >= MAXNLINE) {
         fio.skipemptylns();
         do {
-          const vector<double> cols(fio.line2val());
+          const vector<valtype> cols(fio.line2val());
           for(uint i = 0; i < colids.size(); ++i) { out[i] = cols[colids[i]]; }
           dproc(out);
           ++Nl;
@@ -131,7 +131,7 @@ class TimeSeries
       } else {
         fio.skipemptylns();
         do {
-          const vector<double> cols(fio.line2val());
+          const vector<valtype> cols(fio.line2val());
           for(uint i = 0; i < colids.size(); ++i) { out[i] = cols[colids[i]]; }
           dproc(out);
           ++Nl;
