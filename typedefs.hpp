@@ -2,12 +2,13 @@
 #define TYPEDEFS_HPP
 
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include <float.h>
 #include <limits>
 #include <climits>
 #include <bitset>
 #include <memory>
+#include <type_traits>
 #include "functor.hpp"
 
 using namespace std;
@@ -29,16 +30,24 @@ static const uint MAXNDIGRUN = 50;
 const bitset<MAXNRST> bitunit = bitset<MAXNRST>(1);
 
 typedef vector<uint> coordtype; //type of the coordinate for histogram and narray
-typedef double valtype; //the data type we histogram
 typedef ulong histcounter; //the histogram counter
 typedef ulong linecounter; //the file line counter
 static const ulong MAXNLINE = ULONG_MAX; //maximum number of lines that can be counted 
 
-static constexpr enable_if<numeric_limits<valtype>::has_quiet_NaN, valtype>::type
+#ifdef MPREALCXX
+#include "mpfrc++/mpreal.h"
+using mpfr::mpreal;
+typedef mpreal valtype;
+static constexpr uint MPREAL_PRECISION = MPREALCXX;
+#else
+typedef double valtype; //the data type we histogram
+#endif
+
+static const enable_if<numeric_limits<valtype>::has_quiet_NaN, valtype>::type
 NaN = numeric_limits<valtype>::quiet_NaN();
 
-const valtype MAXEXPARG = log(DBL_MAX); //max of the arguments to std::exp() call
-const valtype MINEXPARG = log(DBL_MIN); //min of the arguments to std::exp() call
+static const valtype MAXEXPARG = log(numeric_limits<valtype>::max()); //max of the arguments to std::exp() call
+static const valtype MINEXPARG = log(numeric_limits<valtype>::min()); //min of the arguments to std::exp() call
 
 //!kB in kJ/mol/K
 const valtype BoltzmannkJ = 0.0083144621; 
