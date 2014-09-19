@@ -18,6 +18,7 @@
 
 #include <regex>
 #include <algorithm>
+#include <iomanip>
 #include "gmxmdp.hpp"
 #include "fileio.hpp"
 #include "fileio_utils.hpp"
@@ -418,25 +419,26 @@ void GMXMDP::setexpand() {
 }
 
 void GMXMDP::print() const {
-  printf("#%15s%15.9lf\n", "kB = ", kB);
+  cout << setw(30);
+  cout << "#kB = " << setprecision(28) << kB << endl;
   printMDPopt(key2val);
   printMDPopt(key2int);
   printMDPopt(key2str);
   printMDPopt(key2vvec);
   printMDPopt(key2vecstr);
   for(const GMXPGRP& pgrp : pgrps) {
-    printf("#%27s%-3d\n", "Pull-group",pgrp.gid);
+    cout << "#Pull-group" << pgrp.gid << endl;
     printMDPopt(pgrp.key2val);
     printMDPopt(pgrp.key2vvec);
   }
   uint i = 0;
   for(const auto& H : Hs) {
-    printf("#%27s%-3d\n", "Hamiltonian",i++);
+    cout << "#Hamiltonian" << i++ << endl;
     uint j = 0;
     for(const auto& funct : H.getPotentialFuncts()) {
-      printf("#%27s%-3d = ", "Functor",j++);
+      cout << "#Functor" << j++ << " = ";
       for(const auto x : funct.getParams()) {
-	printf("%15.8lf", x);
+	cout << x;
       }
       cout << endl;
     }

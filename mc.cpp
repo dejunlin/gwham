@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <iomanip>
 
 int main(int argc, char* argv[]) {
   if (argc != 10) {
@@ -139,18 +140,17 @@ int main(int argc, char* argv[]) {
     else if(d > maxdpmf) { maxdpmf = d;}
     dpmf.push_back(pmf-pmf_analytic);
     const valtype rhonorm = it->second/sum;
-    for(uint i = 0; i < bin.size(); ++i) { printf("%10d",bin[i]);}
-    for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}
-    printf("%30.15lf%30.15lf\n",pmf,rhonorm);
+    cout << setw(10) << bin;
+    cout << setw(30) << setprecision(28) << val << pmf;
+    cout << scientific << rhonorm << endl;
   }
   //perform WHAM inconsistency test
   vector<valtype> eitas = wham.whamvsraw(rho);
   printf("#%10s%30s%30s\n", "Window", "Vals", "Eita");
   for(uint i = 0; i < eitas.size(); ++i) {
-    printf("%10d", i);
+    cout << setw(10) << i;
     const vector<valtype> rstcenter = wincentrs[i];
-    for(uint k = 0; k < rstcenter.size(); ++k) { printf("%30lf", rstcenter[k]); }
-    printf("%30lf\n", eitas[i]);
+    cout << setw(30) << setprecision(28) << rstcenter << eitas[i];
   }
 
   cout << "# WHAM - Analytic " << endl;

@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include <stdio.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -289,12 +290,9 @@ void gnarray<Tcoord,Telem,Tval>::print() const {
     const Tcoord coord = it->first;
     const Telem elem = it->second;
     const vector<Tval> vals = coord2val(coord);
-    for(uint i = 0; i < coord.size(); ++i) { printf("%10d",coord[i]);}
-    for(uint i = 0; i < vals.size(); ++i) {
-      printf("%30.15lf",vals[i]);
-    }
-    cout << " " << elem << endl;
-    //printf("%30.15lf\n",elem);
+    cout << setw(10) << coord;
+    cout << setw(30) << setprecision(28) << vals;
+    cout << elem << endl;
   }
 }
 
@@ -315,12 +313,9 @@ void gnarray<Tcoord,Telem,Tval>::print(const Telem& norm) const {
     const Tcoord coord = it->first;
     const Telem elem = it->second;
     const vector<Tval> vals = coord2val(coord);
-    for(uint i = 0; i < coord.size(); ++i) { printf("%10d",coord[i]);}
-    for(uint i = 0; i < vals.size(); ++i) {
-      printf("%30.15lf",vals[i]);
-    }
-    cout << " " << elem/norm << endl;
-    //printf("%30.15lf\n",elem);
+    cout << setw(10) << coord;
+    cout << setw(30) << setprecision(28) << vals;
+    cout << elem/norm << endl;
   }
 }
 

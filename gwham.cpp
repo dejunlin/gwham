@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <functional>
+#include <iomanip>
 #include "typedefs.hpp"
 #include "hamiltonian.hpp"
 #include "ensemble.hpp"
@@ -142,6 +143,9 @@ void histfromTS (
 }
 
 int main(int argc, char* argv[]) {
+#ifdef MPREALCXX
+  mpreal::set_default_prec(mpfr::digits2bits(MPREAL_PRECISION));
+#endif
   string cmdline("#Usage: gwham sysname mdpsuffixes nwin nrun rcprint nbins hv lv tol rcvbegin rcvstride rcvend mdp0prefixes fseeds\n");
   if (argc != 15) {
     cerr << cmdline;
@@ -179,7 +183,7 @@ int main(int argc, char* argv[]) {
   //each state in one line seperated by spaces
   //(could be a file that doesn't exist, in which case the program will just seed the free energy to zero)
   const string fseedsstr = string(argv[k++]);  
-  
+   
   cout << cmdline;
   cout << "# ";
   for(int i = 0; i < argc; ++i) {
@@ -324,9 +328,9 @@ int main(int argc, char* argv[]) {
       const vector<valtype> val = rho.coord2val(bin);
       const valtype pmf = -kB*T*log(it->second/itmax->second);
       const valtype rhonorm = it->second/sum;
-      for(uint i = 0; i < bin.size(); ++i) { printf("%10d",bin[i]);}
-      for(uint i = 0; i < val.size(); ++i) { printf("%30.15lf",val[i]);}
-      printf("%30.15lf%30.15le\n",pmf,rhonorm);
+      cout << setw(10) << bin;
+      cout << setw(30) << setprecision(28) << val << pmf;
+      cout << scientific << rhonorm << endl;
     }
   }
 }

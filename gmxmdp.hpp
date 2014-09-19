@@ -25,6 +25,7 @@
 #include <iterator>
 #include <regex>
 #include <cmath>
+#include <iomanip>
 #include "typedefs.hpp"
 #include "fileio.hpp"
 #include "fileio_utils.hpp"
@@ -356,7 +357,7 @@ class GMXMDP::GMXPGRP {
 template < class T >
 typename enable_if<numeric_limits<T>::has_quiet_NaN, bool>::type
 isdefault(const T& obj) {
-  return std::isnan(obj);
+  return ::isnan(obj);
 }
 
 template < class T >
@@ -434,8 +435,8 @@ printMDPopt(const map<string, reference_wrapper<T>>& key2opt) {
   for(; it != key2opt.end(); ++it) {
     const string& key = it->first;
     const T& data = it->second.get();
-    printf ("#%27s = ", key.c_str());
-    cout << data << endl;
+    cout << "#" << setw(30) << key << " = ";
+    cout << setprecision(28) << data << endl; 
   }
 }
 

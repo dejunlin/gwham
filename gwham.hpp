@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <iterator>
 #include <vector>
+#include <iomanip>
 
 using namespace std;
 
@@ -109,6 +110,22 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     cout << "# Seeding WHAM iteration with free energies: " << fseeds << endl;
   }
   //first we also precaculate g-weighted number-of-samples here
+  //NOTE that we change the type of histogram here from integer
+  //to valtype
+/*   vector<NARRAY> h{hists->size()};
+ *   for(uint i = 0; i < h.size(); ++i) {
+ *     const auto& hist = (*hists)[i];
+ *     auto& hh = h[i];
+ *     hh = NARRAY{hist.getdim(), hist.getnelms(), hist.gethv(), hist.getlv()};
+ *     auto ithh = hh.begin();
+ *     auto ithist = hist.begin();
+ *     for(; ithh != hh.end(); ++ithh) {
+ *       ithh->second = ithist->second;
+ *       cout << ithh->second << endl;
+ *       ++ithist;
+ *     }
+ *   }
+ */
   vector<HISTOGRAM> h{*hists};
   vector<NARRAY> Ng{hists->size(), DOS.getdosarr()};
   if(g != nullptr) {
@@ -204,7 +221,8 @@ template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
 void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::printfree() const {
   printf("#%10s%30s\n","State","DimensionlessFreeEnergy");
   for(uint i = 0; i < expf.size(); ++i) {
-    printf("#%10d%30.15lf\n",i,log(expf[i]));
+    cout << setw(10) << i;
+    cout << setw(30) << setprecision(28) << log(expf[i]) << endl;
   }
 }
 
