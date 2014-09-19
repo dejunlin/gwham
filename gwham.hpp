@@ -137,12 +137,15 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   //Again we only loop through non-zero elements of DOS
   for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
     const coordtype coord = it->first;
+    DOS[coord] = 0.0;
     const vector<uint> histids = it->second;
     const vector<valtype> vals = coord2val(coord);
     for(const auto& k : histids) {
       const typename NARRAY::iterator itc = C.find(coord);
       if(itc == C.end()) { C[coord] = h[k][coord]; } 
       else { itc->second += h[k][coord]; }
+    }
+    for(uint k = 0; k < expmH.size(); ++k) {
       const auto& exparg = -(*V)[k]->ener(vals);
       if(exparg > MAXEXPARG) {
 	throw(General_Exception("exp("+tostr(exparg)+") will overflow"));
@@ -150,7 +153,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
         expmH[k][coord] = 0;
 	continue;
       }
-      expmH[k][coord] = exp(-(*V)[k]->ener(vals));
+      expmH[k][coord] = exp(exparg);
     }
   }
 
@@ -158,8 +161,13 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   ulong count = 0;
   vector<double> newexpf(expf);
   do {
+    vector<typename NARRAY::const_iterator> itsNg, itsexpmH;
+    for_each(Ng.begin(), Ng.end(), [&itsNg](const NARRAY& narr) { itsNg.emplace_back(narr.begin()); });
+    for_each(expmH.begin(), expmH.end(), [&itsexpmH](const NARRAY& narr) { itsexpmH.emplace_back(narr.begin()); });
+    typename NARRAY::const_iterator itC = C.begin();
+
     ++count;
-    DOS(C, expmH, Ng, expf, newexpf);
+    DOS(itC, itsexpmH, itsNg, expf, newexpf);
     shiftf(newexpf);
   } while(!endit(newexpf,count));
 }

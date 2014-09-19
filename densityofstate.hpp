@@ -1,5 +1,6 @@
 #include "ensemble.hpp"
 #include "typedefs.hpp"
+#include "fileio_utils.hpp"
 #include <map>
 #include <vector>
 #include <math.h>
@@ -32,35 +33,47 @@ class DensityOfState {
     __attribute__((always_inline))
     #endif
     void operator() (
-    		      const narray& C, 
-                      const vector<narray>& expmH,  
-                      const vector<narray>& Ng,  
+    		      typename narray::const_iterator& itC, 
+                      vector<typename narray::const_iterator>& itsexpmH,  
+                      vector<typename narray::const_iterator>& itsNg,  
  		      const vector<valtype>& expf,
 		      vector<valtype>& newexpf
 		    )
     {
       newexpf.assign(newexpf.size(), 0.0);
       //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
-      for(typename narray::const_iterator it = C.begin(); it != C.end(); ++it) {
-        const auto& coord = it->first;
-        const auto& num = it->second;
+      for(iterator itDOS = DOS.begin(); itDOS != DOS.end(); ++itDOS ) {
         valtype denum = 0.0;
-        for(uint k = 0; k < Ng.size(); ++k) {
-          denum += Ng[k][coord] * expf[k] * expmH[k][coord];
+        const auto& num = itC->second;
+	++itC;
+        for(uint k = 0; k < expf.size(); ++k) {
+	  const auto& Ngcoord = itsNg[k]->first;
+	  const auto& expmHcoord = itsexpmH[k]->first;
+          denum += itsNg[k]->second * expf[k] * itsexpmH[k]->second;
+	  ++itsNg[k];
         }
         const valtype dos = num/denum;
-        DOS[coord] = dos;
+        itDOS->second = dos;
         for(uint l = 0; l < newexpf.size(); ++l) {
-          newexpf[l] += dos*expmH[l][coord];
+          newexpf[l] += dos*itsexpmH[l]->second;
+	  ++itsexpmH[l];
         }
       }
       for(auto& x : newexpf) { x = 1/x; }
     }
     //! read only accessor operator 
     valtype operator[](const coordtype& coord) const { return DOS[coord]; };
+    //! writable accessor
+    valtype& operator[](const coordtype& coord) { return DOS[coord]; };
     //! return DOS
     const narray& getdosarr() const { return DOS;}
     typedef typename narray::iterator iterator;
+    typedef typename narray::const_iterator const_iterator;
+    iterator begin() { return DOS.begin(); }
+    const_iterator begin() const { return DOS.begin(); }
+    iterator end() { return DOS.end(); }
+    const_iterator end() const { return DOS.end(); }
+    
     void print() const { DOS.print(); }
   private:
     narray DOS;
