@@ -2915,6 +2915,9 @@ inline const mpreal pow(const double a, const int b, mp_rnd_t rnd_mode)
 namespace std
 {
 	// we are allowed to extend namespace std with specializations only
+    template <> 
+    struct is_floating_point<mpfr::mpreal> : public std::true_type {};
+
     template <>
     inline void swap(mpfr::mpreal& x, mpfr::mpreal& y) 
     { 
