@@ -314,37 +314,89 @@ struct is_pointer<std::shared_ptr<T>> : std::true_type {};
 
 /*
  * =====================================================================================
- *     Function: Print any container with const_iterator and streamable element  
- *  Description: 
+ *        Class:  FormatStream 
+ *  Description:  stream any object with a certain format
  * =====================================================================================
  */
-template <class S, class C>
-typename std::enable_if<
-check_if<C, can_be_const_iterate>::value
-&& check_if<
-            decltype( *(std::declval<typename C::const_iterator>()) ), 
-	    can_be_streamed<S>
-	   >::value
-,S&>::type
-operator<< (S& stream, const C& input) 
-{
-  for(auto& e : input) stream << e << ' ';
-  return stream;
-}	/* -----  end of template function operator<<  ----- */
+template < class S >
+class FormatStream {
+  using ThisType = FormatStream<S>;
+  public:
+    //! Constructor with default setting
+    FormatStream(S& _stream) : FormatStream(_stream, 0, 6) {};
 
-template <class S, class C>
-typename std::enable_if<
-check_if<C, has_memfn_get>::value
-&& check_if<
-            decltype( std::declval<C>().get() ), 
-	    can_be_streamed<S>
-	   >::value
-,S&>::type
-operator<< (S& stream, const C& input) 
-{
-  stream << input.get() << ' ';
-  return stream;
-}	/* -----  end of template function operator<<  ----- */
+    //! Target constructor
+    FormatStream(S& _stream, const uint& _width, const uint& _precision) :
+      stream(_stream), w(_width), prec(_precision) {};
+    
+    //! specialize for string
+    ThisType& operator<< (const std::string& input) {
+      stream.width(w);
+      stream.precision(prec);
+      stream << input;
+      return *this;
+    }
+    
+
+    //! stream the basic scalar type to the contained object stream
+    template < class T >
+    typename std::enable_if<
+      check_if<T, can_be_streamed<S>>::value
+    ,ThisType&>::type
+    operator<< (const T& input) {
+      stream.width(w);
+      stream.precision(prec);
+      stream << input;
+      return *this;
+    }
+    
+    //! stream a type which can be const-iterated through and each element can be streamed
+    template < class T >
+    typename std::enable_if<
+      check_if<T, can_be_const_iterate>::value &&
+      check_if<decltype( *(std::declval<typename T::const_iterator>()) ), can_be_streamed<ThisType>>::value
+    ,ThisType&>::type
+    operator<< (const T& input) {
+      for(auto& i : input) {
+        *this << i; 
+      }
+      return *this;
+    }
+    
+    //! stream a type that has member function get
+    template < class T >
+    typename std::enable_if<
+      check_if<T, has_memfn_get>::value && 
+      check_if<decltype( std::declval<T>().get() ), can_be_streamed<ThisType>>::value
+    ,ThisType&>::type
+    operator<< (const T& input) {
+      *this << input.get();
+      return *this;
+    }
+    
+    //! just handle something like std::endl
+    ThisType& operator<< (S& (*f)(S&)) {
+      f(stream);
+      return *this;
+    }
+    
+    //! set the width
+    void width(const uint _width) { w = _width; }
+
+    //! set the precision
+    void precision(const uint _precision) { prec = _precision; }
+
+    //! set whatever flags the S object has
+    template < class F >
+    void flags(const F& flags) { stream.flags(flags); }
+
+  private:
+    S& stream;
+    uint w;
+    uint prec;
+};
+
+static FormatStream<decltype(std::cout)> fcout{std::cout}; 
 
 
 /*
