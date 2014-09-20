@@ -429,14 +429,18 @@ bool setMDPopt(const InIterator& itbegin, const InIterator& itend, map<string,re
 }
 
 template < class T >
-typename enable_if<check_if<T, can_be_streamed<ostream>>::value, void>::type
+typename enable_if<check_if<T, can_be_streamed<FormatStream<decltype(cout)>>>::value, void>::type
 printMDPopt(const map<string, reference_wrapper<T>>& key2opt) {
   typename map<string, reference_wrapper<T>>::const_iterator it = key2opt.begin();
   for(; it != key2opt.end(); ++it) {
     const string& key = it->first;
     const T& data = it->second.get();
-    cout << "#" << setw(30) << key << " = ";
-    cout << setprecision(28) << data << endl; 
+    cout << "#";
+    fcout.width(30);
+    fcout.flags(ios::right);
+    fcout << key + " = ";
+    fcout.flags(ios::left);
+    fcout << data << endl;
   }
 }
 

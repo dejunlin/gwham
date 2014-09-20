@@ -19,6 +19,7 @@
 #include "ensemble_factory.hpp"
 #include "mdp_factory.hpp"
 #include "gwham.hpp"
+#include "metaprog_snippets.hpp"
 
 using namespace std;
 
@@ -184,12 +185,10 @@ int main(int argc, char* argv[]) {
   //(could be a file that doesn't exist, in which case the program will just seed the free energy to zero)
   const string fseedsstr = string(argv[k++]);  
    
-  cout << cmdline;
-  cout << "# ";
-  for(int i = 0; i < argc; ++i) {
-    cout << "'" << argv[i] << "' ";
-  }
-  cout << endl;
+  fcout << cmdline;
+  fcout << "# ";
+  for_each(argv, argv+argc, [] (char* arg) { fcout << "'" << arg << "' "; });
+  fcout << endl;
 
   
   const uint ndim = nbins.size();
@@ -217,14 +216,14 @@ int main(int argc, char* argv[]) {
   //create ensemble
   multimap<pMDP, uint> pmdp2ipens;
   const auto pens = MDP2Ensemble(pmdps, pmdp2ipens, 1);
-  cout << "#created " << pens.size() << " ensembles\n";
+  fcout << "#created " << pens.size() << " ensembles\n";
   for(auto& pmdp : pmdps) {
     auto itr = pmdp2ipens.equal_range(pmdp);
-    cout << "#MDP file: " << pmdp->fname << " contains to the following ensembles: ";
+    fcout << "#MDP file: " << pmdp->fname << " contains to the following ensembles: ";
     for(auto& it = itr.first; it != itr.second; ++it) {
-      cout << it->second << " ";
+      fcout << it->second << " ";
     }
-    cout << endl;
+    fcout << endl;
   }
 
   //create histogram (1 for each ensemble)
@@ -238,11 +237,11 @@ int main(int argc, char* argv[]) {
     // if temperature are different among ensembles, we need to read potential energy
     auto vts = pmdp->CreateTimeSeries(needpotential);
 
-    cout << "#require " << vts.size() << " types of time-serie files for " << pmdp->fname << " : ";
+    fcout << "#require " << vts.size() << " types of time-serie files for " << pmdp->fname << " : ";
     for(const auto& ts : vts) {
-      cout << ts.fnsuffix << " ";
+      fcout << ts.fnsuffix << " ";
     }
-    cout << endl;
+    fcout << endl;
 
     // we overwrite the stride here
     for(auto& ts : vts) {
@@ -273,7 +272,7 @@ int main(int argc, char* argv[]) {
     //deal with potential energy
     histfromTS(it, Nsamples, pmdp, pmdp2ipens, hists, nrun, tsprefix, states, pot); 
   }
-  cout << "#Number of samples: " << Nsamples << endl;
+  fcout << "#Number of samples: " << Nsamples << endl;
   for(const auto& h : hists) h.print();
   
   //read the seeding free energy from file
@@ -294,8 +293,15 @@ int main(int argc, char* argv[]) {
     const auto& coord = it->first;
     const auto& histid = it->second;
     const auto& vals = hists[histid[0]].coord2val(coord);
-    cout << "#Bin: " << coord << " " << vals; 
-    cout << " is contributed from " << histid.size() << " histograms: " << histid << endl;
+    cout << "#Bin: ";
+    fcout.width(5);
+    fcout << coord;
+    fcout.width(10);
+    fcout.precision(5);
+    fcout << vals; 
+    cout << " is contributed from " << histid.size() << " histograms: ";
+    fcout.width(5);
+    fcout << histid << endl;
   }
 
   WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds);
@@ -305,7 +311,7 @@ int main(int argc, char* argv[]) {
   const vector<pMDP> pmdp0s = CreateMDPs(mdp0prefixes, mdpsuffixes, suffix2MDP);
   multimap<pMDP, uint> pmdp2ipens0;
   auto pE0s = MDP2Ensemble(pmdp0s, pmdp2ipens0, 1);
-  
+
   for(const auto& pmdp0 : pmdp0s) {
     if(pmdp0->isExpandedEnsemble()) { 
       throw(General_Exception("Can't calculate probability density in a expanded ensemble. Check files in mdp0prefixes"));
@@ -328,9 +334,14 @@ int main(int argc, char* argv[]) {
       const vector<valtype> val = rho.coord2val(bin);
       const valtype pmf = -kB*T*log(it->second/itmax->second);
       const valtype rhonorm = it->second/sum;
-      cout << setw(10) << bin;
-      cout << setw(30) << setprecision(28) << val << pmf;
-      cout << scientific << rhonorm << endl;
+      fcout.width(10);
+      fcout << bin;
+      fcout.flags(ios::fixed | ios::right);
+      fcout.precision(15);
+      fcout.width(30);
+      fcout << val << pmf;
+      fcout.flags(ios::scientific);
+      fcout << rhonorm << endl;
     }
   }
 }

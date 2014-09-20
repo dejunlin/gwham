@@ -5,6 +5,7 @@
 #include "hamiltonian.hpp"
 #include "mc.hpp"
 #include "fileio_utils.hpp"
+#include "metaprog_snippets.hpp"
 #include <algorithm>
 #include <iostream>
 #include <stdlib.h>
@@ -102,13 +103,6 @@ int main(int argc, char* argv[]) {
       record[coord].push_back(i);
     }
   }
-  //print the histograms
-  /*for(uint i = 0; i < nwin; ++i) {
-    cout << "#Histogram " << i << endl;
-    hists[i].print();
-  }
-  cout << "#Histogram_tot: " << endl;
-  hist_sum.print();*/
 
   WHAM<pEnsemble,histogram,narray> wham(record,hists,V,vector<linecounter>(nwins_tot,nsteps),tol);
   pEnsemble V0 = make_shared<NVT>(kB, Hamiltonian{}, T);
@@ -140,17 +134,26 @@ int main(int argc, char* argv[]) {
     else if(d > maxdpmf) { maxdpmf = d;}
     dpmf.push_back(pmf-pmf_analytic);
     const valtype rhonorm = it->second/sum;
-    cout << setw(10) << bin;
-    cout << setw(30) << setprecision(28) << val << pmf;
-    cout << scientific << rhonorm << endl;
+    fcout.width(10);
+    fcout << bin;
+    fcout.flags(ios::fixed | ios::right);
+    fcout.precision(15);
+    fcout.width(30);
+    fcout << val << pmf;
+    fcout.flags(ios::scientific);
+    fcout << rhonorm << endl;
   }
   //perform WHAM inconsistency test
   vector<valtype> eitas = wham.whamvsraw(rho);
   printf("#%10s%30s%30s\n", "Window", "Vals", "Eita");
   for(uint i = 0; i < eitas.size(); ++i) {
-    cout << setw(10) << i;
+    fcout.width(10);
+    fcout << i;
     const vector<valtype> rstcenter = wincentrs[i];
-    cout << setw(30) << setprecision(28) << rstcenter << eitas[i];
+    fcout.width(30);
+    fcout.precision(15);
+    fcout.flags(ios::fixed);
+    fcout << rstcenter << eitas[i] << endl;
   }
 
   cout << "# WHAM - Analytic " << endl;

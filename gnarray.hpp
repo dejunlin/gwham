@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <iomanip>
+#include "metaprog_snippets.hpp"
 
 using namespace std;
 
@@ -119,13 +120,8 @@ class gnarray {
 template<class Tcoord, class Telem, class Tval>
 const Tcoord gnarray<Tcoord,Telem,Tval>::val2coord(const vector<Tval>& vals) const {
   Tcoord coord;
-  /*cout << "  #Trying to bin data ";
-  copy(vals.begin(),vals.end(),ostream_iterator<Tval>(cout," "));
-  cout << endl;*/
   for(uint i = 0; i < vals.size(); ++i) {
     if(vals[i] >= hv[i] || vals[i] < lv[i] || vals[i] != vals[i]) { //Here we assume the range to be [lv, hv)
-      /*cout << "  #Data " << vals[i] << " is ";
-      cout << "out of bound [" << lv[i] << ", " << hv[i] << "]\n";*/
       return Tcoord();
     }
     coord.push_back(uint((vals[i]-lv[i])/binsize[i]));
@@ -136,17 +132,11 @@ const Tcoord gnarray<Tcoord,Telem,Tval>::val2coord(const vector<Tval>& vals) con
 template<class Tcoord, class Telem, class Tval>
 typename gnarray<Tcoord,Telem,Tval>::iterator gnarray<Tcoord,Telem,Tval>::bin(const vector<Tval>& data, const Telem& weight) {
   const Tcoord coord = val2coord(data);
-  /*cout << "#Data ";
-  copy(data.begin(),data.end(),ostream_iterator<Tval>(cout," "));*/
   if(coord.size()) { //only bin data if they're in bound
-    /*cout << "is Binned into bin whose vals is";
-    const vector<Tval> vals = coord2val(coord);
-    copy(vals.begin(),vals.end(),ostream_iterator<Tval>(cout," "));
-    cout << endl;*/
     const iterator it = narr.find(coord);
     if(it != narr.end()) { it->second += weight; return it; } //check this to avoid weird uninitialized value
     else { return narr.insert(it,pair<Tcoord,Telem>(coord,weight)); }
-  } //else { cout << "is excluded " << endl; }
+  } 
   return narr.end();
 }
 
@@ -275,47 +265,33 @@ gnarray<Tcoord,Telem,Tval> gnarray<Tcoord,Telem,Tval>::operator=(const gnarray<T
 
 template<class Tcoord, class Telem, class Tval>
 void gnarray<Tcoord,Telem,Tval>::print() const {
-  /*cout << "# ndim = " << dim << endl;
-  cout << "# nelms = ";
-  copy(nelms.begin(),nelms.end(),ostream_iterator<uint>(cout," "));
-  cout << endl;
-  cout << "# hv = ";
-  copy(hv.begin(),hv.end(),ostream_iterator<Tval>(cout," "));
-  cout << endl;
-  cout << "# lv = ";
-  copy(lv.begin(),lv.end(),ostream_iterator<Tval>(cout," "));
-  cout << endl;*/
   printf("%10s%30s%20s\n","#coord","val","elements");
   for(const_iterator it = narr.begin(); it != narr.end(); ++it) {
     const Tcoord coord = it->first;
     const Telem elem = it->second;
     const vector<Tval> vals = coord2val(coord);
-    cout << setw(10) << coord;
-    cout << setw(30) << setprecision(28) << vals;
-    cout << elem << endl;
+    fcout.width(10);
+    fcout << coord;
+    fcout.flags(ios::fixed);
+    fcout.width(30);
+    fcout.precision(15);
+    fcout << vals << elem << endl;
   }
 }
 
 template<class Tcoord, class Telem, class Tval>
 void gnarray<Tcoord,Telem,Tval>::print(const Telem& norm) const {
-  /*cout << "# ndim = " << dim << endl;
-  cout << "# nelms = ";
-  copy(nelms.begin(),nelms.end(),ostream_iterator<uint>(cout," "));
-  cout << endl;
-  cout << "# hv = ";
-  copy(hv.begin(),hv.end(),ostream_iterator<Tval>(cout," "));
-  cout << endl;
-  cout << "# lv = ";
-  copy(lv.begin(),lv.end(),ostream_iterator<Tval>(cout," "));
-  cout << endl;*/
   printf("%10s%30s%20s\n","#coord","val","elements");
   for(const_iterator it = narr.begin(); it != narr.end(); ++it) {
     const Tcoord coord = it->first;
     const Telem elem = it->second;
     const vector<Tval> vals = coord2val(coord);
-    cout << setw(10) << coord;
-    cout << setw(30) << setprecision(28) << vals;
-    cout << elem/norm << endl;
+    fcout.width(10);
+    fcout << coord;
+    fcout.flags(ios::fixed);
+    fcout.width(30);
+    fcout.precision(15);
+    fcout << vals << elem/norm << endl;
   }
 }
 

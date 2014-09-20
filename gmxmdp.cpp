@@ -419,28 +419,36 @@ void GMXMDP::setexpand() {
 }
 
 void GMXMDP::print() const {
-  cout << setw(30);
-  cout << "#kB = " << setprecision(28) << kB << endl;
+  cout << "#";
+  fcout.width(30);
+  fcout.precision(15);
+  fcout.flags(ios::right);
+  fcout << "kB = ";
+  fcout.flags(ios::left);
+  fcout << kB << endl;
   printMDPopt(key2val);
   printMDPopt(key2int);
   printMDPopt(key2str);
   printMDPopt(key2vvec);
   printMDPopt(key2vecstr);
   for(const GMXPGRP& pgrp : pgrps) {
-    cout << "#Pull-group" << pgrp.gid << endl;
+    fcout << "#Pull-group" + tostr(pgrp.gid) << endl;
     printMDPopt(pgrp.key2val);
     printMDPopt(pgrp.key2vvec);
   }
   uint i = 0;
   for(const auto& H : Hs) {
-    cout << "#Hamiltonian" << i++ << endl;
+    fcout << "#Hamiltonian" + tostr(i++) << endl;
     uint j = 0;
     for(const auto& funct : H.getPotentialFuncts()) {
-      cout << "#Functor" << j++ << " = ";
+      cout << "#";
+      fcout.flags(ios::right);
+      fcout << "Functor" + tostr(j++) + " = ";
+      fcout.flags(ios::left);
       for(const auto x : funct.getParams()) {
-	cout << x;
+	fcout << x;
       }
-      cout << endl;
+      fcout << endl;
     }
   }
 };

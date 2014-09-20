@@ -5,6 +5,7 @@
 #include "hamiltonian.hpp"
 #include "exception.hpp"
 #include "fileio_utils.hpp"
+#include "metaprog_snippets.hpp"
 #include <stdlib.h>
 #include <iterator>
 #include <vector>
@@ -107,7 +108,8 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
 {
   if(fseeds.size() == expf.size()) {
     for(uint i = 0; i < fseeds.size(); ++i) { expf[i] = exp(fseeds[i]); }
-    cout << "# Seeding WHAM iteration with free energies: " << fseeds << endl;
+    cout << "# Seeding WHAM iteration with free energies: ";
+    fcout << fseeds << endl;
   }
   //first we also precaculate g-weighted number-of-samples here
   //NOTE that we change the type of histogram here from integer
@@ -205,8 +207,6 @@ bool WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::endit(const vector<valtype>& newexpf, con
   }
   cout << "#WHAM converge to " << tol << " after " << count << " iterations" << endl;
   printfree();
-  /*cout <<"#Final Density of state" << endl;
-  DOS.print();*/
   return true;
 }
 
@@ -221,8 +221,12 @@ template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
 void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::printfree() const {
   printf("#%10s%30s\n","State","DimensionlessFreeEnergy");
   for(uint i = 0; i < expf.size(); ++i) {
-    cout << setw(10) << i;
-    cout << setw(30) << setprecision(28) << log(expf[i]) << endl;
+    cout << "#";
+    fcout.width(10);
+    fcout << i;
+    fcout.width(30);
+    fcout.precision(15);
+    fcout << log(expf[i]) << endl;
   }
 }
 
@@ -235,8 +239,7 @@ NARRAY WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::calrho(const vector<uint>& _dim, const 
   }
 
   cout << "#Calculating probability density along dimension: ";
-  copy(_dim.begin(),_dim.end(),ostream_iterator<uint>(cout," "));
-  cout << endl;
+  fcout << _dim << endl;
 
   //Construct the total bin-size in all the dimension 
   /*valtype binsize_sub = 1;
