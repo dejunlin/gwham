@@ -111,48 +111,22 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     cout << "# Seeding WHAM iteration with free energies: ";
     fcout << fseeds << endl;
   }
-  //first we also precaculate g-weighted number-of-samples here
-  //NOTE that we change the type of histogram here from integer
-  //to valtype
-/*   vector<NARRAY> h{hists->size()};
- *   for(uint i = 0; i < h.size(); ++i) {
- *     const auto& hist = (*hists)[i];
- *     auto& hh = h[i];
- *     hh = NARRAY{hist.getdim(), hist.getnelms(), hist.gethv(), hist.getlv()};
- *     auto ithh = hh.begin();
- *     auto ithist = hist.begin();
- *     for(; ithh != hh.end(); ++ithh) {
- *       ithh->second = ithist->second;
- *       cout << ithh->second << endl;
- *       ++ithist;
- *     }
- *   }
- */
-  vector<HISTOGRAM> h{*hists};
-  vector<NARRAY> Ng{hists->size(), DOS.getdosarr()};
+  //precaculate sample-weights 
+  vector<NARRAY> sw{hists->size(), DOS.getdosarr()};
   if(g != nullptr) {
-    for(uint i = 0; i < h.size(); ++i) {
-      auto& hist = h[i];
-      for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
-	const auto& coord = it->first;
-        const auto& gtmp = (*g)[i][coord];
-	const auto ih = hist.find(coord);
-	if(ih != hist.end()) { ih->second /= gtmp; }
-	Ng[i][coord] = (*N)[i]/gtmp;
-      }
-    }
+    sw = *g;
   } else {
-    for(uint i = 0; i < h.size(); ++i) {
-      auto& hist = h[i];
+    for(uint i = 0; i < hists->size(); ++i) {
       for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
 	const auto& coord = it->first;
-	Ng[i][coord] = (*N)[i];
+	sw[i][coord] = 1.0;
       }
     }
   }
-  //then we cache all the energy 
-  vector<NARRAY> expmH{hists->size(), DOS.getdosarr()};
+  //then we cache all the energy, weighted number of samples
   NARRAY C{DOS.getdosarr()};
+  vector<NARRAY> Ng{hists->size(), DOS.getdosarr()};
+  vector<NARRAY> expmH{hists->size(), DOS.getdosarr()};
   //Again we only loop through non-zero elements of DOS
   for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
     const coordtype coord = it->first;
@@ -161,18 +135,19 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     const vector<valtype> vals = coord2val(coord);
     for(const auto& k : histids) {
       const typename NARRAY::iterator itc = C.find(coord);
-      if(itc == C.end()) { C[coord] = h[k][coord]; } 
-      else { itc->second += h[k][coord]; }
+      if(itc == C.end()) { C[coord] = (*hists)[k][coord]/sw[k][coord]; } 
+      else { itc->second += (*hists)[k][coord]/sw[k][coord]; }
     }
     for(uint k = 0; k < expmH.size(); ++k) {
+      Ng[k][coord] = (*N)[k]/sw[k][coord];
       const auto& exparg = -(*V)[k]->ener(vals);
       if(exparg > MAXEXPARG) {
 	throw(General_Exception("exp("+tostr(exparg)+") will overflow"));
       } else if(exparg < MINEXPARG) {
         expmH[k][coord] = 0;
-	continue;
+      } else {
+        expmH[k][coord] = exp(exparg);
       }
-      expmH[k][coord] = exp(exparg);
     }
   }
 
