@@ -272,6 +272,7 @@ int main(int argc, char* argv[]) {
     //deal with potential energy
     histfromTS(it, Nsamples, pmdp, pmdp2ipens, hists, nrun, tsprefix, states, pot); 
   }
+  fcout.width(10);
   fcout << "#Number of samples: " << Nsamples << endl;
   for(const auto& h : hists) h.print();
   
