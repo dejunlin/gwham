@@ -357,7 +357,7 @@ class GMXMDP::GMXPGRP {
 template < class T >
 typename enable_if<numeric_limits<T>::has_quiet_NaN, bool>::type
 isdefault(const T& obj) {
-  return ::isnan(obj);
+  return std::isnan(obj);
 }
 
 template < class T >

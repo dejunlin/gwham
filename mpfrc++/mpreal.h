@@ -2918,6 +2918,8 @@ namespace std
     template <> 
     struct is_floating_point<mpfr::mpreal> : public std::true_type {};
 
+    inline bool isnan    (const mpfr::mpreal& op){    return (mpfr_nan_p    (op.mpfr_srcptr()) != 0 );    }
+
     template <>
     inline void swap(mpfr::mpreal& x, mpfr::mpreal& y) 
     { 
