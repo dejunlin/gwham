@@ -125,7 +125,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   }
   //then we cache all the energy, weighted number of samples
   NARRAY C{DOS.getdosarr()};
-  vector<NARRAY> Ng{hists->size(), DOS.getdosarr()};
+  vector<NARRAY> NgexpmH{hists->size(), DOS.getdosarr()};
   vector<NARRAY> expmH{hists->size(), DOS.getdosarr()};
   //Again we only loop through non-zero elements of DOS
   for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
@@ -138,15 +138,18 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
       if(itc == C.end()) { C[coord] = (*hists)[k][coord]/sw[k][coord]; } 
       else { itc->second += (*hists)[k][coord]/sw[k][coord]; }
     }
-    for(uint k = 0; k < expmH.size(); ++k) {
-      Ng[k][coord] = (*N)[k]/sw[k][coord];
-      const auto& exparg = -(*V)[k]->ener(vals);
+    for(uint k = 0; k < NgexpmH.size(); ++k) {
+      const auto Ng = (*N)[k]/sw[k][coord];
+      const auto exparg = -(*V)[k]->ener(vals);
       if(exparg > MAXEXPARG) {
 	throw(General_Exception("exp("+tostr(exparg)+") will overflow"));
       } else if(exparg < MINEXPARG) {
-        expmH[k][coord] = 0;
+	NgexpmH[k][coord] = 0;
+	expmH[k][coord] = 0;
       } else {
-        expmH[k][coord] = exp(exparg);
+	const valtype e = exp(exparg);
+        NgexpmH[k][coord] = Ng * e;
+        expmH[k][coord] = e;
       }
     }
   }
@@ -155,13 +158,13 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   ulong count = 0;
   vector<valtype> newexpf(expf);
   do {
-    vector<typename NARRAY::const_iterator> itsNg, itsexpmH;
-    for_each(Ng.begin(), Ng.end(), [&itsNg](const NARRAY& narr) { itsNg.emplace_back(narr.begin()); });
+    vector<typename NARRAY::const_iterator> itsNgexpmH, itsexpmH;
+    for_each(NgexpmH.begin(), NgexpmH.end(), [&itsNgexpmH](const NARRAY& narr) { itsNgexpmH.emplace_back(narr.begin()); });
     for_each(expmH.begin(), expmH.end(), [&itsexpmH](const NARRAY& narr) { itsexpmH.emplace_back(narr.begin()); });
     typename NARRAY::const_iterator itC = C.begin();
 
     ++count;
-    DOS(itC, itsexpmH, itsNg, expf, newexpf);
+    DOS(itC, itsNgexpmH, itsexpmH, expf, newexpf);
     shiftf(newexpf);
   } while(!endit(newexpf,count));
 }

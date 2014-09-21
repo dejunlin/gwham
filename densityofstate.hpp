@@ -34,8 +34,8 @@ class DensityOfState {
     #endif
     void operator() (
     		      typename narray::const_iterator& itC, 
+                      vector<typename narray::const_iterator>& itsNgexpmH,  
                       vector<typename narray::const_iterator>& itsexpmH,  
-                      vector<typename narray::const_iterator>& itsNg,  
  		      const vector<valtype>& expf,
 		      vector<valtype>& newexpf
 		    )
@@ -47,10 +47,8 @@ class DensityOfState {
         const auto& num = itC->second;
 	++itC;
         for(uint k = 0; k < expf.size(); ++k) {
-	  const auto& Ngcoord = itsNg[k]->first;
-	  const auto& expmHcoord = itsexpmH[k]->first;
-          denum += itsNg[k]->second * expf[k] * itsexpmH[k]->second;
-	  ++itsNg[k];
+          denum += itsNgexpmH[k]->second * expf[k];
+	  ++itsNgexpmH[k];
         }
         const valtype dos = num/denum;
         itDOS->second = dos;
