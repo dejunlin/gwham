@@ -139,7 +139,7 @@ struct Dbrent : Bracketmethod {
 	template <class T>
 	Doub minimize(T &funcd)
 	{
-		const Int ITMAX=2000000000;
+		const Int ITMAX=20000;
 		const Doub ZEPS=numeric_limits<Doub>::epsilon()*1.0e-3;
 		Bool ok1,ok2;
 		Doub a,b,d=0.0,d1,d2,du,dv,dw,dx,e=0.0;
@@ -299,6 +299,11 @@ struct Frprmn : Dlinemethod<T> {
 			xi[j]=h[j]=g[j];
 		}
 		for (Int its=0;its<ITMAX;its++) {
+		        if(!(its % 100)) {
+			  cout << "At iteration: " << its << " states are:\n";
+			  for(auto& _x_ : p) cout << "#\t" << _x_ << endl;
+			  cout.flush();
+			}
 			iter=its;
 			fret=linmin();
 			if (2.0*abs(fret-fp) <= ftol*(abs(fret)+abs(fp)+EPS))
