@@ -6,10 +6,15 @@
 #include "exception.hpp"
 #include "fileio_utils.hpp"
 #include "metaprog_snippets.hpp"
+#include "likelyhoodfunc.hpp"
+#include "minimizer/cg.hpp"
+#include "minimizer/bfgs.hpp"
+#include "minimizer/Simplex.hpp"
 #include <stdlib.h>
 #include <iterator>
 #include <vector>
 #include <iomanip>
+#include <limits>
 
 using namespace std;
 
@@ -40,7 +45,7 @@ class WHAM {
 	 const valtype _tol,
 	 const vector<valtype>& fseeds = vector<valtype>(0),
 	 const vector<NARRAY>& _g = vector<NARRAY>{0},
-	 const bool ifmin = false
+	 const bool ifmin = true
 	);
 
     //!calculate PMF in Hamiltonian _V along the dimension in DOS as specified by dim
@@ -178,6 +183,25 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   vector<NARRAY> NgexpmH;
   vector<NARRAY> expmH;
   this->init(*record, sw, C, NgexpmH, expmH);
+
+  if(ifmin) {
+    typedef LikelyHoodFunc<DOStype, NARRAY> FUNC;
+    FUNC func(DOS, *N, C, NgexpmH);
+    vector<valtype> f(expf.size()-1, 0.0);
+    Simplex<valtype> splx(f.size());
+    vector<valtype> stepsize(f.size(), 20.0);
+    splx.seedLengths(stepsize);
+    splx.tolerance(tol);
+    splx.maximumIterations(MAXIT);
+    f = splx.optimize(f, func);
+    cout << "#Simplex converges in " << splx.numberOfIterations() << " iteration at f = " << splx.finalValue() << endl;
+    expf[0] = 1.0;
+    cout << "#\t" << 0 << "\t" << 0.0 << endl;
+    for(uint i = 0; i < f.size(); ++i) { 
+      cout << "#\t" << i+1 << "\t" << f[i] << endl;
+      expf[i+1] = exp(f[i]); 
+    }
+  } 
 
   //perform the WHAM iteration
   ulong count = 0;
