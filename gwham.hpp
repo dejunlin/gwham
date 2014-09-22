@@ -37,9 +37,10 @@ class WHAM {
          const vector<HISTOGRAM>& _hists, 
 	 const vector<PENSEMBLE>& _V, 
          const vector<linecounter>& _N, 
-	 const valtype _tol, 
+	 const valtype _tol,
 	 const vector<valtype>& fseeds = vector<valtype>(0),
-	 const vector<NARRAY>& _g = vector<NARRAY>{0}
+	 const vector<NARRAY>& _g = vector<NARRAY>{0},
+	 const bool ifmin = false
 	);
 
     //!calculate PMF in Hamiltonian _V along the dimension in DOS as specified by dim
@@ -83,7 +84,55 @@ class WHAM {
      vector<valtype> expf;
      //! Density of state as well as a functor that caclulates it
      DOStype DOS;
+
+     //! initialize the cached array for WHAM iteration and set all the DOS to 0.0
+     void init(const map<coordtype, vector<uint> >& _record, 
+               const vector<NARRAY>& sw, 
+	       NARRAY& C, 
+	       vector<NARRAY>& NgexpmH, 
+	       vector<NARRAY>& expmH);
 };
+
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::init
+(
+  const map<coordtype, vector<uint> >& _record,
+  const vector<NARRAY>& sw, 
+  NARRAY& C, 
+  vector<NARRAY>& NgexpmH, 
+  vector<NARRAY>& expmH
+) 
+{
+  C = DOS.getdosarr();
+  NgexpmH = vector<NARRAY>{hists->size(), DOS.getdosarr()};
+  expmH = vector<NARRAY>{hists->size(), DOS.getdosarr()};
+  for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
+    //Again we only loop through non-zero elements of DOS
+    const coordtype coord = it->first;
+    DOS[coord] = 0.0;
+    const vector<uint> histids = it->second;
+    const vector<valtype> vals = coord2val(coord);
+    for(const auto& k : histids) {
+      const typename NARRAY::iterator itc = C.find(coord);
+      if(itc == C.end()) { C[coord] = (*hists)[k][coord]/sw[k][coord]; } 
+      else { itc->second += (*hists)[k][coord]/sw[k][coord]; }
+    }
+    for(uint k = 0; k < NgexpmH.size(); ++k) {
+      const auto Ng = (*N)[k]/sw[k][coord];
+      const auto exparg = -(*V)[k]->ener(vals);
+      if(exparg > MAXEXPARG) {
+	throw(General_Exception("exp("+tostr(exparg)+") will overflow"));
+      } else if(exparg < MINEXPARG) {
+	NgexpmH[k][coord] = 0;
+	expmH[k][coord] = 0;
+      } else {
+	const valtype e = exp(exparg);
+        NgexpmH[k][coord] = Ng * e;
+        expmH[k][coord] = e;
+      }
+    }
+  }
+}
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
 WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _record, 
@@ -92,7 +141,8 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
                                       const vector<linecounter>& _N, 
 	                              const valtype _tol, 
                                       const vector<valtype>& fseeds,
-                                      const vector<NARRAY>& _g 
+                                      const vector<NARRAY>& _g, 
+	                              const bool ifmin
 	                             ):
 				     record(&_record),
 				     hists(&_hists),
@@ -124,35 +174,10 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     }
   }
   //then we cache all the energy, weighted number of samples
-  NARRAY C{DOS.getdosarr()};
-  vector<NARRAY> NgexpmH{hists->size(), DOS.getdosarr()};
-  vector<NARRAY> expmH{hists->size(), DOS.getdosarr()};
-  //Again we only loop through non-zero elements of DOS
-  for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
-    const coordtype coord = it->first;
-    DOS[coord] = 0.0;
-    const vector<uint> histids = it->second;
-    const vector<valtype> vals = coord2val(coord);
-    for(const auto& k : histids) {
-      const typename NARRAY::iterator itc = C.find(coord);
-      if(itc == C.end()) { C[coord] = (*hists)[k][coord]/sw[k][coord]; } 
-      else { itc->second += (*hists)[k][coord]/sw[k][coord]; }
-    }
-    for(uint k = 0; k < NgexpmH.size(); ++k) {
-      const auto Ng = (*N)[k]/sw[k][coord];
-      const auto exparg = -(*V)[k]->ener(vals);
-      if(exparg > MAXEXPARG) {
-	throw(General_Exception("exp("+tostr(exparg)+") will overflow"));
-      } else if(exparg < MINEXPARG) {
-	NgexpmH[k][coord] = 0;
-	expmH[k][coord] = 0;
-      } else {
-	const valtype e = exp(exparg);
-        NgexpmH[k][coord] = Ng * e;
-        expmH[k][coord] = e;
-      }
-    }
-  }
+  NARRAY C;
+  vector<NARRAY> NgexpmH;
+  vector<NARRAY> expmH;
+  this->init(*record, sw, C, NgexpmH, expmH);
 
   //perform the WHAM iteration
   ulong count = 0;
