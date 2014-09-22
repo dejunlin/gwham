@@ -23,6 +23,7 @@
 #include <vector>
 #include <utility>
 #include "../typedefs.hpp"
+#include "../exception.hpp"
 
 using namespace std;
 
@@ -215,7 +216,7 @@ struct Dbrent : Bracketmethod {
 				}
 			}
 		}
-		throw("Too many iterations in routine dbrent");
+		throw(General_Exception("Too many iterations in routine dbrent"));
 	}
 };
 
@@ -325,7 +326,7 @@ struct Frprmn : Dlinemethod<T> {
 				xi[j]=h[j]=g[j]+gam*h[j];
 			}
 		}
-		throw("Too many iterations in frprmn");
+		throw(General_Exception("Too many iterations in frprmn"));
 	}
 };
 
