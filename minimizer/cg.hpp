@@ -24,6 +24,7 @@
 #include <utility>
 #include "../typedefs.hpp"
 #include "../exception.hpp"
+#include "utils.hpp"
 
 using namespace std;
 
@@ -36,28 +37,6 @@ typedef const vector<Doub> VecDoub_I;
 typedef vector<Doub> VecDoub;
 typedef vector<Doub> VecDoub, VecDoub_O, VecDoub_IO;
 
-template<class T>
-inline T SIGN(const T &a, const T &b)
-	{return b >= 0 ? (a >= 0 ? a : -a) : (a >= 0 ? -a : a);}
-
-inline float SIGN(const float &a, const double &b)
-	{return b >= 0 ? (a >= 0 ? a : -a) : (a >= 0 ? -a : a);}
-
-inline float SIGN(const double &a, const float &b)
-	{return (float)(b >= 0 ? (a >= 0 ? a : -a) : (a >= 0 ? -a : a));}
-
-template<class T>
-inline void SWAP(T &a, T &b) { swap(a,b); }
-
-template<class T>
-inline const T &MAX(const T &a, const T &b) {return b > a ? (b) : (a);}
-
-inline float MAX(const double &a, const float &b)
-        {return b > a ? (b) : float(a);}
-
-inline float MAX(const float &a, const double &b)
-        {return b > a ? float(b) : (a);}
-
 typedef bool Bool;
 
 struct Bracketmethod {
@@ -65,7 +44,7 @@ struct Bracketmethod {
 	template <class T>
 	void bracket(const Doub a, const Doub b, T &func)
 	{
-		const Doub GOLD=(1+sqrt(5))/2,GLIMIT=100.0,TINY=1.0e-20;
+		const Doub GOLD=1.618034,GLIMIT=100.0,TINY=1.0e-8;
 		ax=a; bx=b;
 		Doub fu;
 		fa=func(ax);
@@ -301,13 +280,15 @@ struct Frprmn : Dlinemethod<T> {
 		for (Int its=0;its<ITMAX;its++) {
 		        if(!(its % 100)) {
 			  cout << "At iteration: " << its << " states are:\n";
-			  for(auto& _x_ : p) cout << "#\t" << _x_ << endl;
+			  for(uint i = 0; i < p.size(); ++i) cout << "#\t" << i << "\t" << p[i] << endl;
 			  cout.flush();
 			}
 			iter=its;
 			fret=linmin();
-			if (2.0*abs(fret-fp) <= ftol*(abs(fret)+abs(fp)+EPS))
+			if (2.0*abs(fret-fp) <= ftol*(abs(fret)+abs(fp)+EPS)) {
+			  cout << "Convergence met at iteration " << its << endl;
 				return p;
+			}
 			fp=fret;
 			func.df(p,xi);
 			Doub test=0.0;
@@ -316,15 +297,20 @@ struct Frprmn : Dlinemethod<T> {
 				Doub temp=abs(xi[j])*MAX(abs(p[j]),Doub{1.0})/den;
 				if (temp > test) test=temp;
 			}
-			if (test < GTOL) return p;
+			if (test < GTOL) { 
+			  cout << "Convergence met at iteration " << its << endl;
+			  return p;
+			}
 			dgg=gg=0.0;
 			for (Int j=0;j<n;j++) {
 				gg += g[j]*g[j];
 //			  dgg += xi[j]*xi[j];
 				dgg += (xi[j]+g[j])*xi[j];
 			}
-			if (gg == 0.0)
-				return p;
+			if (gg == 0.0) {
+			  cout << "Convergence met at iteration " << its << endl;
+			  return p;
+			}
 			Doub gam=dgg/gg;
 			for (Int j=0;j<n;j++) {
 				g[j] = -xi[j];
