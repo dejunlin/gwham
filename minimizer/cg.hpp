@@ -139,7 +139,7 @@ struct Dbrent : Bracketmethod {
 	template <class T>
 	Doub minimize(T &funcd)
 	{
-		const Int ITMAX=100;
+		const Int ITMAX=2000000000;
 		const Doub ZEPS=numeric_limits<Doub>::epsilon()*1.0e-3;
 		Bool ok1,ok2;
 		Doub a,b,d=0.0,d1,d2,du,dv,dw,dx,e=0.0;
@@ -284,7 +284,7 @@ struct Frprmn : Dlinemethod<T> {
 		ftol(ftoll) {}
 	VecDoub minimize(VecDoub_I &pp)
 	{
-		const Int ITMAX=200;
+		const Int ITMAX=2000000000;
 		const Doub EPS=1.0e-18;
 		const Doub GTOL=1.0e-8;
 		Doub gg,dgg;
