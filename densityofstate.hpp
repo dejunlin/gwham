@@ -19,38 +19,61 @@ class DensityOfState {
   public:
     DensityOfState();
     DensityOfState(const histogram& hist);
-    //! update density of state given a set of inputs (assumes g[k][coord] are invariant across all k for any coord)
-    /**
-     * @param[in] record The 1st vector<uint> is a set of coordinates in at least one of the histograms, whose values is non-zero; and the 2nd vector<uint> keep the index of the histograms
-     * @param[in] hists Generic histogram for each trajectory
-     * @param[in] V Generic hamiltonian that combine the conserved quantities and the associated parameters. Total number of elements is the total number of states considered
-     * @param[in] N N[k] is the number of samples in the k'th trajectory/state. 
-     * @param[in] f Free energy of states. Total number of elements is the total number of states considered 
-     */
 
+    typedef typename narray::iterator iterator;
+    typedef typename narray::const_iterator const_iterator;
+
+    //! calculate density of state given a set of inputs 
+    /**
+     * @param[in] itC iterator to the numerator array 
+     * @param[in] itsNgexpmH iterator to the denumerator N/g*exp(-H) array 
+     * @param[in] expf Inverse of the partition function of each state 
+     */
+    inline
+    #ifdef __GNUC__
+    __attribute__((always_inline))
+    #endif
+    auto operator() (
+    		      const_iterator& itC, 
+                      vector<const_iterator>& itsNgexpmH,  
+ 		      const vector<valtype>& expf
+		    ) -> decltype ( itC->second )
+    {
+      const auto& num = itC->second;
+      ++itC;
+      valtype denum = 0.0;
+      for(uint k = 0; k < expf.size(); ++k) {
+        denum += itsNgexpmH[k]->second * expf[k];
+	++itsNgexpmH[k];
+      }
+      return num/denum;
+    }
+
+    //! update density of state given a set of inputs 
+    /**
+     * @param[in] itC iterator to the numerator array 
+     * @param[in] itsNgexpmH iterator to the denumerator N/g*exp(-H) array 
+     * @param[in] expf Inverse of the partition function of each state 
+     * @param[in] itsexpmH iterator to the denumerator exp(-H) array 
+     * @param[in] newexpf updated version of expf 
+     */
     inline
     #ifdef __GNUC__
     __attribute__((always_inline))
     #endif
     void operator() (
-    		      typename narray::const_iterator& itC, 
-                      vector<typename narray::const_iterator>& itsNgexpmH,  
-                      vector<typename narray::const_iterator>& itsexpmH,  
+    		      const_iterator& itC, 
+                      vector<const_iterator>& itsNgexpmH,  
  		      const vector<valtype>& expf,
+                      vector<const_iterator>& itsexpmH,  
 		      vector<valtype>& newexpf
 		    )
     {
       newexpf.assign(newexpf.size(), 0.0);
       //Here we loop through all the non-zero histogram values and compute the density of state from the histograms
       for(iterator itDOS = DOS.begin(); itDOS != DOS.end(); ++itDOS ) {
-        valtype denum = 0.0;
-        const auto& num = itC->second;
-	++itC;
-        for(uint k = 0; k < expf.size(); ++k) {
-          denum += itsNgexpmH[k]->second * expf[k];
-	  ++itsNgexpmH[k];
-        }
-        const valtype dos = num/denum;
+	//This will advance the iterators itC, itsNgexpmH[k]
+	const auto dos = this->operator()(itC, itsNgexpmH, expf);
         itDOS->second = dos;
         for(uint l = 0; l < newexpf.size(); ++l) {
           newexpf[l] += dos*itsexpmH[l]->second;
@@ -59,14 +82,13 @@ class DensityOfState {
       }
       for(auto& x : newexpf) { x = 1/x; }
     }
+
     //! read only accessor operator 
     valtype operator[](const coordtype& coord) const { return DOS[coord]; };
     //! writable accessor
     valtype& operator[](const coordtype& coord) { return DOS[coord]; };
     //! return DOS
     const narray& getdosarr() const { return DOS;}
-    typedef typename narray::iterator iterator;
-    typedef typename narray::const_iterator const_iterator;
     iterator begin() { return DOS.begin(); }
     const_iterator begin() const { return DOS.begin(); }
     iterator end() { return DOS.end(); }

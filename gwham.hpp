@@ -164,7 +164,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     typename NARRAY::const_iterator itC = C.begin();
 
     ++count;
-    DOS(itC, itsNgexpmH, itsexpmH, expf, newexpf);
+    DOS(itC, itsNgexpmH, expf, itsexpmH, newexpf);
     shiftf(newexpf);
   } while(!endit(newexpf,count));
 }
