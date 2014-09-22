@@ -22,19 +22,11 @@
 #include <cstdlib>
 #include <vector>
 #include <utility>
+#include "../typedefs.hpp"
 
 using namespace std;
 
-#ifdef MPREALCXX
-#include "../mpfrc++/mpreal.h"
-using mpfr::mpreal;
-typedef mpreal Doub;
-typedef mpreal Ldoub;
-static constexpr uint MPREAL_PRECISION = MPREALCXX;
-#else
-typedef double Doub; // default floating type
-typedef long double Ldoub;
-#endif
+typedef valtype Doub; // default floating type
 
 typedef int Int; // 32 bit integer
 typedef unsigned int Uint;
