@@ -118,8 +118,8 @@ struct Dbrent : Bracketmethod {
 	template <class T>
 	Doub minimize(T &funcd)
 	{
-		const Int ITMAX=20000;
-		const Doub ZEPS=numeric_limits<Doub>::epsilon()*1.0e-3;
+		const Int ITMAX=2000;
+		const Doub ZEPS=numeric_limits<Doub>::epsilon();
 		Bool ok1,ok2;
 		Doub a,b,d=0.0,d1,d2,du,dv,dw,dx,e=0.0;
 		Doub fu,fv,fw,fx,olde,tol1,tol2,u,u1,u2,v,w,x,xm;
@@ -231,7 +231,8 @@ struct Dlinemethod {
 	VecDoub xi;
 	T &func;
 	Int n;
-	Dlinemethod(T &funcc) : func(funcc) {}
+	const Doub ftol;
+	Dlinemethod(T &funcc, const Doub& _ftol) : func(funcc), ftol(_ftol) {}
 	Doub linmin()
 	{
 		Doub ax,xx,xmin;
@@ -239,7 +240,7 @@ struct Dlinemethod {
 		Df1dim<T> df1dim(p,xi,func);
 		ax=0.0;
 		xx=1.0;
-		Dbrent dbrent;
+		Dbrent dbrent(ftol);
 		dbrent.bracket(ax,xx,df1dim);
 		xmin=dbrent.minimize(df1dim);
 		for (Int j=0;j<n;j++) {
@@ -258,9 +259,8 @@ struct Frprmn : Dlinemethod<T> {
 	using Dlinemethod<T>::linmin;
 	using Dlinemethod<T>::p;
 	using Dlinemethod<T>::xi;
-	const Doub ftol;
-	Frprmn(T &funcd, const Doub ftoll=3.0e-8) : Dlinemethod<T>(funcd),
-		ftol(ftoll) {}
+	using Dlinemethod<T>::ftol;
+	Frprmn(T &funcd, const Doub ftoll=3.0e-8) : Dlinemethod<T>(funcd, ftoll) {};
 	VecDoub minimize(VecDoub_I &pp)
 	{
 		const Int ITMAX=2000000000;
