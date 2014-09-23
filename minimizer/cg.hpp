@@ -264,8 +264,8 @@ struct Frprmn : Dlinemethod<T> {
 	VecDoub minimize(VecDoub_I &pp)
 	{
 		const Int ITMAX=2000000000;
-		const Doub EPS=1.0e-18;
-		const Doub GTOL=1.0e-8;
+		const Doub EPS=numeric_limits<Doub>::epsilon();
+		const Doub GTOL=ftol;
 		Doub gg,dgg;
 		Int n=pp.size();
 		p=pp;
@@ -280,12 +280,14 @@ struct Frprmn : Dlinemethod<T> {
 		for (Int its=0;its<ITMAX;its++) {
 		        if(!(its % 100)) {
 			  cout << "#At iteration: " << its << " states are:\n";
+			  cout.precision(VALMAXDIGITS10); 
 			  for(uint i = 0; i < p.size(); ++i) cout << "#\t" << i << "\t" << p[i] << endl;
 			  cout.flush();
 			}
 			iter=its;
 			fret=linmin();
 			if (2.0*abs(fret-fp) <= ftol*(abs(fret)+abs(fp)+EPS)) {
+			  cout.precision(VALMAXDIGITS10); 
 			  cout << "#Convergence met at iteration " << its << " because the difference in F(p) between 2 consecutive iteration is smaller than " << ftol*(abs(fret)+abs(fp)+EPS)/2 << endl;
 				return p;
 			}
@@ -298,6 +300,7 @@ struct Frprmn : Dlinemethod<T> {
 				if (temp > test) test=temp;
 			}
 			if (test < GTOL) { 
+			  cout.precision(VALMAXDIGITS10); 
 			  cout << "#Convergence met at iteration " << its << " because gradient is smaller than " << GTOL << endl;
 			  return p;
 			}
