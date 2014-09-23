@@ -6,7 +6,7 @@
 #include "exception.hpp"
 #include "fileio_utils.hpp"
 #include "metaprog_snippets.hpp"
-#include "likelyhoodfunc.hpp"
+#include "likelihoodfunc.hpp"
 #include "minimizer/cg.hpp"
 #include "minimizer/bfgs.hpp"
 #include "minimizer/Simplex.hpp"
@@ -185,7 +185,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   this->init(*record, sw, C, NgexpmH, expmH);
 
   if(ifmin) {
-    typedef LikelyHoodFunc<DOStype, NARRAY> FUNC;
+    typedef LikeliHoodFunc<DOStype, NARRAY> FUNC;
     FUNC func(DOS, *N, C, NgexpmH);
     vector<valtype> df(expf.size()-1, 0.0);
 /*     //Test functor for gradient

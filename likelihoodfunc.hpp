@@ -1,5 +1,5 @@
-#ifndef LIKELYHOODFUNC_HPP
-#define LIKELYHOODFUNC_HPP
+#ifndef LIKELIHOODFUNC_HPP
+#define LIKELIHOODFUNC_HPP
 /*
  * =====================================================================================
  *
@@ -21,7 +21,7 @@
 using namespace std;
 
 template < class DOS, class NARRAY >
-class LikelyHoodFunc {
+class LikeliHoodFunc {
   typedef typename NARRAY::iterator narrit;
   typedef typename NARRAY::const_iterator narrcit;
   typedef typename DOS::iterator dosit;
@@ -30,7 +30,7 @@ class LikelyHoodFunc {
   typedef unsigned int uint;
   typedef unsigned long ulong;
   public:
-    LikelyHoodFunc(DOS& _dos, const vector<ulong>& _N, const NARRAY& _C, const vector<NARRAY>& _NgexpmH) 
+    LikeliHoodFunc(DOS& _dos, const vector<ulong>& _N, const NARRAY& _C, const vector<NARRAY>& _NgexpmH) 
       : dos(_dos), N(_N), C(_C), NgexpmH(_NgexpmH) 
     {
       if(N.size() != NgexpmH.size()) {
