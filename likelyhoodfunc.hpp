@@ -38,13 +38,17 @@ class LikelyHoodFunc {
       }
     };
 
-    valtype operator() (const vector<valtype>& f) {
+    valtype operator() (const vector<valtype>& deltaf) {
+      vector<valtype> f(deltaf.size(), 0.0);
       //here we constraint f[0] to 0.0 so that vector f only 
       //stores the free energy of state 1,2,...,N-1
       vector<valtype> expf(f.size()+1, 0.0);
       expf[0] = 1.0;
-      valtype fret = 0.0;
-      for(uint i = 0; i < f.size(); ++i) {
+      f[0] = deltaf[0];
+      expf[1] = exp(f[0]);
+      valtype fret = 0.0 - N[1]*f[0];
+      for(uint i = 1; i < deltaf.size(); ++i) {
+	f[i] = f[i-1] + deltaf[i];
 	const auto e = exp(f[i]);
 	expf[i+1] = e;
 	fret -= N[i+1]*f[i];
@@ -61,12 +65,18 @@ class LikelyHoodFunc {
       return fret;
     }
     
-    void df (const vector<valtype>& f, vector<valtype>& gradf) {
+    void df (const vector<valtype>& deltaf, vector<valtype>& graddf) {
+      vector<valtype> f(deltaf.size(), 0.0);
+      f[0] = deltaf[0];
       //here we constraint f[0] to 0.0 so that vector f only 
       //stores the free energy of state 1,2,...,N-1
       vector<valtype> expf(f.size()+1, 0.0);
       expf[0] = 1.0;
-      for(uint i = 0; i < f.size(); ++i) {
+      expf[1] = exp(f[0]);
+      vector<valtype> gradf(f.size(), 0.0);
+      gradf[0] -= N[1];
+      for(uint i = 1; i < deltaf.size(); ++i) {
+	f[i] = f[i-1] + deltaf[i];
 	const auto e = exp(f[i]);
 	expf[i+1] = e;
 	gradf[i] -= N[i+1];
@@ -80,6 +90,13 @@ class LikelyHoodFunc {
 	for(uint i = 0; i < f.size(); ++i) {
 	  gradf[i] += d*itsNgexpmH_buff[i+1]->second*expf[i+1];
 	  ++itsNgexpmH_buff[i+1];
+	}
+      }
+      graddf.assign(gradf.size(), 0.0);
+      for(uint i = 0; i < gradf.size(); ++i) {
+	const auto& gf = gradf[i];
+	for(uint j = 0; j <= i; ++j) {
+	  graddf[j] += gf;
 	}
       }
     }
