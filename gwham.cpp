@@ -147,8 +147,8 @@ int main(int argc, char* argv[]) {
 #ifdef MPREALCXX
   mpreal::set_default_prec(mpfr::digits2bits(MPREAL_PRECISION));
 #endif
-  string cmdline("#Usage: gwham sysname mdpsuffixes nwin nrun rcprint nbins hv lv tol rcvbegin rcvstride rcvend mdp0prefixes fseeds\n");
-  if (argc != 15) {
+  string cmdline("#Usage: gwham sysname mdpsuffixes nwin nrun rcprint nbins hv lv tol rcvbegin rcvstride rcvend mdp0prefixes fseeds ifmin\n");
+  if (argc != 16) {
     cerr << cmdline;
     exit(-1);
   }
@@ -183,7 +183,18 @@ int main(int argc, char* argv[]) {
   //provide a file which contains seeding dimensionless free energy of 
   //each state in one line seperated by spaces
   //(could be a file that doesn't exist, in which case the program will just seed the free energy to zero)
-  const string fseedsstr = string(argv[k++]);  
+  const string fseedsstr = string(argv[k++]);
+  //if we call minimization routine instead of WHAM iteration
+  const bool ifmin = stoul(argv[k++]);
+
+  if(is_stdfloat<valtype>::value && ifmin) {
+    const string valtypename = typeid(valtype).name();
+    throw(General_Exception("Calling minimization routine is likely to result in \
+    large fluctuation in free energies, which would be used as exponent of exp() function, \
+    and thus numerical unstability and the floating point type '"+valtypename+"' \
+    might not have enough precision to withstand this. You should use high precision \
+    floating point in order to perform minimization or simply turn off minimization"));
+  }
    
   fcout << cmdline;
   fcout << "# ";
@@ -305,7 +316,7 @@ int main(int argc, char* argv[]) {
     fcout << histid << endl;
   }
 
-  WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds);
+  WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin);
   
   //calculate the probability density
   //we can have the user specify which ensemble we want to probability to be calculated in
