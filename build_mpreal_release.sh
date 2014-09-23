@@ -1,4 +1,4 @@
 #!/bin/bash
 export CC="gcc"
 export CXX="g++"
-cmake .. -DCMAKE_BUILD_TYPE=Release -DMPREALCXX=30
+cmake .. -DCMAKE_BUILD_TYPE=Release -DMPREALCXX=20
