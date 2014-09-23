@@ -208,27 +208,17 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
  *     //End test
  */
 
-/*     Simplex<valtype> splx(df.size());
- *     vector<valtype> stepsize(df.size(), 1.0);
- *     splx.seedLengths(stepsize);
- *     splx.tolerance(tol);
- *     splx.maximumIterations(MAXIT);
- *     df = splx.optimize(df, func);
- *     cout << "#Simplex converges in " << splx.numberOfIterations() << " iteration at f = " << splx.finalValue() << endl;
- */
     Frprmn<FUNC> frprmn(func, tol);
     df = frprmn.minimize(df);
     expf[0] = 1.0;
     vector<valtype> f(df.size(), 0.0);
     f[0] = df[0];
     expf[1] = exp(f[0]);
-    cout << "#\t" << 0 << "\t" << 0.0 << endl;
-    cout << "#\t" << 1 << "\t" << f[0] << endl;
     for(uint i = 1; i < df.size(); ++i) {
       f[i] = f[i-1]+df[i];
-      cout << "#\t" << i+1 << "\t" << f[i] << endl;
       expf[i+1] = exp(f[i]); 
     }
+    endit(expf, 0);
   } 
 
   //perform the WHAM iteration
@@ -243,7 +233,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     ++count;
     DOS(itC, itsNgexpmH, expf, itsexpmH, newexpf);
     shiftf(newexpf);
-  } while(!endit(newexpf,count));
+  } while(!endit(ifmin ? expf : newexpf, count));
 }
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
