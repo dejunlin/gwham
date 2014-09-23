@@ -300,6 +300,19 @@ template < class T > struct is_string : std::false_type {};
 template <typename charT, typename traits, typename Alloc>
 struct is_string<std::basic_string<charT, traits, Alloc> > : std::true_type {};
 
+/*
+ * =====================================================================================
+ *        Class:  Type trait of the default floating point number, i.e., float, double or long double 
+ *  Description:  
+ * =====================================================================================
+ */
+template < class T > struct is_stdfloat : std::false_type {};
+template <>
+struct is_stdfloat<float> : std::true_type {};
+template <>
+struct is_stdfloat<double> : std::true_type {};
+template <>
+struct is_stdfloat<long double> : std::true_type {};
 
 /*
  * =====================================================================================
