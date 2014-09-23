@@ -187,17 +187,45 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   if(ifmin) {
     typedef LikelyHoodFunc<DOStype, NARRAY> FUNC;
     FUNC func(DOS, *N, C, NgexpmH);
-    vector<valtype> f(expf.size()-1, 0.0);
-    Simplex<valtype> splx(f.size());
-    vector<valtype> stepsize(f.size(), 20.0);
-    splx.seedLengths(stepsize);
-    splx.tolerance(tol);
-    splx.maximumIterations(MAXIT);
-    f = splx.optimize(f, func);
-    cout << "#Simplex converges in " << splx.numberOfIterations() << " iteration at f = " << splx.finalValue() << endl;
+    vector<valtype> df(expf.size()-1, 0.0);
+/*     //Test functor for gradient
+ *     vector<valtype> graddf(df.size(),0.0);
+ *     func.df(df, graddf);
+ *     const valtype eps = 1e-10;
+ *     for(uint i = 0; i < df.size(); ++i) {
+ *       vector<valtype> pm{df}, pp{df};
+ *       pm[i] -= eps/2;
+ *       pp[i] += eps/2;
+ *       const valtype fpm = func(pm);
+ *       const valtype fpp = func(pp);
+ *       const valtype gradpf = (fpp-fpm)/eps;
+ *       cout.precision(20);
+ *       cout.width(40);
+ *       cout << "gradpf = " << gradpf << endl;
+ *       cout << "gradf = " << graddf[i] << endl;
+ *       cout << "gradpf - gradf = " << (gradpf - graddf[i])/graddf[i] << endl;
+ *     }
+ *     //End test
+ */
+
+/*     Simplex<valtype> splx(df.size());
+ *     vector<valtype> stepsize(df.size(), 1.0);
+ *     splx.seedLengths(stepsize);
+ *     splx.tolerance(tol);
+ *     splx.maximumIterations(MAXIT);
+ *     df = splx.optimize(df, func);
+ *     cout << "#Simplex converges in " << splx.numberOfIterations() << " iteration at f = " << splx.finalValue() << endl;
+ */
+    Frprmn<FUNC> frprmn(func);
+    df = frprmn.minimize(df);
     expf[0] = 1.0;
+    vector<valtype> f(df.size(), 0.0);
+    f[0] = df[0];
+    expf[1] = exp(f[0]);
     cout << "#\t" << 0 << "\t" << 0.0 << endl;
-    for(uint i = 0; i < f.size(); ++i) { 
+    cout << "#\t" << 1 << "\t" << f[0] << endl;
+    for(uint i = 1; i < df.size(); ++i) {
+      f[i] = f[i-1]+df[i];
       cout << "#\t" << i+1 << "\t" << f[i] << endl;
       expf[i+1] = exp(f[i]); 
     }
