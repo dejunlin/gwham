@@ -216,7 +216,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
  *     df = splx.optimize(df, func);
  *     cout << "#Simplex converges in " << splx.numberOfIterations() << " iteration at f = " << splx.finalValue() << endl;
  */
-    Frprmn<FUNC> frprmn(func);
+    Frprmn<FUNC> frprmn(func, tol);
     df = frprmn.minimize(df);
     expf[0] = 1.0;
     vector<valtype> f(df.size(), 0.0);
