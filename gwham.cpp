@@ -164,6 +164,26 @@ vector<vector<gridval> > histoverlap(const vector<histogram>& hists, const vecto
   return overlap;
 }
 
+//!Return the indices of the non-zero maxium element 
+//of each row of a matrix excluding the diagonal
+template < class T >
+vector<uint> rowmax(const vector<vector<T>>& matrix) {
+  vector<uint> ans;
+  for(uint i = 0; i < matrix.size(); ++i) {
+    const auto& rowi = matrix[i];
+    uint imax = 0;
+    T max = numeric_limits<T>::is_signed ? -numeric_limits<T>::max() : numeric_limits<T>::min();
+    for(uint j = 0; j < rowi.size(); ++j) {
+      //exclude the diagonal
+      if(i == j) continue;
+      if(rowi[j] == 0) continue; 
+      if(rowi[j] > max) { max = rowi[j]; imax = j; }
+    }
+    ans.emplace_back(imax);
+  }
+  return ans;
+}
+
 int main(int argc, char* argv[]) {
 #ifdef MPREALCXX
   mpreal::set_default_prec(mpfr::digits2bits(MPREAL_PRECISION));
@@ -344,6 +364,17 @@ int main(int argc, char* argv[]) {
   fcout.width(6);
   fcout.precision(3);
   for(auto oi : overlap) { fcout << oi << endl; }
+
+  //we need to identify the nearest neighbor of each ensemble 
+  //based on their distance in free energy -- we estimate such 
+  //distance based the overlap of the corresponding histograms
+  //so that the nearest neighbor of each ensemble is the one 
+  //that has the best overlap with it. When a histogram has no 
+  //overlap with any other histogram, we just take the 1st as 
+  //its neighbor
+  const auto fnbi = rowmax(overlap);
+  cout << "#Potentially nearest neighbor of each ensemble in free energy space: ";
+  fcout << fnbi << endl;
 
   WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin);
   
