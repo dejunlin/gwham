@@ -339,7 +339,7 @@ int main(int argc, char* argv[]) {
 
   //we calculate the overlap between histogram
   const auto overlap = histoverlap(hists, Nsamples);
-  cout << "#Overlap between histograms: \n";
+  cout << "#Percentage overlap between histograms: \n";
   fcout.flags(ios::fixed);
   fcout.width(6);
   fcout.precision(3);
