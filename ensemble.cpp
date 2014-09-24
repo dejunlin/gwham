@@ -19,10 +19,6 @@ Ensemble::Ensemble(const Ensemble& src) :
   Ensemble(src.getkB())
   {}
 
-uint Ensemble::cmp(const Ensemble& src) const {
-  return uint(kB != src.getkB()) << DkB;
-};
-
 bool Ensemble::operator==(const Ensemble& src) const {
   return !(this->cmp(src));
 };
@@ -41,7 +37,7 @@ NVE::NVE(const NVE& src) :
   {}
 
 uint NVE::cmp(const Ensemble& src) const {
-  uint Qt = Ensemble::cmp(src);
+  uint Qt = 0;
   if(this == &src) { return Qt; }
   try {
     const NVE& _src = dynamic_cast<const NVE&>(src);

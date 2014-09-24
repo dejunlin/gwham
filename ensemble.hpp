@@ -9,7 +9,7 @@ using namespace std;
 
 class Ensemble {
   public:
-    enum Qt {DkB, DHamiltonian, DTemperature, DPressure};
+    enum Qt {DHamiltonian, DTemperature, DPressure};
     Ensemble();
     Ensemble(const valtype _kB);
     Ensemble(const Ensemble& src);
@@ -24,7 +24,7 @@ class Ensemble {
     //! Compare the parameters of two ensembles 
     /* NOTE: we are essentially comparing the units of kB here
      */ 
-    virtual uint cmp(const Ensemble& src) const;
+    virtual uint cmp(const Ensemble& src) const = 0;
     //! true iff. this->cmp(src) == 0
     virtual bool operator==(const Ensemble& src) const;
     //! true iff. this->cmp(src) != 0
