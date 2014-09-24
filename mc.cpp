@@ -44,8 +44,9 @@ int main(int argc, char* argv[]) {
   split<valtype>(hv,hvstr);
   split<valtype>(lv,lvstr);
 
-  if(nbins.size() != hv.size() || hv.size() != lv.size() || lv.size() != nwins.size() || nwins.size() != dim) {
+  if(nbins.size() != dim || hv.size() != dim || lv.size() != dim || nwins.size() != dim) {
     cerr << "The size of nbins, hv, lv, nwins aren't all " << dim << endl;
+    cerr << "but they are: " << nbins.size() << " " << hv.size() << " " << lv.size() << " " << nwins.size() << endl;
     exit(-1);
   }
 
