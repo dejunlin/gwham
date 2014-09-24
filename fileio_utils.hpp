@@ -40,10 +40,9 @@ template <class Tp>
 void split(vector<Tp>& output, const string& str) {
   istringstream iss(str);
   Tp val;
-  do {
-    iss >> val;
+  while (iss >> val) {
     output.emplace_back(val);
-  } while (iss);
+  }
 }
 
 //split a string into an array by delims
