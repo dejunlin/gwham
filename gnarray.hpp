@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <iomanip>
+#include <algorithm>
 #include "metaprog_snippets.hpp"
 
 using namespace std;
@@ -338,9 +339,7 @@ Telem gnarray<Tcoord,Telem,Tval>::overlap(const ThisType& rhs) const {
     //we only sum the elements whose coordinates are common
     if(itrhs == rhs.end()) continue;
     const auto& valrhs = itrhs->second;
-    //we only sum the elements that are less of the two
-    if(val > valrhs) continue;
-    ans += val;
+    ans += std::min(val, valrhs);
   }
   return ans;
 }
