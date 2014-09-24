@@ -30,7 +30,7 @@ inline
 #ifdef __GNUC__
 __attribute__((always_inline))
 #endif
-void HistogramCV(histogram& hist, linecounter& N, const vector<valtype>& input) {
+void HistogramCV(histogram& hist, histcounter& N, const vector<valtype>& input) {
   if(hist.bin(input) != hist.end()) ++N; 
 }
 
@@ -38,7 +38,7 @@ inline
 #ifdef __GNUC__
 __attribute__((always_inline))
 #endif
-void HistogramExpECV(vector<histogram>& hists, vector<linecounter>& Ns, vector<uint>::const_iterator& itstate, const linecounter nststates, linecounter& count, vector<valtype>::const_iterator& itpot, const vector<valtype>& input) {
+void HistogramExpECV(vector<histogram>& hists, vector<histcounter>& Ns, vector<uint>::const_iterator& itstate, const linecounter nststates, linecounter& count, vector<valtype>::const_iterator& itpot, const vector<valtype>& input) {
   const auto& state = *itstate;
   ++count;
   if(!(count % nststates)) ++itstate;
@@ -54,7 +54,7 @@ inline
 #ifdef __GNUC__
 __attribute__((always_inline))
 #endif
-void HistogramExpCV(vector<histogram>& hists, vector<linecounter>& Ns, vector<uint>::const_iterator& itstate, const linecounter nststates, linecounter& count, const vector<valtype>& input) {
+void HistogramExpCV(vector<histogram>& hists, vector<histcounter>& Ns, vector<uint>::const_iterator& itstate, const linecounter nststates, linecounter& count, const vector<valtype>& input) {
   const auto& state = *itstate;
   ++count;
   if(!(count % nststates)) ++itstate;
@@ -66,7 +66,7 @@ inline
 #ifdef __GNUC__
 __attribute__((always_inline))
 #endif
-void HistogramECV(histogram& hist, linecounter& N, vector<valtype>::const_iterator& itpot, const vector<valtype>& input) {
+void HistogramECV(histogram& hist, histcounter& N, vector<valtype>::const_iterator& itpot, const vector<valtype>& input) {
   const auto& pot = *itpot;
   ++itpot;
   vector<valtype> data = input;
@@ -98,7 +98,7 @@ __attribute__((always_inline))
 #endif
 void histfromTS (
     vTSit& it,
-    vector<linecounter>& Nsamples,
+    vector<histcounter>& Nsamples,
     const PMDP& pmdp, 
     const multimap<PMDP, uint>& pmdp2ihist, 
     vector<H>& hists, 
@@ -141,6 +141,27 @@ void histfromTS (
     const string fts = fnprefix + "_" + tostr(i) + fnsuffix;
     ts(fts, histogrammer); 
   }
+}
+
+using gridval = narray::gridval;
+vector<vector<gridval> > histoverlap(const vector<histogram>& hists, const vector<histcounter>& Nsamples) {
+  vector<vector<gridval> > overlap(hists.size(), vector<gridval>(hists.size(), 0));
+  for(uint i = 0; i < hists.size(); ++i) {
+    //diagonal is always 1 by definition
+    overlap[i][i] = 1;
+    const auto& hi = hists[i];
+    const auto& Ni = Nsamples[i];
+    for(uint j = i+1; j < hists.size(); ++j) {
+      const auto ov = hi.overlap(hists[j]);
+      //NOTE: there is a chance that gridval(ov) might 
+      //overflow gridval type in case ov is too large
+      const gridval oij = gridval(ov)/(Ni+Nsamples[j]);
+      overlap[i][j] = oij;
+      //just copy the upper half to the lower
+      overlap[j][i] = oij;
+    }
+  }
+  return overlap;
 }
 
 int main(int argc, char* argv[]) {
@@ -240,7 +261,7 @@ int main(int argc, char* argv[]) {
   //create histogram (1 for each ensemble)
   vector<histogram> hists{pens.size(), histogram{ndim, nbins, hv, lv}};
   // total number of valid samples
-  vector<linecounter> Nsamples(hists.size(), 0);
+  vector<histcounter> Nsamples(hists.size(), 0);
   //create the time-series readers
   const bool needpotential = cmpens(pens)&(1<<Ensemble::DTemperature);
   for(const auto& pmdp : pmdps) {
@@ -315,6 +336,14 @@ int main(int argc, char* argv[]) {
     fcout.width(5);
     fcout << histid << endl;
   }
+
+  //we calculate the overlap between histogram
+  const auto overlap = histoverlap(hists, Nsamples);
+  cout << "#Overlap between histograms: \n";
+  fcout.flags(ios::fixed);
+  fcout.width(6);
+  fcout.precision(3);
+  for(auto oi : overlap) { fcout << oi << endl; }
 
   WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin);
   

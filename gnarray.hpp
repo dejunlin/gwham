@@ -19,7 +19,11 @@ class gnarray {
     //!just a wrapper around map<Tcoord,Telem>::const_iterator
     typedef typename map<Tcoord, Telem>::const_iterator const_iterator;
     //!just Tcoord
-    typedef Tcoord hist_coord;
+    typedef Tcoord gridcoord;
+    //!just Telem
+    typedef Telem gridval;
+    //!This type
+    typedef gnarray<Tcoord, Telem, Tval> ThisType;
     //!empty constructor
     gnarray();
     //!constructor
@@ -97,6 +101,12 @@ class gnarray {
     vector<vector<Tval> > canonical_valseries() const; 
     //!Sum of all the elments
     Telem sum() const;
+
+    //!Calculate the overlap between this and a input narray
+    /** The overlap is the sum of the lesser elemnts that reside 
+     * in the common subset of coordinates of the 2 narrays
+     */
+    Telem overlap(const ThisType& rhs) const;
 
   private:
     map<Tcoord, Telem> narr;
@@ -314,6 +324,23 @@ Telem gnarray<Tcoord,Telem,Tval>::sum() const {
   Telem ans = 0;
   for(const_iterator it = narr.begin(); it != narr.end(); ++it) {
     ans += it->second;
+  }
+  return ans;
+}
+
+template<class Tcoord, class Telem, class Tval>
+Telem gnarray<Tcoord,Telem,Tval>::overlap(const ThisType& rhs) const {
+  Telem ans{0};
+  for(const_iterator it = narr.begin(); it != narr.end(); ++it) {
+    const auto& coord = it->first;
+    const auto& val = it->second;
+    const auto& itrhs = rhs.find(coord);
+    //we only sum the elements whose coordinates are common
+    if(itrhs == rhs.end()) continue;
+    const auto& valrhs = itrhs->second;
+    //we only sum the elements that are less of the two
+    if(val > valrhs) continue;
+    ans += val;
   }
   return ans;
 }
