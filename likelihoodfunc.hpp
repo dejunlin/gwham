@@ -106,6 +106,8 @@ class ftree {
     inline uint nodesize() const { return nodes.size(); }
     //! return tne node list
     inline const Nodes& getnodes() const { return nodes; } 
+    //! return tne edge list
+    inline const Edges& getedges() const { return edges; } 
 };
 
 template < class DOS, class NARRAY >
