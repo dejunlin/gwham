@@ -167,13 +167,13 @@ vector<vector<gridval> > histoverlap(const vector<histogram>& hists, const vecto
 //!Return the indices of the non-zero maxium element 
 //of each row of a matrix excluding the diagonal
 template < class T >
-vector<uint> rowmax(const vector<vector<T>>& matrix) {
-  vector<uint> ans;
-  for(uint i = 0; i < matrix.size(); ++i) {
+vector<int> rowmax(const vector<vector<T>>& matrix) {
+  vector<int> ans;
+  for(int i = 0; i < int(matrix.size()); ++i) {
     const auto& rowi = matrix[i];
-    uint imax = 0;
+    int imax = -1;
     T max = numeric_limits<T>::is_signed ? -numeric_limits<T>::max() : numeric_limits<T>::min();
-    for(uint j = 0; j < rowi.size(); ++j) {
+    for(int j = 0; j < int(rowi.size()); ++j) {
       //exclude the diagonal
       if(i == j) continue;
       if(rowi[j] == 0) continue; 
@@ -372,9 +372,10 @@ int main(int argc, char* argv[]) {
   //that has the best overlap with it. When a histogram has no 
   //overlap with any other histogram, we just take the 1st as 
   //its neighbor
-  const auto fnbi = rowmax(overlap);
-  cout << "#Potentially nearest neighbor of each ensemble in free energy space: ";
-  fcout << fnbi << endl;
+  const auto histnb = rowmax(overlap);
+  cout << "#Nearest neighbor of each histogram : ";
+  fcout.width(5);
+  fcout << histnb << endl;
 
   WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin);
   
