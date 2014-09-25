@@ -164,9 +164,13 @@ vector<vector<gridval> > histoverlap(const vector<histogram>& hists, const vecto
   return overlap;
 }
 
-//!Return the indices of the non-zero maxium element 
-//of each row of a matrix excluding the diagonal
+//! given a connectivity matrix, build a list of columns for each
+//row of the matrix that have non-zero element in the matrix
+//The first element of each row corresponds to the maximal element
+//in the row -- in case of an isolated element, its own index would 
+//be the only neighbor in its list
 template < class T >
+<<<<<<< HEAD
 vector<int> rowmax(const vector<vector<T>>& matrix) {
   vector<int> ans;
   for(uint i = 0; i < matrix.size(); ++i) {
@@ -175,12 +179,30 @@ vector<int> rowmax(const vector<vector<T>>& matrix) {
     int imax = -1;
     T max = numeric_limits<T>::is_signed ? -numeric_limits<T>::max() : numeric_limits<T>::min();
     for(int j = 0; j < rowi.size(); ++j) {
+=======
+vector<vector<uint> > buildnblist(const vector<vector<T>>& matrix) {
+  vector<vector<uint> > ans(matrix.size());
+  for(uint i = 0; i < matrix.size(); ++i) {
+    const auto& rowi = matrix[i];
+    uint imax = i;
+    T max = numeric_limits<T>::is_signed ? -numeric_limits<T>::max() : numeric_limits<T>::min();
+    map<uint, bool> seen;
+    for(uint j = 0; j < rowi.size(); ++j) {
+>>>>>>> 3b82f68f6549b1845b7d7bcd31f1780f9d9da24f
       //exclude the diagonal
       if(i == j) continue;
-      if(rowi[j] == 0) continue; 
+      //exclude zero
+      if(rowi[j] == 0) continue;
+      seen[j] = true;
       if(rowi[j] > max) { max = rowi[j]; imax = j; }
     }
-    ans.emplace_back(imax);
+    auto& nbi = ans[i];
+    if(imax != i) {
+      const auto it = seen.find(imax);
+      if(it != seen.end()) seen.erase(it);
+    }
+    nbi.emplace_back(imax);
+    for(const auto& nb : seen) nbi.emplace_back(nb.first);
   }
   return ans;
 }
@@ -362,8 +384,8 @@ int main(int argc, char* argv[]) {
   const auto overlap = histoverlap(hists, Nsamples);
   cout << "#Percentage overlap between histograms: \n";
   fcout.flags(ios::fixed);
-  fcout.width(6);
-  fcout.precision(3);
+  fcout.width(15);
+  fcout.precision(8);
   for(auto oi : overlap) { fcout << oi << endl; }
 
   //we need to identify the nearest neighbor of each ensemble 
@@ -371,11 +393,39 @@ int main(int argc, char* argv[]) {
   //distance based the overlap of the corresponding histograms
   //so that the nearest neighbor of each ensemble is the one 
   //that has the best overlap with it. When a histogram has no 
+<<<<<<< HEAD
   //overlap with any other histogram, fnbi would have a -1 in 
   //the corresponding position
   const auto histnb = rowmax(overlap);
   cout << "#Nearest neighbor of each histogram: ";
   fcout << histnb << endl;
+=======
+  //overlap with any other histogram, the neighbor id would be 
+  //-1
+  const auto histnbs = buildnblist(overlap);
+  cout << "#Neighbors of each histogram :\n";
+  fcout.width(5);
+  for(const auto& histnb : histnbs) {
+    cout << "#";
+    fcout << histnb << endl;
+  }
+
+  //To maximize the efficiency of minimization, we exploit the 
+  //the histogram neighbor list to transform the likelihood 
+  //function argument from f (free energy) to deltaf, 
+  //where deltaf[i] is the difference between any two f such 
+  //that the corresponding histograms are nearest neighbor to 
+  //each other. This essentially constructs a tree where each
+  //node is a unique f and each edge is a unique deltaf. To
+  //calculate the likelihood function, we need to back-construct
+  //f from deltaf by tranversing the tree from the tip (f[0])
+  //-- which means that each edge need to know the 2 nodes 
+  //it's connecting; on the other hand, to calculate the gradient
+  //of the likelihood function with respect to deltaf, we need
+  //to sum the components of gradient with respect to f -- which
+  //means that the edge need to know all the nodes depending on 
+  //it to connect to the tip
+>>>>>>> 3b82f68f6549b1845b7d7bcd31f1780f9d9da24f
 
   WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin);
   
