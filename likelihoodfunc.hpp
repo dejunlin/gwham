@@ -18,7 +18,95 @@
  * =====================================================================================
  */
 #include <cmath>
+#include <vector>
+#include <iterator>
+#include <array>
+#include "exception.hpp"
 using namespace std;
+
+template < class FTree >
+void walktree(FTree& tree, map<uint,bool>& seen, const vector<vector<uint>>& nbnodes, const uint& i, vector<typename FTree::Data>& f) {
+  if(seen.find(i) != seen.end()) { return; }
+  //we always start from f[0]
+  const typename FTree::Node headnode = f.begin();
+  tree.addnode(headnode+i);
+  seen[i] = true;
+  for(const auto& j : nbnodes[i]) {
+    //return if reach a dead end
+    if(j == i) return;
+    //skip if has been seen before
+    if(seen.find(j) != seen.end()) { 
+      continue;
+    }
+    //coming all the way here means a valid edge
+    tree.addedge({headnode+i, headnode+j});
+    //recurse over all the branches
+    walktree(tree, seen, nbnodes, j, f);
+  }
+}
+
+template < class FTree >
+vector<FTree> buildftree(const vector<vector<uint>>& nbnodes, vector<typename FTree::Data>& f) {
+  if(nbnodes.size() != f.size()) {
+    throw(General_Exception("input size of list of neighboring node is not the same as the size of f array"));
+  }
+  vector<FTree> ans;
+  FTree tree;
+  map<uint, bool> seen;
+  for(uint i = 0; i < nbnodes.size(); ++i) {
+    if(seen.find(i) != seen.end()) { continue; }
+    walktree(tree, seen, nbnodes, i, f);
+    if(tree.nodesize()) { 
+      ans.emplace_back(tree); 
+      tree = FTree{};
+    } 
+  }
+  return ans;
+}
+
+//! This class represents the tree structure of f (free energy)
+//and deltaf (difference between two f) with each node being 
+//one unique f and each edge being one unique deltaf
+template < class V >
+class ftree {
+  public:
+    typedef V Data;
+    typedef typename vector<V>::iterator Node;
+  private:
+    typedef ftree<V> ThisType;
+    typedef array<Node, 2> Edge;
+    typedef vector<Edge> Edges;
+    typedef vector<Node> Nodes;
+  friend vector<ThisType> buildftree<ThisType>(const vector<vector<uint>>&, vector<V>&);
+  friend void walktree<ThisType>(ThisType&, map<uint,bool>&, const vector<vector<uint>>&, const uint&, vector<V>&);
+  public:
+    //! Construct the tree 
+    ftree() {};
+
+    //! All the nodes in this tree
+    Nodes nodes;
+
+    //! All the edges
+    /** NOTE the 1st element of each Edge
+     * is the minuend and the 2nd one is the 
+     * subtrahend
+     */
+    Edges edges;
+
+    //! For each edge, the indices of the
+    //nodes that depend on it to connect to 
+    //the tip of the tree
+    vector<vector<uint> > ports;
+
+    //! add a node
+    inline void addnode(const Node& node) { nodes.emplace_back(node); }
+    //! add an edge
+    inline void addedge(const Edge& edge) { edges.emplace_back(edge); }
+    //! number of nodes
+    inline uint nodesize() const { return nodes.size(); }
+    //! return tne node list
+    inline const Nodes& getnodes() const { return nodes; } 
+};
 
 template < class DOS, class NARRAY >
 class LikeliHoodFunc {
