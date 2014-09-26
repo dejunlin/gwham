@@ -21,28 +21,34 @@
 #include <vector>
 #include <iterator>
 #include <array>
+#include <list>
 #include "exception.hpp"
 using namespace std;
 
 template < class FTree >
-void walktree(FTree& tree, map<uint,bool>& seen, const vector<vector<uint>>& nbnodes, const uint& i, vector<typename FTree::Data>& f) {
-  if(seen.find(i) != seen.end()) { return; }
+vector<uint> walktree(FTree& tree, map<uint,bool>& seen, const vector<vector<uint>>& nbnodes, const uint& i, vector<typename FTree::Data>& f) {
+  if(seen.find(i) != seen.end()) { return vector<uint>{}; }
   //we always start from f[0]
   const typename FTree::Node headnode = f.begin();
   tree.addnode(headnode+i);
+  vector<uint> branch{tree.nodesize()-1}; 
   seen[i] = true;
   for(const auto& j : nbnodes[i]) {
     //return if reach a dead end
-    if(j == i) return;
+    if(j == i) return branch;
     //skip if has been seen before
     if(seen.find(j) != seen.end()) { 
       continue;
     }
     //coming all the way here means a valid edge
     tree.addedge({headnode+i, headnode+j});
+    const auto hubid = tree.edgesize()-1;
     //recurse over all the branches
-    walktree(tree, seen, nbnodes, j, f);
+    auto subbranch = walktree(tree, seen, nbnodes, j, f);
+    branch.insert(branch.end(), subbranch.begin(), subbranch.end());
+    tree.addport(hubid, subbranch);
   }
+  return branch;
 }
 
 template < class FTree >
@@ -72,13 +78,13 @@ class ftree {
   public:
     typedef V Data;
     typedef typename vector<V>::iterator Node;
+    typedef vector<Node> Nodes;
   private:
     typedef ftree<V> ThisType;
     typedef array<Node, 2> Edge;
     typedef vector<Edge> Edges;
-    typedef vector<Node> Nodes;
   friend vector<ThisType> buildftree<ThisType>(const vector<vector<uint>>&, vector<V>&);
-  friend void walktree<ThisType>(ThisType&, map<uint,bool>&, const vector<vector<uint>>&, const uint&, vector<V>&);
+  friend vector<uint> walktree<ThisType>(ThisType&, map<uint,bool>&, const vector<vector<uint>>&, const uint&, vector<V>&);
   public:
     //! Construct the tree 
     ftree() {};
@@ -102,12 +108,21 @@ class ftree {
     inline void addnode(const Node& node) { nodes.emplace_back(node); }
     //! add an edge
     inline void addedge(const Edge& edge) { edges.emplace_back(edge); }
+    //! add an port
+    inline void addport(const uint& hubid, const vector<uint>& port) { 
+      ports.resize(edges.size());
+      ports[hubid] = port;
+    }
     //! number of nodes
     inline uint nodesize() const { return nodes.size(); }
+    //! number of edges
+    inline uint edgesize() const { return edges.size(); }
     //! return tne node list
     inline const Nodes& getnodes() const { return nodes; } 
     //! return tne edge list
     inline const Edges& getedges() const { return edges; } 
+    //! return tne port list
+    inline const vector<vector<uint>>& getports() const { return ports; } 
 };
 
 template < class DOS, class NARRAY >
