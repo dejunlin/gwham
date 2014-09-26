@@ -25,8 +25,10 @@
 #include "exception.hpp"
 using namespace std;
 
+//! Build the branch of a ftree, return a vector of nodes in this branch
+//including the branch node
 template < class FTree >
-vector<uint> walktree(FTree& tree, map<uint,bool>& seen, const vector<vector<uint>>& nbnodes, const uint& i, vector<typename FTree::Data>& f) {
+vector<uint> buildbranch(FTree& tree, map<uint,bool>& seen, const vector<vector<uint>>& nbnodes, const uint& i, vector<typename FTree::Data>& f) {
   if(seen.find(i) != seen.end()) { return vector<uint>{}; }
   //we always start from f[0]
   const typename FTree::Node headnode = f.begin();
@@ -44,13 +46,14 @@ vector<uint> walktree(FTree& tree, map<uint,bool>& seen, const vector<vector<uin
     tree.addedge({headnode+i, headnode+j});
     const auto hubid = tree.edgesize()-1;
     //recurse over all the branches
-    auto subbranch = walktree(tree, seen, nbnodes, j, f);
+    auto subbranch = buildbranch(tree, seen, nbnodes, j, f);
     branch.insert(branch.end(), subbranch.begin(), subbranch.end());
     tree.addport(hubid, subbranch);
   }
   return branch;
 }
 
+//! build a ftree based on the neighbor list for each node
 template < class FTree >
 vector<FTree> buildftree(const vector<vector<uint>>& nbnodes, vector<typename FTree::Data>& f) {
   if(nbnodes.size() != f.size()) {
@@ -61,7 +64,7 @@ vector<FTree> buildftree(const vector<vector<uint>>& nbnodes, vector<typename FT
   map<uint, bool> seen;
   for(uint i = 0; i < nbnodes.size(); ++i) {
     if(seen.find(i) != seen.end()) { continue; }
-    walktree(tree, seen, nbnodes, i, f);
+    buildbranch(tree, seen, nbnodes, i, f);
     if(tree.nodesize()) { 
       ans.emplace_back(tree); 
       tree = FTree{};
@@ -84,7 +87,7 @@ class ftree {
     typedef array<Node, 2> Edge;
     typedef vector<Edge> Edges;
   friend vector<ThisType> buildftree<ThisType>(const vector<vector<uint>>&, vector<V>&);
-  friend vector<uint> walktree<ThisType>(ThisType&, map<uint,bool>&, const vector<vector<uint>>&, const uint&, vector<V>&);
+  friend vector<uint> buildbranch<ThisType>(ThisType&, map<uint,bool>&, const vector<vector<uint>>&, const uint&, vector<V>&);
   public:
     //! Construct the tree 
     ftree() {};
