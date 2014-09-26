@@ -170,16 +170,6 @@ vector<vector<gridval> > histoverlap(const vector<histogram>& hists, const vecto
 //in the row -- in case of an isolated element, its own index would 
 //be the only neighbor in its list
 template < class T >
-<<<<<<< HEAD
-vector<int> rowmax(const vector<vector<T>>& matrix) {
-  vector<int> ans;
-  for(uint i = 0; i < matrix.size(); ++i) {
-    const auto& rowi = matrix[i];
-    //if no such element exist, just get -1
-    int imax = -1;
-    T max = numeric_limits<T>::is_signed ? -numeric_limits<T>::max() : numeric_limits<T>::min();
-    for(int j = 0; j < rowi.size(); ++j) {
-=======
 vector<vector<uint> > buildnblist(const vector<vector<T>>& matrix) {
   vector<vector<uint> > ans(matrix.size());
   for(uint i = 0; i < matrix.size(); ++i) {
@@ -188,7 +178,6 @@ vector<vector<uint> > buildnblist(const vector<vector<T>>& matrix) {
     T max = numeric_limits<T>::is_signed ? -numeric_limits<T>::max() : numeric_limits<T>::min();
     map<uint, bool> seen;
     for(uint j = 0; j < rowi.size(); ++j) {
->>>>>>> 3b82f68f6549b1845b7d7bcd31f1780f9d9da24f
       //exclude the diagonal
       if(i == j) continue;
       //exclude zero
@@ -393,15 +382,8 @@ int main(int argc, char* argv[]) {
   //distance based the overlap of the corresponding histograms
   //so that the nearest neighbor of each ensemble is the one 
   //that has the best overlap with it. When a histogram has no 
-<<<<<<< HEAD
-  //overlap with any other histogram, fnbi would have a -1 in 
-  //the corresponding position
-  const auto histnb = rowmax(overlap);
-  cout << "#Nearest neighbor of each histogram: ";
-  fcout << histnb << endl;
-=======
-  //overlap with any other histogram, the neighbor id would be 
-  //-1
+  //overlap with any other histogram, the neighbor id the histogram
+  //id itself
   const auto histnbs = buildnblist(overlap);
   cout << "#Neighbors of each histogram :\n";
   fcout.width(5);
@@ -425,7 +407,6 @@ int main(int argc, char* argv[]) {
   //to sum the components of gradient with respect to f -- which
   //means that the edge need to know all the nodes depending on 
   //it to connect to the tip
->>>>>>> 3b82f68f6549b1845b7d7bcd31f1780f9d9da24f
 
   WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin);
   

@@ -85,6 +85,8 @@ class WHAM {
      const vector<valtype> lv;
      //!number of dimension of the HISTOGRAM
      const uint dim;
+     //!f[i] is the dimensionless free energy of state i 
+     vector<valtype> f;
      //!expf[i] is the exponential of the dimensionless free energy of state i 
      vector<valtype> expf;
      //! Density of state as well as a functor that caclulates it
@@ -158,11 +160,15 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
 				     binsize((*hists)[0].getbinsize()),
 				     lv((*hists)[0].getlv()),
 				     dim(binsize.size()),
+				     f(vector<valtype>(V->size(),0.0)),
 				     expf(vector<valtype>(V->size(),1.0)),
 				     DOS({(*hists)[0]})
 {
   if(fseeds.size() == expf.size()) {
-    for(uint i = 0; i < fseeds.size(); ++i) { expf[i] = exp(fseeds[i]); }
+    for(uint i = 0; i < fseeds.size(); ++i) { 
+      f[i] = fseeds[i];
+      expf[i] = exp(fseeds[i]); 
+    }
     cout << "# Seeding WHAM iteration with free energies: ";
     fcout << fseeds << endl;
   }
@@ -186,12 +192,12 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
 
   if(ifmin) {
     typedef LikeliHoodFunc<DOStype, NARRAY> FUNC;
-    FUNC func(DOS, *N, C, NgexpmH);
+    FUNC func(DOS, *N, C, NgexpmH, f, expf);
     vector<valtype> df(expf.size()-1, 0.0);
 /*     //Test functor for gradient
  *     vector<valtype> graddf(df.size(),0.0);
  *     func.df(df, graddf);
- *     const valtype eps = 1e-10;
+ *     const valtype eps = 1e-20;
  *     for(uint i = 0; i < df.size(); ++i) {
  *       vector<valtype> pm{df}, pp{df};
  *       pm[i] -= eps/2;
@@ -208,15 +214,14 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
  *     //End test
  */
 
+
     Frprmn<FUNC> frprmn(func, tol);
     df = frprmn.minimize(df);
+    f[0] = 0;
     expf[0] = 1.0;
-    vector<valtype> f(df.size(), 0.0);
-    f[0] = df[0];
-    expf[1] = exp(f[0]);
-    for(uint i = 1; i < df.size(); ++i) {
-      f[i] = f[i-1]+df[i];
-      expf[i+1] = exp(f[i]); 
+    for(uint i = 0; i < df.size(); ++i) {
+      f[i+1] = f[i]+df[i];
+      expf[i+1] = exp(f[i+1]); 
     }
     endit(expf, 0);
   } 

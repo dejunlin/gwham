@@ -138,11 +138,11 @@ class LikeliHoodFunc {
   typedef unsigned int uint;
   typedef unsigned long ulong;
   public:
-    LikeliHoodFunc(DOS& _dos, const vector<ulong>& _N, const NARRAY& _C, const vector<NARRAY>& _NgexpmH) 
-      : dos(_dos), N(_N), C(_C), NgexpmH(_NgexpmH), x(_N.size()-1, numeric_limits<valtype>::max()), expf(_N.size(), numeric_limits<valtype>::max()) 
+    LikeliHoodFunc(DOS& _dos, const vector<ulong>& _N, const NARRAY& _C, const vector<NARRAY>& _NgexpmH, vector<valtype>& _f, vector<valtype>& _expf) 
+      : dos(_dos), N(_N), C(_C), NgexpmH(_NgexpmH), x(_N.size()-1, numeric_limits<valtype>::max()), f(_f), expf(_expf) 
     {
-      if(N.size() != NgexpmH.size()) {
-	throw(General_Exception("Size of array N is not the same as array NgexpmH"));
+      if(N.size() != NgexpmH.size() || N.size() != f.size() || N.size() != expf.size()) {
+	throw(General_Exception("Size of array N, NgexpmH, f and expf are not the same"));
       }
     };
 
@@ -152,22 +152,19 @@ class LikeliHoodFunc {
       //call without any update; otherwise, we need to update 
       //dos and x
       const bool update = (deltaf != x);
-      vector<valtype> f(deltaf.size(), 0.0);
-      f[0] = deltaf[0];
-      valtype fret = 0.0 - N[1]*f[0];
-      //here we constraint f[0] to 0.0 so that vector f only 
-      //stores the free energy of state 1,2,...,N-1
-
+      //here we constraint f[0] to 0.0
+      f[0] = 0;
+      expf[0] = 1;
+      
+      valtype fret = 0;
       narrcit itC = C.begin();
       if(update) {
         x = deltaf;
-        expf[0] = 1.0;
-        expf[1] = exp(f[0]);
-        for(uint i = 1; i < deltaf.size(); ++i) {
-  	  f[i] = f[i-1] + deltaf[i];
-  	  const auto e = exp(f[i]);
+        for(uint i = 0; i < deltaf.size(); ++i) {
+  	  f[i+1] = f[i] + deltaf[i];
+  	  const auto e = exp(f[i+1]);
   	  expf[i+1] = e;
-  	  fret -= N[i+1]*f[i];
+  	  fret -= N[i+1]*f[i+1];
         }
         vector<narrcit> itsNgexpmH;
         for_each(NgexpmH.begin(), NgexpmH.end(), [&itsNgexpmH](const NARRAY& narr) { itsNgexpmH.emplace_back(narr.begin()); });
@@ -178,9 +175,8 @@ class LikeliHoodFunc {
           fret -= c*log(d);
         }
       } else {
-        for(uint i = 1; i < deltaf.size(); ++i) {
-  	  f[i] = f[i-1] + deltaf[i];
-  	  fret -= N[i+1]*f[i];
+        for(uint i = 0; i < deltaf.size(); ++i) {
+  	  fret -= N[i+1]*f[i+1];
         }
         for(dosit itdos = dos.begin(); itdos != dos.end(); ++itdos ) {
   	  const auto& c = itC->second;
@@ -199,20 +195,19 @@ class LikeliHoodFunc {
       //dos and x
       const bool update = (deltaf != x);
       vector<valtype> gradf(deltaf.size(), 0.0);
-      gradf[0] -= N[1];
       narrcit itC = C.begin();
       if(update) {
 	x = deltaf;
-        //here we constraint f[0] to 0.0 so that vector f only 
-        //stores the free energy of state 1,2,...,N-1
-        vector<valtype> f(deltaf.size(), 0.0);
-        f[0] = deltaf[0];
+        //here we constrain f[0] to 0.0
+        f[0] = 0;
         expf[0] = 1.0;
-        expf[1] = exp(f[0]);
-        for(uint i = 1; i < deltaf.size(); ++i) {
-          f[i] = f[i-1] + deltaf[i];
-          const auto e = exp(f[i]);
+
+        for(uint i = 0; i < deltaf.size(); ++i) {
+          f[i+1] = f[i] + deltaf[i];
+          const auto e = exp(f[i+1]);
           expf[i+1] = e;
+          //since f[0] is constrained to 0, gradf[0] is actually 
+          //gradient with respect to f[1]
           gradf[i] -= N[i+1];
         }
         vector<narrcit> itsNgexpmH;
@@ -221,13 +216,13 @@ class LikeliHoodFunc {
           vector<narrcit> itsNgexpmH_buff{itsNgexpmH};
           const auto d = dos(itC, itsNgexpmH, expf);
 	  itdos->second = d;
-          for(uint i = 0; i < f.size(); ++i) {
+          for(uint i = 0; i < gradf.size(); ++i) {
             gradf[i] += d*itsNgexpmH_buff[i+1]->second*expf[i+1];
             ++itsNgexpmH_buff[i+1];
           }
         }
       } else {
-        for(uint i = 1; i < deltaf.size(); ++i) {
+        for(uint i = 0; i < deltaf.size(); ++i) {
           gradf[i] -= N[i+1];
 	}
         vector<narrcit> itsNgexpmH_buff;
@@ -255,7 +250,8 @@ class LikeliHoodFunc {
     const NARRAY& C;
     const vector<NARRAY>& NgexpmH;
     vector<valtype> x;
-    vector<valtype> expf;
+    vector<valtype>& f;
+    vector<valtype>& expf;
 };
 
 
