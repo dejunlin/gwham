@@ -145,7 +145,9 @@ class LikeliHoodFunc {
 		   vector<valtype>& _expf, 
 		   FTree& _tree
 		  ) 
-      : dos(_dos), N(_N), C(_C), NgexpmH(_NgexpmH), x(_N.size()-1, numeric_limits<valtype>::max()), f(_f), expf(_expf), tree(_tree) 
+      : dos(_dos), N(_N), C(_C), NgexpmH(_NgexpmH), 
+        x(_N.size()-1, numeric_limits<valtype>::max()), fret(0), gradf(x.size(), 0), graddf(x.size(), 0), 
+	f(_f), expf(_expf), tree(_tree) 
     {
       if(N.size() != NgexpmH.size() || N.size() != f.size() || N.size() != expf.size()) {
 	throw(General_Exception("Size of array N, NgexpmH, f and expf are not the same"));
@@ -164,10 +166,13 @@ class LikeliHoodFunc {
       for(const auto& edge : edges) {
 	const auto& nodei = edge[0];
 	const auto& nodej = edge[1];
-	cout << nodei-headnode << "----" << nodej-headnode << endl;
+	cout << "# " << nodei-headnode << "----" << nodej-headnode << endl;
       }
-    };
 
+    };
+    
+    //calculate both the value and gradient of the likelihood
+    //function
     valtype operator() (const vector<valtype>& deltaf) {
       //if this operator or this->df() has been called using exactly the 
       //same argument, we just retrieve results from last 
@@ -175,7 +180,7 @@ class LikeliHoodFunc {
       //dos and x
       const bool update = (deltaf != x);
       
-      valtype fret = 0;
+      fret = 0;
       narrcit itC = C.begin();
       if(update) {
         x = deltaf;
@@ -197,102 +202,50 @@ class LikeliHoodFunc {
   	  const auto e = exp(fi);
   	  expf[id] = e;
   	  fret -= N[id]*fi;
+          //since f[0] is constrained to 0, gradf[0] is actually 
+          //gradient with respect to f[1]; Here we need to make 
+	  //sure gradf[i] corresponds to f[i-1]
+          gradf[id-1] = -valtype(N[id]);
         }
         vector<narrcit> itsNgexpmH;
         for_each(NgexpmH.begin(), NgexpmH.end(), [&itsNgexpmH](const NARRAY& narr) { itsNgexpmH.emplace_back(narr.begin()); });
         for(dosit itdos = dos.begin(); itdos != dos.end(); ++itdos) {
+          vector<narrcit> itsNgexpmH_buff{itsNgexpmH};
           const auto& c = itC->second;
           const auto d = dos(itC, itsNgexpmH, expf);
           itdos->second = d;
           fret -= c*log(d);
-        }
-      } else {
-        for(uint i = 0; i < deltaf.size(); ++i) {
-  	  fret -= N[i+1]*f[i+1];
-        }
-        for(dosit itdos = dos.begin(); itdos != dos.end(); ++itdos ) {
-  	  const auto& c = itC->second;
-	  const auto& d = itdos->second;
-	  ++itC;
-	  fret -= c*log(d);
-	}
-      }
-      return fret;
-    }
-    
-    void df (const vector<valtype>& deltaf, vector<valtype>& graddf) {
-      //if this operator or this->df() has been called using exactly the 
-      //same argument, we just retrieve results from last 
-      //call without any update; otherwise, we need to update 
-      //dos and x
-      const bool update = (deltaf != x);
-      vector<valtype> gradf(deltaf.size(), 0.0);
-      narrcit itC = C.begin();
-      if(update) {
-	x = deltaf;
-        //here we constrain f[0] to 0.0
-        f[0] = 0;
-        expf[0] = 1.0;
-
-	const auto& edges = tree.getedges();
-	const auto headnode = f.begin();
-        for(uint i = 0; i < deltaf.size(); ++i) {
-	  const auto& edge = edges[i];
-	  //iterators to the f array
-	  const auto& itfi = edge[1];
-	  const auto& itfj = edge[0];
-	  *itfi = *itfj + deltaf[i];
-	  //id is the index in the f array
-	  const uint id = itfi-headnode;
-	  const auto& fi = *itfi;
-  	  const auto e = exp(fi);
-  	  expf[id] = e;
-          //since f[0] is constrained to 0, gradf[0] is actually 
-          //gradient with respect to f[1]; Here we need to make 
-	  //sure gradf[i] corresponds to f[i-1]
-          gradf[id-1] -= N[id];
-        }
-        vector<narrcit> itsNgexpmH;
-        for_each(NgexpmH.begin(), NgexpmH.end(), [&itsNgexpmH](const NARRAY& narr) { itsNgexpmH.emplace_back(narr.begin()); });
-        for(dosit itdos = dos.begin(); itdos != dos.end(); ++itdos ) {
-          vector<narrcit> itsNgexpmH_buff{itsNgexpmH};
-          const auto d = dos(itC, itsNgexpmH, expf);
-	  itdos->second = d;
           for(uint i = 0; i < gradf.size(); ++i) {
             gradf[i] += d*itsNgexpmH_buff[i+1]->second*expf[i+1];
             ++itsNgexpmH_buff[i+1];
           }
         }
-      } else {
-	//NOTE the difference between gradf[i] here and gradf[id-1]
-	//when we have to update -- here we just update gradf 
-	//serially
-        for(uint i = 0; i < deltaf.size(); ++i) {
-          gradf[i] -= N[i+1];
-	}
-        vector<narrcit> itsNgexpmH_buff;
-        for_each(NgexpmH.begin(), NgexpmH.end(), [&itsNgexpmH_buff](const NARRAY& narr) { itsNgexpmH_buff.emplace_back(narr.begin()); });
-        for(dosit itdos = dos.begin(); itdos != dos.end(); ++itdos ) {
-          const auto d = itdos->second;
-          for(uint i = 0; i < deltaf.size(); ++i) {
-            gradf[i] += d*itsNgexpmH_buff[i+1]->second*expf[i+1];
-            ++itsNgexpmH_buff[i+1];
+        graddf.assign(gradf.size(), 0.0);
+        const auto& ports = tree.getports();
+        const auto& nodes = tree.getnodes();
+        for(uint i = 0; i < graddf.size(); ++i) {
+          auto& gdf = graddf[i];
+          const auto& port = ports[i];
+          for(auto& p : port) { 
+            const auto& node = nodes[p];
+            const auto id = node - headnode; 
+            gdf += gradf[id-1];
           }
         }
+      } 
+      return fret;
+    }
+    
+    void df (const vector<valtype>& deltaf, vector<valtype>& _graddf) {
+      //if this operator or this->df() has been called using exactly the 
+      //same argument, we just retrieve results from last 
+      //call without any update; otherwise, we need to update 
+      //dos and x
+      const bool update = (deltaf != x);
+      if(update) {
+	this->operator()(deltaf);
       }
-      graddf.assign(gradf.size(), 0.0);
-      const auto& ports = tree.getports();
-      const auto& nodes = tree.getnodes();
-      const auto headnode = f.begin();
-      for(uint i = 0; i < graddf.size(); ++i) {
-	auto& gdf = graddf[i];
-	const auto& port = ports[i];
-	for(auto& p : port) { 
-	  const auto& node = nodes[p];
-	  const auto id = node - headnode; 
-	  gdf += gradf[id-1];
-	}
-      }
+      _graddf = graddf;
     }
      
   private:
@@ -301,6 +254,9 @@ class LikeliHoodFunc {
     const NARRAY& C;
     const vector<NARRAY>& NgexpmH;
     vector<valtype> x;
+    valtype fret;
+    vector<valtype> gradf;
+    vector<valtype> graddf;
     vector<valtype>& f;
     vector<valtype>& expf;
     FTree& tree;
