@@ -50,4 +50,9 @@ class MDP_Factory_Exception : public General_Exception {
   public:
     MDP_Factory_Exception(const string& _msg) : General_Exception("MDP Factory exception: " + _msg) {};
 };
+
+class GWHAM_Exception : public General_Exception {
+  public:
+    GWHAM_Exception(const string& _msg) : General_Exception("GWHAM exception: " + _msg) {};
+};
 #endif
