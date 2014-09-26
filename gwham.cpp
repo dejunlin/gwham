@@ -26,6 +26,31 @@ using namespace std;
 typedef gnarray<coordtype, valtype, valtype> narray;
 typedef gnarray<coordtype, histcounter, valtype> histogram;
 
+//! read histogram from file and return the total number of
+//elements in the histogram
+inline
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
+histcounter readhist(const string fnhist, histogram& hist) {
+  fileio fio_hist(fnhist, std::fstream::in, false);
+  const auto ndim = hist.getdim();
+  fio_hist.skipemptylns();
+  histcounter N = 0;
+  do {
+    const auto cols = fio_hist.line2val<string>();
+    //the format should be coord, val, counts
+    if(cols.size() != ndim*2 + 1) continue;
+    const vector<string> coordstr(cols.begin(), cols.begin()+ndim);
+    histogram::gridcoord coord;
+    strto(coord, coordstr);
+    const histogram::gridval n = stoul(cols.back());
+    hist[coord] = n;
+    N += n;
+  } while(fio_hist.readtsnb());
+  return N;
+}
+
 inline
 #ifdef __GNUC__
 __attribute__((always_inline))
@@ -147,8 +172,8 @@ int main(int argc, char* argv[]) {
 #ifdef MPREALCXX
   mpreal::set_default_prec(mpfr::digits2bits(MPREAL_PRECISION));
 #endif
-  string cmdline("#Usage: gwham sysname mdpsuffixes nwin nrun rcprint nbins hv lv tol rcvbegin rcvstride rcvend mdp0prefixes fseeds ifmin\n");
-  if (argc != 16) {
+  string cmdline("#Usage: gwham sysname mdpsuffixes nwin nrun rcprint nbins hv lv tol rcvbegin rcvstride rcvend mdp0prefixes fseeds ifmin ifreadhist\n");
+  if (argc != 17) {
     cerr << cmdline;
     exit(-1);
   }
@@ -186,6 +211,8 @@ int main(int argc, char* argv[]) {
   const string fseedsstr = string(argv[k++]);
   //if we call minimization routine instead of WHAM iteration
   const bool ifmin = stoul(argv[k++]);
+  //if we read the histogram directly instead of binning time-series into histogram
+  const bool ifreadhist = stoul(argv[k++]);
 
   if(is_stdfloat<valtype>::value && ifmin) {
     const string valtypename = typeid(valtype).name();
@@ -241,47 +268,56 @@ int main(int argc, char* argv[]) {
   vector<histogram> hists{pens.size(), histogram{ndim, nbins, hv, lv}};
   // total number of valid samples
   vector<histcounter> Nsamples(hists.size(), 0);
-  //create the time-series readers
-  const bool needpotential = cmpens(pens)&(1<<Ensemble::DTemperature);
-  for(const auto& pmdp : pmdps) {
-    pmdp->print();
-    // if temperature are different among ensembles, we need to read potential energy
-    auto vts = pmdp->CreateTimeSeries(needpotential);
-
-    fcout << "#require " << vts.size() << " types of time-serie files for " << pmdp->fname << " : ";
-    for(const auto& ts : vts) {
-      fcout << ts.fnsuffix << " ";
+  
+  if(!ifreadhist) {
+    //create the time-series readers
+    const bool needpotential = cmpens(pens)&(1<<Ensemble::DTemperature);
+    for(const auto& pmdp : pmdps) {
+      pmdp->print();
+      // if temperature are different among ensembles, we need to read potential energy
+      auto vts = pmdp->CreateTimeSeries(needpotential);
+  
+      fcout << "#require " << vts.size() << " types of time-serie files for " << pmdp->fname << " : ";
+      for(const auto& ts : vts) {
+        fcout << ts.fnsuffix << " ";
+      }
+      fcout << endl;
+  
+      // we overwrite the stride here
+      for(auto& ts : vts) {
+        ts.fio.lb = rcvbegin;
+        ts.fio.ls *= rcvstride;
+        ts.fio.le = rcvend;
+      }
+  
+      const auto tsprefix = getfnfixes(pmdp->fname)[0];
+      decltype(vts)::iterator it = vts.begin();
+      // For exapnded ensemble, we need to read the state time-series first
+      vector<uint> states;
+      if(pmdp->isExpandedEnsemble()) {
+        // state time-series is always the first one
+        vecfromTS(states, *it, nrun, tsprefix); 
+        ++it;
+      }
+  
+      vector<valtype> pot;
+      if(needpotential) {
+        // potential energy time-series 
+        vecfromTS(pot, *it, nrun, tsprefix);
+        ++it;
+      }
+  
+      //finally we histogram the cv; we first build a histogrammer depends 
+      //on whether we are doing expanded ensemble and/or if we need to 
+      //deal with potential energy
+      histfromTS(it, Nsamples, pmdp, pmdp2ipens, hists, nrun, tsprefix, states, pot); 
     }
-    fcout << endl;
-
-    // we overwrite the stride here
-    for(auto& ts : vts) {
-      ts.fio.lb = rcvbegin;
-      ts.fio.ls *= rcvstride;
-      ts.fio.le = rcvend;
+  } else {
+    cout << "#Reading histograms from files...\n";
+    for(uint i = 0; i < pens.size(); ++i) {
+      const string fnhist = sysname + "_" + tostr(i) + ".hist";
+      Nsamples[i] = readhist(fnhist, hists[i]);
     }
-
-    const auto tsprefix = getfnfixes(pmdp->fname)[0];
-    decltype(vts)::iterator it = vts.begin();
-    // For exapnded ensemble, we need to read the state time-series first
-    vector<uint> states;
-    if(pmdp->isExpandedEnsemble()) {
-      // state time-series is always the first one
-      vecfromTS(states, *it, nrun, tsprefix); 
-      ++it;
-    }
-
-    vector<valtype> pot;
-    if(needpotential) {
-      // potential energy time-series 
-      vecfromTS(pot, *it, nrun, tsprefix);
-      ++it;
-    }
-
-    //finally we histogram the cv; we first build a histogrammer depends 
-    //on whether we are doing expanded ensemble and/or if we need to 
-    //deal with potential energy
-    histfromTS(it, Nsamples, pmdp, pmdp2ipens, hists, nrun, tsprefix, states, pot); 
   }
   fcout.width(10);
   fcout << "#Number of samples: " << Nsamples << endl;
