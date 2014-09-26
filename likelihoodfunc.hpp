@@ -27,12 +27,14 @@ using namespace std;
 //! Build the branch of a ftree, return a vector of nodes in this branch
 //including the branch node
 template < class FTree >
-vector<uint> buildbranch(FTree& tree, map<uint,bool>& seen, const vector<vector<uint>>& nbnodes, const uint& i, vector<typename FTree::Data>& f) {
-  if(seen.find(i) != seen.end()) { return vector<uint>{}; }
+typename FTree::Nodes buildbranch(FTree& tree, map<uint,bool>& seen, const vector<vector<uint>>& nbnodes, const uint& i, vector<typename FTree::Data>& f) {
+  typedef typename FTree::Nodes Nodes;
+  if(seen.find(i) != seen.end()) { return Nodes{}; }
   //we always start from f[0]
   const typename FTree::Node headnode = f.begin();
-  tree.addnode(headnode+i);
-  vector<uint> branch{tree.nodesize()-1}; 
+  const auto node = headnode + i;
+  tree.addnode(node);
+  Nodes branch(1, node); 
   seen[i] = true;
   for(const auto& j : nbnodes[i]) {
     //return if reach a dead end
@@ -86,7 +88,7 @@ class ftree {
     typedef array<Node, 2> Edge;
     typedef vector<Edge> Edges;
   friend vector<ThisType> buildftree<ThisType>(const vector<vector<uint>>&, vector<V>&);
-  friend vector<uint> buildbranch<ThisType>(ThisType&, map<uint,bool>&, const vector<vector<uint>>&, const uint&, vector<V>&);
+  friend Nodes buildbranch<ThisType>(ThisType&, map<uint,bool>&, const vector<vector<uint>>&, const uint&, vector<V>&);
   public:
     //! Construct the tree 
     ftree() {};
@@ -104,14 +106,14 @@ class ftree {
     //! For each edge, the indices of the
     //nodes that depend on it to connect to 
     //the tip of the tree
-    vector<vector<uint> > ports;
+    vector<Nodes> ports;
 
     //! add a node
     inline void addnode(const Node& node) { nodes.emplace_back(node); }
     //! add an edge
     inline void addedge(const Edge& edge) { edges.emplace_back(edge); }
     //! add an port
-    inline void addport(const uint& hubid, const vector<uint>& port) { 
+    inline void addport(const uint& hubid, const Nodes& port) { 
       ports.resize(edges.size());
       ports[hubid] = port;
     }
@@ -124,7 +126,7 @@ class ftree {
     //! return tne edge list
     inline const Edges& getedges() const { return edges; } 
     //! return tne port list
-    inline const vector<vector<uint>>& getports() const { return ports; } 
+    inline const vector<Nodes>& getports() const { return ports; } 
 };
 
 template < class DOS, class NARRAY, class FTree >
@@ -226,8 +228,7 @@ class LikeliHoodFunc {
         for(uint i = 0; i < graddf.size(); ++i) {
           auto& gdf = graddf[i];
           const auto& port = ports[i];
-          for(auto& p : port) { 
-            const auto& node = nodes[p];
+          for(auto& node : port) { 
             const auto id = node - headnode; 
             gdf += gradf[id-1];
           }
