@@ -354,4 +354,26 @@ void gnarray<Tcoord,Telem,Tval>::setstride() {
   return;
 }
 
+//! calculate the overlap matrix of a set of narrays
+template < class V, class C, class NARRAY >
+vector<vector<V> > narrayoverlap(const vector<NARRAY>& hists, const vector<C>& Nsamples) {
+  vector<vector<V> > overlap(hists.size(), vector<V>(hists.size(), 0));
+  for(uint i = 0; i < hists.size(); ++i) {
+    //diagonal is always 1 by definition
+    overlap[i][i] = 1;
+    const auto& hi = hists[i];
+    const auto& Ni = Nsamples[i];
+    for(uint j = i+1; j < hists.size(); ++j) {
+      const auto ov = hi.overlap(hists[j]);
+      //NOTE: there is a chance that V(ov) might 
+      //overflow V type in case ov is too large
+      const V oij = V(ov)/(Ni+Nsamples[j]);
+      overlap[i][j] = oij;
+      //just copy the upper half to the lower
+      overlap[j][i] = oij;
+    }
+  }
+  return overlap;
+}
+
 #endif

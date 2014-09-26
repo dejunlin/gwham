@@ -18,6 +18,38 @@
 
 using namespace std;
 
+//! given a connectivity matrix, build a list of columns for each
+//row of the matrix that have non-zero element in the matrix
+//The first element of each row corresponds to the maximal element
+//in the row -- in case of an isolated element, its own index would 
+//be the only neighbor in its list
+template < class T >
+vector<vector<uint> > buildnblist(const vector<vector<T>>& matrix) {
+  vector<vector<uint> > ans(matrix.size());
+  for(uint i = 0; i < matrix.size(); ++i) {
+    const auto& rowi = matrix[i];
+    uint imax = i;
+    T max = numeric_limits<T>::is_signed ? -numeric_limits<T>::max() : numeric_limits<T>::min();
+    map<uint, bool> seen;
+    for(uint j = 0; j < rowi.size(); ++j) {
+      //exclude the diagonal
+      if(i == j) continue;
+      //exclude zero
+      if(rowi[j] == 0) continue;
+      seen[j] = true;
+      if(rowi[j] > max) { max = rowi[j]; imax = j; }
+    }
+    auto& nbi = ans[i];
+    if(imax != i) {
+      const auto it = seen.find(imax);
+      if(it != seen.end()) seen.erase(it);
+    }
+    nbi.emplace_back(imax);
+    for(const auto& nb : seen) nbi.emplace_back(nb.first);
+  }
+  return ans;
+}
+
 //HISTOGRAM class must provide public member function 'coord2val' that maps a coordinate to corresponding value
 //HISTOGRAM class must have member variable 'binsize' which is the size of bin along each dimension 
 //NARRAY class must have square bracket operator that maps a index (coordinate) to an element
@@ -45,7 +77,8 @@ class WHAM {
 	 const valtype _tol,
 	 const vector<valtype>& fseeds = vector<valtype>(0),
 	 const vector<NARRAY>& _g = vector<NARRAY>{0},
-	 const bool ifmin = true
+	 const bool ifmin = true,
+	 const vector<vector<valtype> >& _overlap = vector<vector<valtype>>(0)
 	);
 
     //!calculate PMF in Hamiltonian _V along the dimension in DOS as specified by dim
@@ -71,6 +104,8 @@ class WHAM {
      const map<coordtype, vector<uint> >* const record;
      //!Generic HISTOGRAM for each trajectory
      const vector<HISTOGRAM>* const hists;
+     //!Overlap between each pair of histograms
+     const vector<vector<valtype> >* const overlap;
      //!Statistical inefficiency for each trajectory
      const vector<NARRAY>* const g;
      //!V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
@@ -149,10 +184,12 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
 	                              const valtype _tol, 
                                       const vector<valtype>& fseeds,
                                       const vector<NARRAY>& _g, 
-	                              const bool ifmin
+	                              const bool ifmin,
+                                      const vector<vector<valtype> >& _overlap
 	                             ):
 				     record(&_record),
 				     hists(&_hists),
+				     overlap(&_overlap),
 				     g(_g.size() ? &_g : nullptr),
 				     V(&_V),
 				     N(&_N),
@@ -191,8 +228,43 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   this->init(*record, sw, C, NgexpmH, expmH);
 
   if(ifmin) {
-    typedef LikeliHoodFunc<DOStype, NARRAY> FUNC;
-    FUNC func(DOS, *N, C, NgexpmH, f, expf);
+    //To maximize the efficiency of minimization, we exploit the 
+    //the histogram neighbor list to transform the likelihood 
+    //function argument from f (free energy) to deltaf, 
+    //where deltaf[i] is the difference between any two f such 
+    //that the corresponding histograms are nearest neighbor to 
+    //each other. This essentially constructs a tree where each
+    //node is a unique f and each edge is a unique deltaf. To
+    //calculate the likelihood function, we need to back-construct
+    //f from deltaf by tranversing the tree from the tip (f[0])
+    //-- which means that each edge need to know the 2 nodes 
+    //it's connecting; on the other hand, to calculate the gradient
+    //of the likelihood function with respect to deltaf, we need
+    //to sum the components of gradient with respect to f -- which
+    //means that the edge need to know all the nodes depending on 
+    //it to connect to the tip
+
+    //First, we need to identify the neighbors of each ensemble 
+    //based on their histograms' overlap. When a histogram has no 
+    //overlap with any other histogram, the neighbor id the histogram
+    //id itself
+    const auto histnbs = buildnblist(*overlap);
+
+    //Second, we build trees with each edge being the one deltaf and 
+    //each node being one f. If we got multiple trees back, we have
+    //multiple independent simulations -- in this case, we just warn
+    //the user and bail
+    //TODO: run WHAM on each one of the trees
+    auto ftrees = buildftree<ftree<valtype>>(histnbs, f);
+    if(ftrees.size() > 1) {
+      throw(GWHAM_Exception(tostr(ftrees.size())+" independent sets of \
+      histograms detected based on their overlaps \
+      you might want to run WHAM on them individually"));
+    }
+    auto& tree = ftrees[0];
+
+    typedef LikeliHoodFunc<DOStype, NARRAY, ftree<valtype>> FUNC;
+    FUNC func(DOS, *N, C, NgexpmH, f, expf, tree);
     vector<valtype> df(expf.size()-1, 0.0);
 /*     //Test functor for gradient
  *     vector<valtype> graddf(df.size(),0.0);
@@ -213,7 +285,6 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
  *     }
  *     //End test
  */
-
 
     Frprmn<FUNC> frprmn(func, tol);
     df = frprmn.minimize(df);

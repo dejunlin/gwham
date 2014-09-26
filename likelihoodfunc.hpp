@@ -21,7 +21,6 @@
 #include <vector>
 #include <iterator>
 #include <array>
-#include <list>
 #include "exception.hpp"
 using namespace std;
 
@@ -128,7 +127,7 @@ class ftree {
     inline const vector<vector<uint>>& getports() const { return ports; } 
 };
 
-template < class DOS, class NARRAY >
+template < class DOS, class NARRAY, class FTree >
 class LikeliHoodFunc {
   typedef typename NARRAY::iterator narrit;
   typedef typename NARRAY::const_iterator narrcit;
@@ -138,11 +137,34 @@ class LikeliHoodFunc {
   typedef unsigned int uint;
   typedef unsigned long ulong;
   public:
-    LikeliHoodFunc(DOS& _dos, const vector<ulong>& _N, const NARRAY& _C, const vector<NARRAY>& _NgexpmH, vector<valtype>& _f, vector<valtype>& _expf) 
-      : dos(_dos), N(_N), C(_C), NgexpmH(_NgexpmH), x(_N.size()-1, numeric_limits<valtype>::max()), f(_f), expf(_expf) 
+    LikeliHoodFunc(DOS& _dos, 
+                   const vector<ulong>& _N, 
+		   const NARRAY& _C, 
+		   const vector<NARRAY>& _NgexpmH, 
+		   vector<valtype>& _f, 
+		   vector<valtype>& _expf, 
+		   FTree& _tree
+		  ) 
+      : dos(_dos), N(_N), C(_C), NgexpmH(_NgexpmH), x(_N.size()-1, numeric_limits<valtype>::max()), f(_f), expf(_expf), tree(_tree) 
     {
       if(N.size() != NgexpmH.size() || N.size() != f.size() || N.size() != expf.size()) {
 	throw(General_Exception("Size of array N, NgexpmH, f and expf are not the same"));
+      }
+      if(tree.nodesize() != f.size()) {
+        throw(General_Exception("Number of nodes in the tree isn't the same \
+        as the number of states. Check the implementation of buildtree function"));
+      }
+      if(tree.nodesize() != tree.edgesize()+1) {
+        throw(General_Exception("Number of nodes in the tree isn't the same \
+        as the number of edges + 1. Check the implementation of buildtree function"));
+      }
+      const auto& edges = tree.getedges();
+      const auto& headnode = f.begin();
+      cout << "#Edges of tree: \n";
+      for(const auto& edge : edges) {
+	const auto& nodei = edge[0];
+	const auto& nodej = edge[1];
+	cout << nodei-headnode << "----" << nodej-headnode << endl;
       }
     };
 
@@ -152,19 +174,29 @@ class LikeliHoodFunc {
       //call without any update; otherwise, we need to update 
       //dos and x
       const bool update = (deltaf != x);
-      //here we constraint f[0] to 0.0
-      f[0] = 0;
-      expf[0] = 1;
       
       valtype fret = 0;
       narrcit itC = C.begin();
       if(update) {
         x = deltaf;
+        //here we constraint f[0] to 0.0
+        f[0] = 0;
+        expf[0] = 1;
+
+	const auto& edges = tree.getedges();
+	const auto headnode = f.begin();
         for(uint i = 0; i < deltaf.size(); ++i) {
-  	  f[i+1] = f[i] + deltaf[i];
-  	  const auto e = exp(f[i+1]);
-  	  expf[i+1] = e;
-  	  fret -= N[i+1]*f[i+1];
+	  const auto& edge = edges[i];
+	  //iterators to the f array
+	  const auto& itfi = edge[1];
+	  const auto& itfj = edge[0];
+	  *itfi = *itfj + deltaf[i];
+	  //id is the index in the f array
+	  const uint id = itfi-headnode;
+	  const auto& fi = *itfi;
+  	  const auto e = exp(fi);
+  	  expf[id] = e;
+  	  fret -= N[id]*fi;
         }
         vector<narrcit> itsNgexpmH;
         for_each(NgexpmH.begin(), NgexpmH.end(), [&itsNgexpmH](const NARRAY& narr) { itsNgexpmH.emplace_back(narr.begin()); });
@@ -202,13 +234,23 @@ class LikeliHoodFunc {
         f[0] = 0;
         expf[0] = 1.0;
 
+	const auto& edges = tree.getedges();
+	const auto headnode = f.begin();
         for(uint i = 0; i < deltaf.size(); ++i) {
-          f[i+1] = f[i] + deltaf[i];
-          const auto e = exp(f[i+1]);
-          expf[i+1] = e;
+	  const auto& edge = edges[i];
+	  //iterators to the f array
+	  const auto& itfi = edge[1];
+	  const auto& itfj = edge[0];
+	  *itfi = *itfj + deltaf[i];
+	  //id is the index in the f array
+	  const uint id = itfi-headnode;
+	  const auto& fi = *itfi;
+  	  const auto e = exp(fi);
+  	  expf[id] = e;
           //since f[0] is constrained to 0, gradf[0] is actually 
-          //gradient with respect to f[1]
-          gradf[i] -= N[i+1];
+          //gradient with respect to f[1]; Here we need to make 
+	  //sure gradf[i] corresponds to f[i-1]
+          gradf[id-1] -= N[id];
         }
         vector<narrcit> itsNgexpmH;
         for_each(NgexpmH.begin(), NgexpmH.end(), [&itsNgexpmH](const NARRAY& narr) { itsNgexpmH.emplace_back(narr.begin()); });
@@ -222,6 +264,9 @@ class LikeliHoodFunc {
           }
         }
       } else {
+	//NOTE the difference between gradf[i] here and gradf[id-1]
+	//when we have to update -- here we just update gradf 
+	//serially
         for(uint i = 0; i < deltaf.size(); ++i) {
           gradf[i] -= N[i+1];
 	}
@@ -236,10 +281,16 @@ class LikeliHoodFunc {
         }
       }
       graddf.assign(gradf.size(), 0.0);
-      for(uint i = 0; i < gradf.size(); ++i) {
-	const auto& gf = gradf[i];
-	for(uint j = 0; j <= i; ++j) {
-	  graddf[j] += gf;
+      const auto& ports = tree.getports();
+      const auto& nodes = tree.getnodes();
+      const auto headnode = f.begin();
+      for(uint i = 0; i < graddf.size(); ++i) {
+	auto& gdf = graddf[i];
+	const auto& port = ports[i];
+	for(auto& p : port) { 
+	  const auto& node = nodes[p];
+	  const auto id = node - headnode; 
+	  gdf += gradf[id-1];
 	}
       }
     }
@@ -252,6 +303,7 @@ class LikeliHoodFunc {
     vector<valtype> x;
     vector<valtype>& f;
     vector<valtype>& expf;
+    FTree& tree;
 };
 
 

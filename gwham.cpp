@@ -143,59 +143,6 @@ void histfromTS (
   }
 }
 
-using gridval = narray::gridval;
-vector<vector<gridval> > histoverlap(const vector<histogram>& hists, const vector<histcounter>& Nsamples) {
-  vector<vector<gridval> > overlap(hists.size(), vector<gridval>(hists.size(), 0));
-  for(uint i = 0; i < hists.size(); ++i) {
-    //diagonal is always 1 by definition
-    overlap[i][i] = 1;
-    const auto& hi = hists[i];
-    const auto& Ni = Nsamples[i];
-    for(uint j = i+1; j < hists.size(); ++j) {
-      const auto ov = hi.overlap(hists[j]);
-      //NOTE: there is a chance that gridval(ov) might 
-      //overflow gridval type in case ov is too large
-      const gridval oij = gridval(ov)/(Ni+Nsamples[j]);
-      overlap[i][j] = oij;
-      //just copy the upper half to the lower
-      overlap[j][i] = oij;
-    }
-  }
-  return overlap;
-}
-
-//! given a connectivity matrix, build a list of columns for each
-//row of the matrix that have non-zero element in the matrix
-//The first element of each row corresponds to the maximal element
-//in the row -- in case of an isolated element, its own index would 
-//be the only neighbor in its list
-template < class T >
-vector<vector<uint> > buildnblist(const vector<vector<T>>& matrix) {
-  vector<vector<uint> > ans(matrix.size());
-  for(uint i = 0; i < matrix.size(); ++i) {
-    const auto& rowi = matrix[i];
-    uint imax = i;
-    T max = numeric_limits<T>::is_signed ? -numeric_limits<T>::max() : numeric_limits<T>::min();
-    map<uint, bool> seen;
-    for(uint j = 0; j < rowi.size(); ++j) {
-      //exclude the diagonal
-      if(i == j) continue;
-      //exclude zero
-      if(rowi[j] == 0) continue;
-      seen[j] = true;
-      if(rowi[j] > max) { max = rowi[j]; imax = j; }
-    }
-    auto& nbi = ans[i];
-    if(imax != i) {
-      const auto it = seen.find(imax);
-      if(it != seen.end()) seen.erase(it);
-    }
-    nbi.emplace_back(imax);
-    for(const auto& nb : seen) nbi.emplace_back(nb.first);
-  }
-  return ans;
-}
-
 int main(int argc, char* argv[]) {
 #ifdef MPREALCXX
   mpreal::set_default_prec(mpfr::digits2bits(MPREAL_PRECISION));
@@ -370,45 +317,14 @@ int main(int argc, char* argv[]) {
   }
 
   //we calculate the overlap between histogram
-  const auto overlap = histoverlap(hists, Nsamples);
+  const auto overlap = narrayoverlap<valtype, histcounter, histogram>(hists, Nsamples);
   cout << "#Percentage overlap between histograms: \n";
   fcout.flags(ios::fixed);
   fcout.width(15);
   fcout.precision(8);
   for(auto oi : overlap) { fcout << oi << endl; }
 
-  //we need to identify the nearest neighbor of each ensemble 
-  //based on their distance in free energy -- we estimate such 
-  //distance based the overlap of the corresponding histograms
-  //so that the nearest neighbor of each ensemble is the one 
-  //that has the best overlap with it. When a histogram has no 
-  //overlap with any other histogram, the neighbor id the histogram
-  //id itself
-  const auto histnbs = buildnblist(overlap);
-  cout << "#Neighbors of each histogram :\n";
-  fcout.width(5);
-  for(const auto& histnb : histnbs) {
-    cout << "#";
-    fcout << histnb << endl;
-  }
-
-  //To maximize the efficiency of minimization, we exploit the 
-  //the histogram neighbor list to transform the likelihood 
-  //function argument from f (free energy) to deltaf, 
-  //where deltaf[i] is the difference between any two f such 
-  //that the corresponding histograms are nearest neighbor to 
-  //each other. This essentially constructs a tree where each
-  //node is a unique f and each edge is a unique deltaf. To
-  //calculate the likelihood function, we need to back-construct
-  //f from deltaf by tranversing the tree from the tip (f[0])
-  //-- which means that each edge need to know the 2 nodes 
-  //it's connecting; on the other hand, to calculate the gradient
-  //of the likelihood function with respect to deltaf, we need
-  //to sum the components of gradient with respect to f -- which
-  //means that the edge need to know all the nodes depending on 
-  //it to connect to the tip
-
-  WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin);
+  WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin, overlap);
   
   //calculate the probability density
   //we can have the user specify which ensemble we want to probability to be calculated in

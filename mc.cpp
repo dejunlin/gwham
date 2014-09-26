@@ -77,6 +77,7 @@ int main(int argc, char* argv[]) {
   
   const vector<vector<valtype> > wincentrs = windows.canonical_valseries();
   for(uint i = 0; i < wincentrs.size(); ++i) {
+    cout << "# Running window " << i << endl;
     const vector<valtype> wincentr = wincentrs[i];
     harmonic bias(dim,k,wincentr);
     MC<potpoly_dblwell,harmonic> mc(kB,T,pot,bias,nsteps,stepsize);
@@ -88,7 +89,7 @@ int main(int argc, char* argv[]) {
     }
     V.emplace_back(make_shared<NVT>(kB, Hamiltonian{functors}, T));
   }
-
+  
   histogram hist_sum(dim,nbins,hv,lv);
 
   map<coordtype, vector<uint> > record;
@@ -104,8 +105,10 @@ int main(int argc, char* argv[]) {
       record[coord].push_back(i);
     }
   }
+  const vector<linecounter> Nsamples(nwins_tot,nsteps);
+  const auto overlap = narrayoverlap<valtype, histcounter, histogram>(hists, Nsamples);
 
-  WHAM<pEnsemble,histogram,narray> wham(record,hists,V,vector<linecounter>(nwins_tot,nsteps),tol);
+  WHAM<pEnsemble,histogram,narray> wham(record,hists,V,Nsamples,tol,vector<valtype>(0), vector<narray>(0), true, overlap);
   pEnsemble V0 = make_shared<NVT>(kB, Hamiltonian{}, T);
   /*vector<uint> rhodim(dim,0);
   for(uint i = 0; i < dim; ++i) { rhodim[i] = i; }*/
