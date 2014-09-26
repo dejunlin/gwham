@@ -266,6 +266,12 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     typedef LikeliHoodFunc<DOStype, NARRAY, ftree<valtype>> FUNC;
     FUNC func(DOS, *N, C, NgexpmH, f, expf, tree);
     vector<valtype> df(expf.size()-1, 0.0);
+    //need to populate df based on fseed if possible
+    const auto& edges = tree.getedges();
+    for(uint i = 0; i < df.size(); ++i) {
+      const auto& edge = edges[i];
+      df[i] = *edge[1] - *edge[0];
+    }
 /*     //Test functor for gradient
  *     vector<valtype> graddf(df.size(),0.0);
  *     func.df(df, graddf);
