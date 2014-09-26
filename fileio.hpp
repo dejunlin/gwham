@@ -113,14 +113,16 @@ class fileio {
     bool fopen(const string& _fname);
     //! just open a file handle
     bool fopen(const string& _fname, const ios_base::openmode& mode);
-    //! break line into vector of valtype 
+
+    //! break line into a vector 
+    template < class V = valtype >
     inline
     #ifdef __GNUC__
     __attribute__((always_inline))
     #endif
-    vector<valtype> line2val() const {
-      vector<valtype> ans;
-      split<valtype>(ans, line);
+    vector<V> line2val() const {
+      vector<V> ans;
+      split<V>(ans, line);
       return ans;
     };
     //! break line into vector of string using specified deliminator 
