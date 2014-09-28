@@ -22,6 +22,7 @@
 #include <iterator>
 #include <array>
 #include "exception.hpp"
+#include "metaprog_snippets.hpp"
 using namespace std;
 
 //! merge the trees by recursively base on the nearest neighbor
@@ -45,10 +46,10 @@ void mergebranchNNB(vector<FTree>& trees) {
         if(itb != broutes.end()) {
           //loop through all edges in branch and add them to root
 	  //TODO: test if we need to first connect the joint node
+          const auto& bjoints = branch.getjoints();
           const auto& bedges = branch.getedges();
-          for(const auto& bedge : bedges) {
-            root.addedge(bedge);
-          }
+	  const auto& bedgeid = (bjoints.find(rnode)->second)[0];
+	  root.append(branch, bedges[bedgeid]); 
           trees.erase(trees.begin()+j);
           ifmerged = true;
           //we only establish one connection
