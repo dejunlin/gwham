@@ -24,53 +24,136 @@
 #include "exception.hpp"
 using namespace std;
 
-//! Build the branch of a ftree, return a vector of nodes in this branch
-//including the branch node
+//! merge the trees by recursively base on the nearest neighbor
+//NOTE that the earlier trees in the array will
+//absorb those come latter and destroy their topology, i.e.,
+//the merged tree will persist consistency with the earlier ones
 template < class FTree >
-typename FTree::Nodes buildbranch(FTree& tree, map<uint,bool>& seen, const vector<vector<uint>>& nbnodes, const uint& i, vector<typename FTree::Data>& f) {
-  typedef typename FTree::Nodes Nodes;
-  if(seen.find(i) != seen.end()) { return Nodes{}; }
-  //we always start from f[0]
-  const typename FTree::Node headnode = f.begin();
-  const auto node = headnode + i;
-  tree.addnode(node);
-  Nodes branch(1, node); 
-  seen[i] = true;
-  for(const auto& j : nbnodes[i]) {
-    //return if reach a dead end
-    if(j == i) return branch;
-    //skip if has been seen before
-    if(seen.find(j) != seen.end()) { 
-      continue;
+void mergebranchNNB(vector<FTree>& trees) {
+  if(trees.size() <= 1) { return; }
+  const uint Ntreesb = trees.size();
+  for(uint i = 0; i < trees.size(); ++i) {
+    auto& root = trees[i];
+    for(uint j = i+1; j < trees.size(); ) {
+      auto& branch = trees[j];
+      auto& rroutes = root.getroutes(); 
+      auto& broutes = branch.getroutes();
+      bool ifmerged = false;
+      for(auto itr = rroutes.begin(); itr != rroutes.end(); ++itr) {
+        const auto rnode = itr->first;
+        auto itb = broutes.find(rnode);
+        if(itb != broutes.end()) {
+          //loop through all edges in branch and add them to root
+	  //TODO: test if we need to first connect the joint node
+          const auto& bedges = branch.getedges();
+          for(const auto& bedge : bedges) {
+            root.addedge(bedge);
+          }
+          trees.erase(trees.begin()+j);
+          ifmerged = true;
+          //we only establish one connection
+          break;
+        }
+      }
+      if(!ifmerged) { ++j; }
     }
-    //coming all the way here means a valid edge
-    tree.addedge({headnode+i, headnode+j});
-    const auto hubid = tree.edgesize()-1;
-    //recurse over all the branches
-    auto subbranch = buildbranch(tree, seen, nbnodes, j, f);
-    branch.insert(branch.end(), subbranch.begin(), subbranch.end());
-    tree.addport(hubid, subbranch);
   }
-  return branch;
+  //recurse until all possible branches are merged
+  if(trees.size() > 1 && trees.size() != Ntreesb) {
+    mergebranchNNB(trees);
+  }
+
+  //reaching here means all branches are merged
+}
+
+//! merge the trees based on 2nd connection
+template < class FTree >
+void mergebranch2nd(const vector<vector<uint>>& nbnodes, vector<FTree>& trees, vector<typename FTree::Data>& f) {
+  if(trees.size() <= 1) { return; }
+  const auto headnode = f.begin();
+  const uint Ntreeb = trees.size();
+  for(uint i = 0; i < trees.size(); ++i) {
+    auto& root = trees[i];
+    for(uint j = i+1; j < trees.size(); ) {
+      auto& branch = trees[j];
+      //for each node in the root, lookup the 2nd neighbors and see 
+      //if any of them can be found in the branch; if so, merge them
+      auto& rroutes = root.getroutes(); 
+      auto& broutes = branch.getroutes();
+      bool ifmerged = false;
+      for(auto itr = rroutes.begin(); itr != rroutes.end(); ++itr) {
+        const auto& rnblist = nbnodes[itr->first-headnode];
+	for(const auto& id : rnblist) {
+	  const auto node = headnode + id;
+	  auto itb = broutes.find(node);
+	  if(itb != broutes.end()) {
+	    const typename FTree::Edge newedge = {itr->first ,node};
+	    //recursively add the branch to the root
+	    root.append(branch, newedge);
+	    ifmerged = true;
+	    break;
+	  }
+	}
+	if(ifmerged) { break; }
+      }
+      if(ifmerged) { 
+	trees.erase(trees.begin()+j);
+	continue;
+      }
+      ++j;
+    }
+  }
+  if(trees.size() > 1 && trees.size() != Ntreeb) {
+    mergebranch2nd(nbnodes, trees, f);
+  }
+}
+
+//! merge the trees
+//NOTE that the earlier trees in the array will
+//absorb those come latter and destroy their topology, i.e.,
+//the merged tree will persist consistency with the earlier ones
+template < class FTree >
+void mergebranch(const vector<vector<uint>>& nbnodes, vector<FTree>& trees, vector<typename FTree::Data>& f) {
+  //first merge trees using nearest neighbors
+  mergebranchNNB(trees);
+  if(trees.size() <= 1) { return; }
+  //then connect the primary trees
+  mergebranch2nd(nbnodes, trees, f);
 }
 
 //! build a ftree based on the neighbor list for each node
+//the first neighbor of each node is the nearest neighbor
+//and we'll first build N trees using the nearest neighbors 
+//of each node and merge the tree recursively
 template < class FTree >
 vector<FTree> buildftree(const vector<vector<uint>>& nbnodes, vector<typename FTree::Data>& f) {
   if(nbnodes.size() != f.size()) {
     throw(General_Exception("input size of list of neighboring node is not the same as the size of f array"));
   }
-  vector<FTree> ans;
-  FTree tree;
-  map<uint, bool> seen;
-  for(uint i = 0; i < nbnodes.size(); ++i) {
-    if(seen.find(i) != seen.end()) { continue; }
-    buildbranch(tree, seen, nbnodes, i, f);
-    if(tree.nodesize()) { 
-      ans.emplace_back(tree); 
-      tree = FTree{};
-    } 
+  typedef typename FTree::Node Node;
+  const uint Ntree = nbnodes.size();
+  vector<FTree> ans(Ntree);
+  const Node headnode = f.begin();
+  for(uint i = 0; i < Ntree; ++i) {
+    const Node node1 = headnode + i;
+    //first neighbor of each state is the nearest neighbor
+    const Node node2 = headnode + nbnodes[i][0];
+    //assume node1 is closer to the headnode
+    ans[i].addedge({node1, node2});
   }
+  //! eliminate duplicate pair -- this need to be done only once
+  for(uint i = 0; i < ans.size(); ++i) {
+    const auto treei = ans[i];
+    for(uint j = i+1; j < ans.size();) {
+      if(treei.nodeset_equal(ans[j])) {
+	ans.erase(ans.begin() + j);
+	continue;
+      }
+      ++j;
+    }
+  }
+  mergebranch(nbnodes, ans, f);
+
   return ans;
 }
 
@@ -83,15 +166,20 @@ class ftree {
     typedef V Data;
     typedef typename vector<V>::iterator Node;
     typedef vector<Node> Nodes;
+    typedef array<Node, 2> Edge;
   private:
     typedef ftree<V> ThisType;
-    typedef array<Node, 2> Edge;
     typedef vector<Edge> Edges;
   friend vector<ThisType> buildftree<ThisType>(const vector<vector<uint>>&, vector<V>&);
-  friend Nodes buildbranch<ThisType>(ThisType&, map<uint,bool>&, const vector<vector<uint>>&, const uint&, vector<V>&);
   public:
     //! Construct the tree 
     ftree() {};
+
+    //! The indices of all the edges touching a node
+    map<Node, vector<uint> > joints;
+
+    //! The indices of edges that connect each node to the headnode 
+    map<Node, vector<uint> > routes;
 
     //! All the nodes in this tree
     Nodes nodes;
@@ -108,15 +196,127 @@ class ftree {
     //the tip of the tree
     vector<Nodes> ports;
 
+    //! if the 2 trees have the same set of nodes
+    bool nodeset_equal(const ThisType& rhs) const {
+      bool ans = true;
+      const auto& rhsroutes = rhs.getroutes();
+      for(auto it = routes.begin(); it!= routes.end(); ++it) {
+	const auto& node = it->first;
+	if(rhsroutes.find(node) == rhsroutes.end()) {
+	  ans = false;
+	  break;
+	}
+      }
+      return ans;
+    }
+
+    //! add a joint
+    inline void addjoint(const Node& node, const uint& edgeid) { 
+      auto it = joints.find(node);
+      if(it != joints.end()) { it->second.push_back(edgeid); }
+      else { joints[node] = {edgeid}; }
+    }
+
     //! add a node
     inline void addnode(const Node& node) { nodes.emplace_back(node); }
-    //! add an edge
-    inline void addedge(const Edge& edge) { edges.emplace_back(edge); }
     //! add an port
-    inline void addport(const uint& hubid, const Nodes& port) { 
+    inline void addport(const uint& hubid, const Nodes& newport) { 
       ports.resize(edges.size());
-      ports[hubid] = port;
+      auto& port = ports[hubid];
+      port.insert(port.end(), newport.begin(), newport.end());
     }
+    //! add a route
+    inline void addroute(const Node& node, const uint& edgeid) {
+      auto it = routes.find(node);
+      if(it != routes.end()) {
+	it->second.push_back(edgeid);
+      } else {
+        routes[node] = {edgeid};
+      }
+      addport(edgeid, {node});
+      //also update this node's route to former edges
+      const auto& edge = edges[edgeid];
+      const auto& itfnode = routes.find(edge[0]);
+      //if such former edge exist and the joint node is not the headnode
+      if(itfnode != routes.end() && itfnode->second.size()) {
+	//we assume that in the array of edges each node map to, the smaller
+	//the corresponding index is, the closer such edge is to the node
+	addroute(node, (itfnode->second)[0]);
+      }
+    }
+    //! add an edge
+    /** NOTE this will re-establish the polarity of the edge
+     */
+    inline void addedge(const Edge& edge) {
+      const auto head = edge[0];
+      const auto tail = edge[1];
+      const auto ithead = routes.find(head);
+      const auto ittail = routes.find(tail);
+      //if both nodes in this edge exist in the routes, just skip
+      if(ithead != routes.end() && ittail != routes.end()) {
+	return;
+	//otherwise, whichever end exists is assumed closer to the headnode
+      } else if(ithead != routes.end()) {
+	//head exists but tail doesn't
+        addnode(tail);
+        edges.emplace_back(edge);
+        addroute(tail, edges.size()-1);
+      } else if(ittail != routes.end()) {
+	//tail exists but head doesn't
+        addnode(head);
+	//re-establish polarity of this edge
+	Edge newedge = {tail, head};
+        edges.emplace_back(newedge);
+        addroute(head, edges.size()-1);
+      } else {
+	//if neither exists, this has to been a new tree otherwise we bail
+	if(!this->empty()) {
+	  throw(General_Exception("Can't add an isolated edge to non-empty ftree"));
+	}
+	//assume the first node in this head become head node
+        addnode(head);
+        addnode(tail);
+        edges.emplace_back(edge);
+	routes[head] = vector<uint>{};
+	addroute(tail, edges.size()-1);
+      }
+      //map both nodes to this new edge
+      addjoint(head, edges.size()-1);
+      addjoint(tail, edges.size()-1);
+    }
+
+    //! append another tree to this one via the input joint node
+    inline ThisType& append(const ThisType& src, const Edge& junction) {
+      const auto& node1 = junction[0];
+      const auto& node2 = junction[1];
+      auto it1 = routes.find(node1);
+      auto it2 = routes.find(node2);
+      //if both nodes belong to this tree already, just return;
+      if(it1 != routes.end() && it2 != routes.end()) {
+	return *this;
+      } else if(!this->empty() &&  it1 == routes.end() && it2 == routes.end()) {
+	throw(General_Exception("Can't append to a non-empty ftree without junction"));
+      }
+      //NOTE: if this is an tempty tree, doesn't matter which one becomes head
+      const Node newnode = (it1 == routes.end()) ?  node1 : node2;
+
+      addedge(junction);
+
+      //recursively add all the source edges 
+      const auto& srcjoints = src.getjoints();
+      const auto itsrcjoint = srcjoints.find(newnode); 
+      if(itsrcjoint == srcjoints.end()) {
+	throw(General_Exception("Junction node doesn't belong to the ftree to be appended"));
+      }
+      const auto& srcedges = src.getedges();
+      for(const auto& srcedgeid : itsrcjoint->second) {
+	this->append(src, srcedges[srcedgeid]); 
+      }
+      return *this;
+    }
+    
+    //! if this is an empty tree
+    inline bool empty() const { return !(nodes.size() || edges.size() || routes.size() || ports.size()); } 
     //! number of nodes
     inline uint nodesize() const { return nodes.size(); }
     //! number of edges
@@ -127,6 +327,11 @@ class ftree {
     inline const Edges& getedges() const { return edges; } 
     //! return tne port list
     inline const vector<Nodes>& getports() const { return ports; } 
+    //! return tne joint list
+    inline const map<Node, vector<uint> >& getjoints() const { return joints; } 
+    //! return tne route list
+    inline map<Node, vector<uint> >& getroutes() { return routes; } 
+    inline const map<Node, vector<uint> >& getroutes() const { return routes; } 
 };
 
 template < class DOS, class NARRAY, class FTree >
