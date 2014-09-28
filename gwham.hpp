@@ -206,9 +206,9 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
       f[i] = fseeds[i];
       expf[i] = exp(fseeds[i]); 
     }
-    cout << "# Seeding WHAM iteration with free energies: ";
-    fcout << fseeds << endl;
   }
+  cout << "#Initial free energies of each state: \n";
+  for(uint i = 0; i < f.size(); ++i) cout << "# " << i << "\t" << f[i] << endl;
   //precaculate sample-weights 
   vector<NARRAY> sw{hists->size(), DOS.getdosarr()};
   if(g != nullptr) {
@@ -267,15 +267,19 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     FUNC func(DOS, *N, C, NgexpmH, f, expf, tree);
     vector<valtype> df(expf.size()-1, 0.0);
     //need to populate df based on fseed if possible
+    cout << "#Initial df between on each edge: \n";
+    const auto& headnode = f.begin();
     const auto& edges = tree.getedges();
     for(uint i = 0; i < df.size(); ++i) {
       const auto& edge = edges[i];
+      cout << "# " << edge[0]-headnode << "----" << edge[1]-headnode << ": ";
       df[i] = *edge[1] - *edge[0];
+      cout << *edge[1] << " - " << *edge[0] << " = " << df[i] << endl;
     }
 /*     //Test functor for gradient
  *     vector<valtype> graddf(df.size(),0.0);
  *     func.df(df, graddf);
- *     const valtype eps = 1e-20;
+ *     const valtype eps = 1e-10;
  *     for(uint i = 0; i < df.size(); ++i) {
  *       vector<valtype> pm{df}, pp{df};
  *       pm[i] -= eps/2;
@@ -297,8 +301,11 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     f[0] = 0;
     expf[0] = 1.0;
     for(uint i = 0; i < df.size(); ++i) {
-      f[i+1] = f[i]+df[i];
-      expf[i+1] = exp(f[i+1]); 
+      const auto& edge = edges[i];
+      *edge[1] = *edge[0] + df[i];
+    }
+    for(uint i = 0; i < f.size(); ++i) {
+      expf[i] = exp(f[i]);
     }
     endit(expf, 0);
   } 

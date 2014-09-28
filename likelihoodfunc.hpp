@@ -127,6 +127,14 @@ void mergebranch(const vector<vector<uint>>& nbnodes, vector<FTree>& trees, vect
 //of each node and merge the tree recursively
 template < class FTree >
 vector<FTree> buildftree(const vector<vector<uint>>& nbnodes, vector<typename FTree::Data>& f) {
+  cout << "#Neighbors of each histogram: \n";
+  fcout.width(4);
+  for(uint i = 0; i < nbnodes.size(); ++i) {
+    const auto& nbnode = nbnodes[i];
+    cout << "#" << i << " : ";
+    fcout << nbnode << endl;
+  }
+
   if(nbnodes.size() != f.size()) {
     throw(General_Exception("input size of list of neighboring node is not the same as the size of f array"));
   }
@@ -153,6 +161,26 @@ vector<FTree> buildftree(const vector<vector<uint>>& nbnodes, vector<typename FT
     }
   }
   mergebranch(nbnodes, ans, f);
+
+  for(const auto& tree : ans) {
+    const auto& edges = tree.getedges();
+    const auto& headnode = f.begin();
+    cout << "#Edges of tree: \n";
+    for(const auto& edge : edges) {
+	const auto& nodei = edge[0];
+	const auto& nodej = edge[1];
+	cout << "# " << nodei-headnode << "----" << nodej-headnode << endl;
+    }
+    cout << "#Ports of tree: \n";
+    const auto& ports = tree.getports();
+    for(uint i = 0; i < ports.size(); ++i) {
+      const auto& edge = edges[i];
+      const auto& port= ports[i];
+      cout << "# " << edge[0]-headnode << "----" << edge[1]-headnode << ": ";
+      for(const auto& p : port) cout << p-headnode << ' ';
+      cout << endl;
+    }
+  }
 
   return ans;
 }
@@ -367,14 +395,6 @@ class LikeliHoodFunc {
         throw(General_Exception("Number of nodes in the tree isn't the same \
         as the number of edges + 1. Check the implementation of buildtree function"));
       }
-      const auto& edges = tree.getedges();
-      const auto& headnode = f.begin();
-      cout << "#Edges of tree: \n";
-      for(const auto& edge : edges) {
-	const auto& nodei = edge[0];
-	const auto& nodej = edge[1];
-	cout << "# " << nodei-headnode << "----" << nodej-headnode << endl;
-      }
 
     };
     
@@ -386,7 +406,7 @@ class LikeliHoodFunc {
       //call without any update; otherwise, we need to update 
       //dos and x
       const bool update = (deltaf != x);
-      
+       
       fret = 0;
       narrcit itC = C.begin();
       if(update) {

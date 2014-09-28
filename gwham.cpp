@@ -358,7 +358,7 @@ int main(int argc, char* argv[]) {
   fcout.flags(ios::fixed);
   fcout.width(15);
   fcout.precision(8);
-  for(auto oi : overlap) { fcout << oi << endl; }
+  for(auto oi : overlap) { cout << "# "; fcout << oi << endl; }
 
   WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin, overlap);
   
