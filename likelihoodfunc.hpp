@@ -35,9 +35,9 @@ void mergebranchNNB(vector<FTree>& trees) {
   const uint Ntreesb = trees.size();
   for(uint i = 0; i < trees.size(); ++i) {
     auto& root = trees[i];
+    auto& rroutes = root.getroutes(); 
     for(uint j = i+1; j < trees.size(); ) {
       auto& branch = trees[j];
-      auto& rroutes = root.getroutes(); 
       auto& broutes = branch.getroutes();
       bool ifmerged = false;
       for(auto itr = rroutes.begin(); itr != rroutes.end(); ++itr) {
@@ -45,11 +45,11 @@ void mergebranchNNB(vector<FTree>& trees) {
         auto itb = broutes.find(rnode);
         if(itb != broutes.end()) {
           //loop through all edges in branch and add them to root
-	  //TODO: test if we need to first connect the joint node
           const auto& bjoints = branch.getjoints();
           const auto& bedges = branch.getedges();
-	  const auto& bedgeid = (bjoints.find(rnode)->second)[0];
-	  root.append(branch, bedges[bedgeid]); 
+	  for(const auto& bedgeid : bjoints.find(rnode)->second) {
+	    root.append(branch, bedges[bedgeid]); 
+	  }
           trees.erase(trees.begin()+j);
           ifmerged = true;
           //we only establish one connection
@@ -115,8 +115,14 @@ void mergebranch2nd(const vector<vector<uint>>& nbnodes, vector<FTree>& trees, v
 //the merged tree will persist consistency with the earlier ones
 template < class FTree >
 void mergebranch(const vector<vector<uint>>& nbnodes, vector<FTree>& trees, vector<typename FTree::Data>& f) {
+  for(uint i = 0; i < trees.size(); ++i) {
+    const auto& tree = trees[i];
+    const auto& edges = tree.getedges();
+    const auto& headnode = f.begin();
+  }
   //first merge trees using nearest neighbors
   mergebranchNNB(trees);
+
   if(trees.size() <= 1) { return; }
   //then connect the primary trees
   mergebranch2nd(nbnodes, trees, f);
@@ -128,13 +134,14 @@ void mergebranch(const vector<vector<uint>>& nbnodes, vector<FTree>& trees, vect
 //of each node and merge the tree recursively
 template < class FTree >
 vector<FTree> buildftree(const vector<vector<uint>>& nbnodes, vector<typename FTree::Data>& f) {
-  cout << "#Neighbors of each histogram: \n";
-  fcout.width(4);
-  for(uint i = 0; i < nbnodes.size(); ++i) {
-    const auto& nbnode = nbnodes[i];
-    cout << "#" << i << " : ";
-    fcout << nbnode << endl;
-  }
+/*   cout << "#Neighbors of each histogram: \n";
+ *   fcout.width(4);
+ *   for(uint i = 0; i < nbnodes.size(); ++i) {
+ *     const auto& nbnode = nbnodes[i];
+ *     cout << "#" << i << " : ";
+ *     fcout << nbnode << endl;
+ *   }
+ */
 
   if(nbnodes.size() != f.size()) {
     throw(General_Exception("input size of list of neighboring node is not the same as the size of f array"));
@@ -163,25 +170,26 @@ vector<FTree> buildftree(const vector<vector<uint>>& nbnodes, vector<typename FT
   }
   mergebranch(nbnodes, ans, f);
 
-  for(const auto& tree : ans) {
-    const auto& edges = tree.getedges();
-    const auto& headnode = f.begin();
-    cout << "#Edges of tree: \n";
-    for(const auto& edge : edges) {
-	const auto& nodei = edge[0];
-	const auto& nodej = edge[1];
-	cout << "# " << nodei-headnode << "----" << nodej-headnode << endl;
-    }
-    cout << "#Ports of tree: \n";
-    const auto& ports = tree.getports();
-    for(uint i = 0; i < ports.size(); ++i) {
-      const auto& edge = edges[i];
-      const auto& port= ports[i];
-      cout << "# " << edge[0]-headnode << "----" << edge[1]-headnode << ": ";
-      for(const auto& p : port) cout << p-headnode << ' ';
-      cout << endl;
-    }
-  }
+/*   for(const auto& tree : ans) {
+ *     const auto& edges = tree.getedges();
+ *     const auto& headnode = f.begin();
+ *     cout << "#Edges of tree: \n";
+ *     for(const auto& edge : edges) {
+ * 	const auto& nodei = edge[0];
+ * 	const auto& nodej = edge[1];
+ * 	cout << "# " << nodei-headnode << "----" << nodej-headnode << endl;
+ *     }
+ *     cout << "#Ports of tree: \n";
+ *     const auto& ports = tree.getports();
+ *     for(uint i = 0; i < ports.size(); ++i) {
+ *       const auto& edge = edges[i];
+ *       const auto& port= ports[i];
+ *       cout << "# " << edge[0]-headnode << "----" << edge[1]-headnode << ": ";
+ *       for(const auto& p : port) cout << p-headnode << ' ';
+ *       cout << endl;
+ *     }
+ *   }
+ */
 
   return ans;
 }
