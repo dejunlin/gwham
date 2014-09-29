@@ -115,11 +115,6 @@ void mergebranch2nd(const vector<vector<uint>>& nbnodes, vector<FTree>& trees, v
 //the merged tree will persist consistency with the earlier ones
 template < class FTree >
 void mergebranch(const vector<vector<uint>>& nbnodes, vector<FTree>& trees, vector<typename FTree::Data>& f) {
-  for(uint i = 0; i < trees.size(); ++i) {
-    const auto& tree = trees[i];
-    const auto& edges = tree.getedges();
-    const auto& headnode = f.begin();
-  }
   //first merge trees using nearest neighbors
   mergebranchNNB(trees);
 
