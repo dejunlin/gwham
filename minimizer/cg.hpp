@@ -287,8 +287,8 @@ struct Frprmn : Dlinemethod<T> {
 			iter=its;
 			fret=linmin();
 			if (2.0*abs(fret-fp) <= ftol*(abs(fret)+abs(fp)+EPS)) {
-			  cout.precision(VALMAXDIGITS10); 
-			  cout << "#Convergence met at iteration " << its << " because the difference in F(p) between 2 consecutive iteration is smaller than " << ftol*(abs(fret)+abs(fp)+EPS)/2 << endl;
+			  cout.precision(VALMAXDIGITS10);
+			  cout << "#Convergence met at iteration " << its << " because the relative difference in F(p) between 2 consecutive iteration is smaller than " << scientific << ftol << endl;
 				return p;
 			}
 			fp=fret;
