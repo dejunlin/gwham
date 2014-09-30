@@ -257,7 +257,9 @@ int main(int argc, char* argv[]) {
   fcout << "#created " << pens.size() << " ensembles\n";
   for(auto& pmdp : pmdps) {
     auto itr = pmdp2ipens.equal_range(pmdp);
-    fcout << "#MDP file: " << pmdp->fname << " contains to the following ensembles: ";
+    fcout << "#MDP file: " << pmdp->fname << endl;
+    pmdp->print();
+    fcout << "#contains to the following ensembles: ";
     for(auto& it = itr.first; it != itr.second; ++it) {
       fcout << it->second << " ";
     }
@@ -273,7 +275,6 @@ int main(int argc, char* argv[]) {
     //create the time-series readers
     const bool needpotential = cmpens(pens)&(1<<Ensemble::DTemperature);
     for(const auto& pmdp : pmdps) {
-      pmdp->print();
       // if temperature are different among ensembles, we need to read potential energy
       auto vts = pmdp->CreateTimeSeries(needpotential);
   
