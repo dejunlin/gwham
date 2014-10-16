@@ -60,7 +60,7 @@ CreateMDPs(const vector<string>& MDPprefixes,
       try {
 	// check if the file exists
 	// if not, a FILEIO_Exception will be fired
-        fileio fio(fmdp, fstream::in, 1, 0, 1, MAXNLINE, ";#@");
+        fileio fio(fmdp, fstream::in, false, 0, 1, MAXNLINE, ";#@");
       } catch (FILEIO_Exception& fioex) {
 	continue;
       }
