@@ -39,8 +39,8 @@ histcounter readhist(const string fnhist, histogram& hist) {
   histcounter N = 0;
   do {
     const auto cols = fio_hist.line2val<string>();
-    //the format should be coord, val, counts
-    if(cols.size() != ndim*2 + 1) continue;
+    //the format should be coord, val, counts, ... (the rest are ignored)
+    if(cols.size() < ndim*2 + 1) continue;
     const vector<string> coordstr(cols.begin(), cols.begin()+ndim);
     histogram::gridcoord coord;
     strto(coord, coordstr);
