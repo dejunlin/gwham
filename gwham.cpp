@@ -44,7 +44,7 @@ histcounter readhist(const string fnhist, histogram& hist) {
     const vector<string> coordstr(cols.begin(), cols.begin()+ndim);
     histogram::gridcoord coord;
     strto(coord, coordstr);
-    const histogram::gridval n = stoul(cols.back());
+    const histogram::gridval n = stoul(cols[ndim*2]);
     hist[coord] = n;
     N += n;
   } while(fio_hist.readtsnb());
