@@ -64,11 +64,14 @@ class WHAM {
     //!perform WHAM iteration and update the density of state
     /**
      * @param[in] _record record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
-     * @param[in] hists Generic HISTOGRAM for each trajectory
+     * @param[in] _hists Generic HISTOGRAM for each trajectory
+     * @param[in] _V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
+     * @param[in] _N _N[k] is the number of samples the k'th trajectory has
+     * @param[in] _tol Tolerance for WHAM iteration
+     * @param[in] fseeds seeds for the free energy for each state
      * @param[in] _g[k][coord] Statistical inefficiency of the k'th trajectory in bin coord
-     * @param[in] V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
-     * @param[in] N N[k][l] is the number of samples the k'th trajectory visiting the l'th state. 
-     * @param[in] tol Tolerance for WHAM iteration 
+     * @param[in] ifmin if we minimize the likelihood function before WHAM iteration
+     * @param[in] _overlap the pairwise overlap among the histograms
      */
     WHAM(const map<coordtype, vector<uint> >& _record, 
          const vector<HISTOGRAM>& _hists, 
