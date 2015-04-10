@@ -50,12 +50,13 @@ vector<vector<uint> > buildnblist(const vector<vector<T>>& matrix) {
   return ans;
 }
 
-//HISTOGRAM class must provide public member function 'coord2val' that maps a coordinate to corresponding value
-//HISTOGRAM class must have member variable 'binsize' which is the size of bin along each dimension 
-//NARRAY class must have square bracket operator that maps a index (coordinate) to an element
-//NARRAY class must have member iterator type
-//NARRAY class must have member function find(coordtype) which given a coordinate return the iterator it points at
-//NARRAY class must have member function end() which return the past-the-end iterator
+/**
+* @brief solve the WHAM equation
+*
+* @tparam PENSEMBLE pointer type to the ensemble whose hamiltonian will be evaluated when needed
+* @tparam HISTOGRAM histogram class
+* @tparam NARRAY multidimensional array class
+*/
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
 class WHAM {
   typedef DensityOfState<PENSEMBLE,HISTOGRAM,NARRAY> DOStype;
