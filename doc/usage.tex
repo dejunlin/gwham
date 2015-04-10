@@ -1,0 +1,20 @@
+\section{Usage}
+The user can use the WHAM kernel as a library in his/her own
+program or to use the ``gwham'' program to compute the thermodynamic
+quantity of interest. 
+
+\subsection{Use the WHAM kernel}
+The user is strongly encouraged to read section~\ref{sec:impl} before using the
+WHAM kernel. The WHAM kernel is implemented in the C++ template class ``WHAM''
+in ``gwham.hpp''. All the WHAM calculation is done upon instantiation of this
+class, i.e., all the function calls are directly inside or nested in the
+constructor of the ``WHAM'' class. The ``WHAM'' class takes three template
+arguments: 1) the pointer to the generic ensemble class; 2) histogram class; 3)
+multidimensional array class. Its constructor expects a list of arguments
+described in the comments right over its declaration in ``gwham.hpp'' and will
+not be elaborated here. The description is straightforward and the user should
+read it carefully. Since the ``WHAM'' class is a template, there's no need to 
+link against it upon the compilation of whatever program the user is writing. 
+However, the user needs to link his/her program against the ``Hamiltonian'' 
+and ``Ensemble'' class objects (compiled from the respective ``hamiltonian.cpp''
+and ``ensemble.cpp'' file) if he/she uses it.
