@@ -1,3 +1,100 @@
 \section{Implementation}
 
+The WHAM kernel I wrote contains three major steps in solving
+equation~\ref{eq:WHAM1}: 
+1) Caching $\{N_{i}\exp(-H_{i,\mathbf{m}})\}_{i}$ in memory;
+2) Minimize function $F$ in equation~\ref{eq:Fexg}. This step is an optional;
+3) Solve for equation~\ref{eq:WHAM1} iteratively. (Note that the iteration is
+virtually skipped if step one results in a converged answer.) 
+I will give more details about these steps as well as the user interface
+in my implementation in the following sections. \change{Note that the 
+purpose of this section is not to elaborate the details of my implementation
+, as I don't and will not have the intention/time of doing so, 
+but to provide a general understanding of how my implementation works or
+how one could potentially implement their own WHAM program}. 
+
+\subsection{Caching $\{N_{i}\exp(-H_{i,\mathbf{m}})\}_{i}$}
+Because evaluating the exponential function is in general an expensive 
+operation, we can precompute $\{\exp(-H_{i,\mathbf{m}})\}_{i}$ or more effectively, 
+$\{N_{i}\exp(-H_{i,\mathbf{m}})\}_{i}$ before we do any minimization of iteration
+to save computation time. One caveat is that doing this could be 
+memory demanding especially when we're dealing with high-dimensional 
+reaction coordinate space with a large number of bins. My recommendation 
+is to perform initial WHAM runs with a small number of bins to obtain 
+a set of $\{g_{i}\}_{i}$, which can then be used to seed another round
+of WHAM with larger number of bins. My implementation will cache
+$\{N_{i}\exp(-H_{i,\mathbf{m}})\}_{i}$ in any case and it's thus worth watching 
+for the memory requirement in the initial run.
+
+\subsection{Minimizing $F$ in equation~\ref{eq:Fexg}}
+As shown by Zhu and Hummer~\cite{Zhu2012}, it's more efficient to minimize $F$
+as a function of $\Delta g_{ij} \equiv g_{i} - g_{j}$.  The form of such
+function was documented in their paper~\cite{Zhu2012} except that we need to
+replace the harmonic potential with the generalized Hamiltonian in
+section~\ref{sec:theory}. However, since we are dealing with a generalized form
+of Hamiltonian and typically multidimensional reaction coordinate, simply
+taking $i$ and $j$ as the nearest neighbors of sampling windows won't lead to
+high enough computational efficiency to justify the extra cost of calculating
+the gradient of $F$ as compare to simply solving equation~\ref{eq:WHAM1}
+iteratively. Although I've not come up with an analytic justification for
+pairing of $i$ and $j$ in general, I often found in practice that pairing $i$
+and $j$ when the corresponding histograms maximally overlap with each other
+works very well. This can be seen from equation~\ref{eq:dFdg} where
+$\frac{\partial F}{\partial g_{i}}$ is predominantly determined by those $j$
+which have significant number of samples in the bins $\mathbf{m}$ where
+$c_{i,\mathbf{m}}$ is non trivial, i.e., $i$ and $j$ histograms overlap significantly.
+Thus, the first step to minimization of $F$ is to construct a nearest neighbor 
+list of $g_{i}$ and $g_{j}$ where the corresponding histograms overlap maximally.
+This results in a tree-like structure with each $g_{i}$ being the node and 
+each $\Delta g_{ij}$ being the edge linking the two nodes $g_{i}$ and $g_{j}$.
+Note that inside my implementation, such a tree is not implemented in the 
+usual sense of tree structure in most computer program; it's rather a 
+``aggregation'' of nodes and edges that recognize one another by a map. 
+The reason I did this is I couldn't find any reliable C++ tree structure 
+implementation that meets my need. However, the construction of such a 
+tree needs to be done only once and is rather cheap operation in most of 
+the application to date (considering that most of the sampling simulations
+have less than $1000$ sampling windows to be analyzed by WHAM). After
+we got all the $\Delta g_{ij}$, the calculation of $F$ and its gradient
+is straightforward. It's thus easy to use any of of the minimization 
+algorithm to minimize $F$. In my implementation, I used Polak-Ribiere 
+conjugate gradient method with Brent’s line search~\cite{NumRec2007} but 
+the adaptation to other methods should be straightforward. 
+
+\subsection{Solve equation~\ref{eq:WHAM1}}
+The procedure of solving equation~\ref{eq:WHAM1} is very straightforward and
+will not be elaborated here. I just want to mention that in my implementation
+the evaluation of $\Omega_{\mathbf{m}}$ is in its own module module called the
+``DensityOfState'' so that the ``WHAM'' class is only responsible for checking
+the self-consistency in equation~\ref{eq:WHAM1}.  The ``DensityOfState'' class
+also provides some basic application program interfaces (APIs) such as the
+square bracket operator for computing other thermodynamic quantities as
+mentioned in section~\ref{sec:intro}.
+
+\subsection{Application Program Interfaces (APIs)}
+The section describes the APIs for preparing necessary data for WHAM. The three
+major components of APIs are parsing the sampling data, creating the histogram 
+and setting the Hamiltonian. 
+
+The sampling data is usually a time series generated from the simulation
+program. In the current implementation, the time series are not needed by WHAM
+kernel \textit{per se} but are directly binned into histogram. Depending on the
+simulation program used and the thermodynamic quantity of interest, the formats
+of the time series vary. I only implemented the data parser for GROMACS version
+4.6.3 (or potentially any version with compatible output format) but it should
+be straightforward to extend it to other data formats.  The users are
+encouraged to write their own data parser; as for users who are not proficient
+C++ user, it's also straightforward to transform your data into the supported
+GROMACS format and user the GROMACS APIs directly (TODO: I'll give more details
+in the next section).
+
+Histograms are represented by a multidimensional array implemented in the
+``gnarray'' class. The dimensionality is determined at run time (by the output 
+from the time-series data parser). The underlying data structure of the 
+``gnarray'' class is a map from the reaction coordinate values (or the bin)
+to a integer, i.e., the number of counts in the bin. Basic accessor APIs
+to the underlying array element are provided.
+
+The Hamiltonian is basically a functor that maps the reaction coordinates 
+to the potential energy. 
 
