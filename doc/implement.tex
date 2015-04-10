@@ -1,4 +1,4 @@
-\section{Implementation}
+\section{Implementation}\label{sec:impl}
 \change{The purpose of this section is not to elaborate the details of my
 implementation, as I don't and will not have the intention/time to do so,
 but to provide a general understanding of how my implementation works or how
@@ -94,7 +94,11 @@ to the underlying array element are provided.
 The Hamiltonian is basically a functor that maps the reaction coordinates 
 to the potential energy. The class ``Hamiltonian'' provides APIs to 
 compute the potential energy for all the reaction coordinate bins. It's 
-generalized to handle a wide range of potential energy functions.
+generalized to handle a wide range of potential energy functions. The 
+Hamiltonian is wrapped inside another class called ``Ensemble'', 
+which provides generic interface to access the Hamiltonian of different 
+thermodynamic ensembles. The ``Ensemble'' class along with its member
+``Hamiltonian'' is instantiated by a generic interfacial class (see below).
 
 To better organize the codes and provide more user-friendly interface, I also
 provide a generic interfacial class to link the 3 aforementioned components
