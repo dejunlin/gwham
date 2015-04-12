@@ -74,7 +74,7 @@ also provides some basic application program interfaces (APIs) such as the
 square bracket operator for computing other thermodynamic quantities as
 mentioned in section~\ref{sec:intro}.
 
-\subsection{Application Program Interfaces (APIs)}
+\subsection{Application Program Interfaces (APIs)}\label{sec:api}
 The section describes the APIs for preparing necessary data for WHAM. The three
 major components of APIs are parsing the sampling data, creating the histogram 
 and setting the Hamiltonian.
@@ -117,5 +117,5 @@ version 4.6.3 (or potentially any version with compatible output format) format
 but I believe the extension is straightforward. The users are encouraged to
 write their own data parser; as for users who are not proficient C++
 programmer, it's also straightforward to transform your data into the supported
-GROMACS format and user the GROMACS APIs directly (TODO: I'll give more details
-in the next section).
+GROMACS format and user the GROMACS APIs directly (I'll give more details
+in section~\ref{sec:usage}).

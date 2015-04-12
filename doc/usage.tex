@@ -1,4 +1,4 @@
-\section{Usage}
+\section{Usage} \label{sec:usage}
 The user can use the WHAM kernel as a library in his/her own
 program or to use the ``gwham'' program to compute the thermodynamic
 quantity of interest. 
@@ -18,3 +18,157 @@ link against it upon the compilation of whatever program the user is writing.
 However, the user needs to link his/her program against the ``Hamiltonian'' 
 and ``Ensemble'' class objects (compiled from the respective ``hamiltonian.cpp''
 and ``ensemble.cpp'' file) if he/she uses it.
+
+\subsection{Use the ``gwham'' executable}
+The ``gwham'' executable reads a set of simulation parameter files, parse the
+time series along the reaction coordinates (RCs) and compute the potential of
+mean force (PMF) along the RCs. For now, it can only read parameter and 
+time series files in GROMACS format but the users can always transform their 
+data into the GROMACS format in order to use it (see below).
+
+\subsubsection{File naming convention}\label{sec:fname}
+Each simulation parameter file corresponds to one simulation window and tells
+the ``gwham'' program how to read the time series, what the RCs and the
+Hamiltonians are. The time series are the data output from the simulation
+software and usually are the RC values as a function of time. The simulation
+parameter files and the time series files must be in ASCII and must be named by
+the following convention: ``prefix\_window\_run[suffix]'', where ``prefix'' is
+any arbitrary string that identifies this set of simulations and is provided as
+a command line argument to the ``gwham'' program (see below) and ``window'' is
+an index that is consistent between a simulation parameter file and a
+consecutive set of time series file which are further indexed by ``run''. The
+index ``run'' is there for the users' convenience because usually a simulation
+is run in chunks and produces a consecutive set of output files; ``run'' thus
+tells the program to identify each chunk by this unique index. Both ``window''
+and ``run'' are non-negative integers that start from 0. ``[suffix]'' is a
+string that's dependent on the specific MDP class (see section~\ref{sec:api})
+and tells the program what file it's about to read.  For example, if we have a
+set of $\mathbf{10}$ umbrella sampling simulations (``called foo'') in GROMACS
+with each consists of $\mathbf{5}$ runs, the simulation parameter files should
+be named as: ``foo\_0.mdp'', ``foo\_1.mdp'', $\cdots$, ``foo\_9.mdp'' and for
+the $i$'th ``mdp'' file, there should be $M$ time series files:
+``foo\_i\_0x.xvg'', ``foo\_i\_0x.xvg'', $\cdots$, ``foo\_i\_4x.xvg'' (where the
+``x.xvg'' suffix is expected by the ``GMXMDP'' class). 
+
+\subsubsection{Supported GROMACS free energy or PMF calculation schemes}
+The following GROMACS free energy calculation schemes are currently supported, i.e., 
+the options in ``mdp'' files that can be understood by the ``gwham'' program:
+
+\begin{enumerate}
+  \item \label{it:umb} PMF calculation via umbrella sampling 
+  \item \label{it:hrex} PMF calculation via umbrella sampling with Hamiltonian replica exchange 
+  \item \label{it:expens} PMF calculation via umbrella sampling in expanded ensemble 
+\end{enumerate}
+
+\change{Note that features~\ref{it:hrex} and \ref{it:expens} are only available
+for a in-house version of GROMACS 4.6.3 developed by me. Also note although
+``gwham'' can handle cases where the temperatures and/or pressures in different
+simulation windows vary, e.g., in a temperature replica exchange simulation or
+in a umbrella sampling simulation coupled to temperature replica exchange, the
+program further expects a set of ``ener.xvg'' files in addtion to the ``x.xvg''
+files and I have not tested such cases yet and the users might need to contact
+me for further instruction on this.} 
+
+\subsubsection{How to prepare input files for ``gwham''}\label{sec:fformat}
+For users who want to use ``gwham'' to analyse the data from GROMACS, it's
+sufficient to rename their files following the convention in
+section~\ref{sec:fname}. Alternatively,  you can generate symbolic links to the
+data according to the naming convention so you can keep your original data
+without renaming them. The syntax of the simulation parameter files (``mdp''
+files) and the time series ``x.xvg'' files should following strictly those
+documented in the GROMACS 4.6 manual. 
+
+Alternative to the time series file, the user can also supply the histograms
+directly so that the program won't need to transform the time series into
+histograms. There should be one histogram for each state/ensemble. Note that
+the number of state doesn't necessarily equal the number of simulations, e.g.,
+in a expanded ensemble simulation, and is automatically determined by the
+program when analysing the ``mdp'' files.  The histogram file should contain
+$2N+1$ columns, where $N$ is the dimensionality of the RCs, with the first $N$
+columns denotes the indices of the multidimensional grid, the following $N$
+columns denotes the RC values of the corresponding grid point and the last
+column denotes the number of samples in that grid point. Only grid points with 
+at least 1 sample needs to be specified.
+
+For those who are not GROMACS users, you need transform your original data into
+GROMACS 4.6 format in order to use ``gwham''. If you're interested, I strongly
+recommend you to read this documentation as well as the GROMACS 4.6 manual
+carefully and you're welcomed to contact me if you need any help. 
+
+\subsubsection{Command line arguments}
+It expects the list of arguments in the following order:
+
+\begin{enumerate}
+  \item File name prefix for simulation parameter files and time series file
+  (see section~\ref{sec:fname} for what this means)
+  \item The simulation parameter file suffix that tells ``gwham'' what types of
+  simulation package you're using -- \change{for now this has to be the string
+  ``mdp'', i.e., only GROMACS ``mdp'' files can be parsed.}
+  \item Number of simulation windows (see section~\ref{sec:fname} for what this
+  means)
+  \item Number of runs for each window (see section~\ref{sec:fname} for what
+  this means). Note that you can simply put a large enough integer here so that
+  the program will read as many runs as possible.
+  \item The indices (starting from $0$) of the RCs that you want to calculate
+  PMFs on. E.g., if you performed a 5-dimensional umbrella sampling and you
+  want to calculate the PMF along the 1st, the 3rd and the 4th dimension, you
+  should use ``0 2 3'' here.
+  \item Number of bins (deliminated by spaces) to use for histogramming for
+  each of the dimension of the RCs. E.g., if your umbrella sampling simulation
+  is along a 3-dimensional RC, you should use ``$n_{1} n_{2} n_{3}$'' to
+  specify how many bins you want.
+  \item Upper bounds (deliminated by spaces) to use for histogramming for
+  each of the dimension of the RCs.
+  \item lower bounds (deliminated by spaces) to use for histogramming for
+  each of the dimension of the RCs.
+  \item Tolerance for the error in converging the solution to WHAM equation.
+  \item Which data point onwards to be regarded as the first sample in all the
+  time series file.  If you want to exclude the first $N$ data points in all
+  the time series, you should put $N$ here. Note that the comments are not
+  counted as valid data since they are automatically ignored by the parser.
+  \item How frequently we skip reading data points in the time series, i.e.,
+  only read the time series only every this number of data points.
+  \item Which data point to be the last one included in the analyse. All the 
+  samples after this are excluded.
+  \item The name of a ``mdp'' file (without the ``.mdp'' suffix) that specifies 
+  the thermodynamic parameters of a ensemble where we want the PMF to be calculated.
+  E.g., if you want the PMF to be in $310$~K instead of $300$~K, you should prepare
+  a ``mdp'' file with the temperature specified as $310$~K.
+  \item A file contains the seeding values for the free energy in each state/ensemble.
+  The free energy values must be specified in one line deliminated by spaces. 
+  The number of values should match the number of states in the simulations or otherwise
+  the content of this file will be ignored. Note that the number of state doesn't 
+  necessarily equal the number of simulations, e.g., in a expanded ensemble simulation, 
+  and is automatically determined by the program when analysing the ``mdp'' files.
+  \item A boolean value ($1$ or $0$) that tells the program if to perform
+  minimization before WHAM iteration.
+  \item A boolean value ($1$ or $0$) that tells the program if we can directly reads 
+  in histogram instead of time series data. The format histogram file is documented in 
+  section~\ref{sec:fformat}.
+\end{enumerate}
+
+\subsection{Output from the ``gwham'' executable}
+The followings are printed to standard output when running ``gwham'':
+\begin{enumerate}
+  \item What type of command line arguments it's expecting
+  \item The arguments that are given
+  \item The names of the ``mdp'' file
+  \item The simulation parameters that it successfully reads in
+  \item The names of the ``x.xvg'' files (or potentially any time series files)
+  or histogram files
+  \item The histograms that it creates or reads
+  \item The index of the histograms that contribute to each bin
+  \item The overlap matrix (in percentage) between any pair of histograms
+  \item Seeding free energies in each state
+  \item Seeding free energy difference between any pair of states
+  \item The free energy difference during optimization (printed out every 100
+  steps of minimization)
+  \item Indication of whether convergence has been met or not for minimization
+  \item Free energies of each state during WHAM iteration (printed out every
+  100 steps of iteration)
+  \item Indication of whether convergence has been met for WHAM iteration
+  \item PMF along the specified dimensions of RCs as well as the corresponding
+  relative probability.  This contains $2N+2$ columns with the first $2N$ being
+  the specification of the indices as well as the RC values for each grid point
+  and the last two columns are the respective PMF and probability.
+\end{enumerate}
