@@ -8,8 +8,6 @@
 #include "metaprog_snippets.hpp"
 #include "likelihoodfunc.hpp"
 #include "minimizer/cg.hpp"
-#include "minimizer/bfgs.hpp"
-#include "minimizer/Simplex.hpp"
 #include <stdlib.h>
 #include <iterator>
 #include <vector>
