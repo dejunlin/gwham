@@ -14,7 +14,7 @@ option(MPREALCXX "Use mpfrc++" 50)
 set(CMAKE_CXX_FLAGS                "-Wall")
 set(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g")
 set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE        "-O4 -DNDEBUG -ffast-math")
+set(CMAKE_CXX_FLAGS_RELEASE        "-Ofast -DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
 
 add_executable(gwham gwham.cpp fileio.cpp fileio_utils.cpp gmxmdp.cpp hamiltonian.cpp ensemble.cpp) 
