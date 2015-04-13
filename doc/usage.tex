@@ -19,7 +19,7 @@ However, the user needs to link his/her program against the ``Hamiltonian''
 and ``Ensemble'' class objects (compiled from the respective ``hamiltonian.cpp''
 and ``ensemble.cpp'' file) if he/she uses it.
 
-\subsection{Use the ``gwham'' executable}
+\subsection{Use the ``gwham'' program}
 The ``gwham'' executable reads a set of simulation parameter files, parse the
 time series along the reaction coordinates (RCs) and compute the potential of
 mean force (PMF) along the RCs. For now, it can only read parameter and 
@@ -39,16 +39,20 @@ an index that is consistent between a simulation parameter file and a
 consecutive set of time series file which are further indexed by ``run''. The
 index ``run'' is there for the users' convenience because usually a simulation
 is run in chunks and produces a consecutive set of output files; ``run'' thus
-tells the program to identify each chunk by this unique index. Both ``window''
-and ``run'' are non-negative integers that start from 0. ``[suffix]'' is a
-string that's dependent on the specific MDP class (see section~\ref{sec:api})
-and tells the program what file it's about to read.  For example, if we have a
-set of $\mathbf{10}$ umbrella sampling simulations (``called foo'') in GROMACS
-with each consists of $\mathbf{5}$ runs, the simulation parameter files should
-be named as: ``foo\_0.mdp'', ``foo\_1.mdp'', $\cdots$, ``foo\_9.mdp'' and for
-the $i$'th ``mdp'' file, there should be $M$ time series files:
-``foo\_i\_0x.xvg'', ``foo\_i\_0x.xvg'', $\cdots$, ``foo\_i\_4x.xvg'' (where the
-``x.xvg'' suffix is expected by the ``GMXMDP'' class). 
+tells the program to identify each chunk by this unique index. E.g., due to the
+constraints on wall time allocation in a Linux cluster, a 30~$\mu$s simulation
+might be performed in $10$ consecutive chunks with each being $3$~$\mu$s and
+produce $10$ consecutive set of output files and these files should be
+identified by the ``run'' index of $0,1,\dotsc,9$.  Both ``window'' and ``run''
+are non-negative integers that start from 0. ``[suffix]'' is a string that's
+dependent on the specific MDP class (see section~\ref{sec:api}) and tells the
+program what file it's about to read.  For example, if we have a set of
+$\mathbf{10}$ umbrella sampling simulations (``called foo'') in GROMACS with
+each consists of $\mathbf{5}$ runs, the simulation parameter files should be
+named as: ``foo\_0.mdp'', ``foo\_1.mdp'', $\cdots$, ``foo\_9.mdp'' and for the
+$i$'th ``mdp'' file, there should be $M$ time series files: ``foo\_i\_0x.xvg'',
+``foo\_i\_0x.xvg'', $\cdots$, ``foo\_i\_4x.xvg'' (where the ``x.xvg'' suffix is
+expected by the ``GMXMDP'' class). 
 
 \subsubsection{Supported GROMACS free energy or PMF calculation schemes}
 The following GROMACS free energy calculation schemes are currently supported, i.e., 
@@ -172,3 +176,65 @@ The followings are printed to standard output when running ``gwham'':
   the specification of the indices as well as the RC values for each grid point
   and the last two columns are the respective PMF and probability.
 \end{enumerate}
+
+\subsubsection{Examples}
+An example for using ``gwham'' executable is provided in the ``example''
+directory along with this release. The data set is the PMF of 1 C16-KGGK
+lipopeptide binding to a POPE:POPG membrane as published in this
+paper~\cite{Lin2014}. The PMF was calculated using umbrella sampling along the
+Z component of the distance between the center of mass of the lipopeptide and
+the membrane bilayer.  The files are named with the prefix ``md0'' and the
+output are ``gwham\_mpreal\_min.out'', ``gwham\_mpreal\_nomin.out'' and
+``gwham\_mpreal\_min\_hist.out'' with ``min'', ``nomin'' and ``hist'' meaning
+minimization was performed, minimization was not performed and histograms were
+directly read, respectively. See section~\ref{sec:compile} for the meaning of
+``mpreal''. The PMFs are at the end of the corresponding output files and I've
+excerpted the PMFs into the respective ``pmf\_mpreal\_min'',
+``pmf\_mpreal\_nomin`` and ``pmf\_mpreal\_min\_hist''.
+
+\subsection{Using the ``mc'' program}
+The ``mc'' program run a Monte Carlo (with the Metropolis-Hastings
+algorithm) umbrella sampling on the following potential:
+\begin{equation}
+H(x_{0}, x_{1}, \dotsc, x_{i}, \dotsc, x_{N-1}) = \sum_{i=0}^{N-1} a x_{i}^{2}(b x_{i}^{2} + c)
+\label{eq:dblwell}
+\end{equation}
+and recover $H$ using the WHAM kernel. This is for testing the WHAM kernel.
+The ``mc'' program takes the list of arguments in the following order:
+\begin{enumerate}
+  \item $N$ in equation~\ref{eq:dblwell}
+  \item Number of bins in histogramming each dimension of H or each $x_{i}$
+  \item Upper bounds in histogramming each dimension of H or each $x_{i}$
+  \item Lower bounds in histogramming each dimension of H or each $x_{i}$
+  \item Number of windows in the umbrella sampling along each dimension of H, i.e., $x_{i}$
+  \item Number of Monte Carlo sampling steps for all the windows
+  \item Step size when moving along all $x_{i}$ in the Monte Carlo sampling
+  \item Tolerance for the error in converging the solution to WHAM equation
+  \item The indices (starting from $0$) of the RCs, i.e., the list of $i$ in
+  $x_{i}$, where you want the PMF to be printed out. E.g., if you performed a
+  5-dimensional umbrella sampling and you want to calculate the PMF along the
+  1st, the 3rd and the 4th dimension, you should use ``0 2 3'' here.
+\end{enumerate}
+The output of the ``mc'' program is similar to that of the ``gwham'' program
+except that it output which umbrella sampling it's currently performing on the
+fly.
+
+\subsection{Compilation} \label{sec:compile}
+The build system I use in the current release is CMake. The CMake configuration
+file (``CMakeLists.txt'') for building the ``gwham'' and ``mc'' executables is
+provided along with the release. I also provide 4 bash scripts for building the
+executables in Linux environment: a debug and a release builds as well as these
+two builds with ``mpreal'' (see section~\ref{sec:prec} for what this means)
+turned on. To use these bash scripts, download and unpack the source codes in a
+directory, say, /tmp, make a sub directory /tmp/build, copy one of the bash
+scripts in /tmp/build and execute it. The precision for ``mpreal'' is $20$ for
+release build and $50$ for debug build. The user can change the precision in
+the corresponding build script by a assigning different value to the
+``MPREALCXX'' macro when executing the ``cmake'' command. \change{Note that
+these bash scripts use gcc as the compiler and assume a default path
+(``/usr/local'') to the STL library and the user might need to change them. To
+use the CMake build system with the current release, you need to have CMake up
+to at least version 3.1.0; you also need to have ``GNU'' gcc up to at least
+version 4.9 if you are using it as the compiler. Other compilers with the
+complete set of C++11 features implemented might also be used although I have
+not tested those cases.}

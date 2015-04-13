@@ -74,6 +74,19 @@ also provides some basic application program interfaces (APIs) such as the
 square bracket operator for computing other thermodynamic quantities as
 mentioned in section~\ref{sec:intro}.
 
+\subsection{A note on floating point precision required by the WHAM kernel}\label{sec:prec}
+In order to use minimization of $F$, a high-precision floating point type is
+often necessary to maintain numerical stability, especially in case where the
+free energies of different states span several orders of magnitude. In the
+current implementation, I used the MPFR C++ library by
+Holoborodko~\cite{mpfrcpp2014} (version last updated in 2014-07-04 with my
+slight tweaks for C++11 compatibility). The floating point type in this library
+is called ``mpreal''. I provide a set of build scripts to build the ``gwham''
+program with this library for the user's convenience. The precision of
+``mpreal'' is embedded in these build scripts and is set at compilation time
+with the default of $20$ digits for release build and $50$ for debug build. For
+details about how to compile the programs, see section~\ref{sec:compile}.
+
 \subsection{Application Program Interfaces (APIs)}\label{sec:api}
 The section describes the APIs for preparing necessary data for WHAM. The three
 major components of APIs are parsing the sampling data, creating the histogram 
