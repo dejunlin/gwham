@@ -1,0 +1,111 @@
+; VARIOUS PREPROCESSING OPTIONS =
+title	= UMBRELLA PULL md1 of 1lipo-popeg AT  DISTANCE OF  ANGSTROM
+cpp                      = /usr/bin/cpp
+
+; RUN CONTROL PARAMETERS =
+integrator               = md
+; start time and timestep in ps =
+tinit                    = 0.0
+dt                       = 0.01
+nsteps                   = 5000000   ; 1 ns
+; 25ns of simulation (0.01 for 2500000)
+; 1 ns of simulation (0.001 for 1000000)
+; number of steps for center of mass motion removal =
+nstcomm                  = 1
+comm-grps		 = System
+
+; OUTPUT CONTROL OPTIONS =
+; Output frequency for coords (x), velocities (v) and forces (f) =
+nstxout                  = 10000	; every 100 ps
+nstvout                  = 10000
+nstfout                  = 10000
+; Output frequency for energies to log file and energy file =
+nstlog                   = 1000		; every 10 ps
+nstenergy                = 1000
+; Output frequency and precision for xtc file =
+nstxtcout                = 10000
+xtc_precision            = 100
+; This selects the subset of atoms for the xtc file. You can =
+; select multiple groups. By default all atoms will be written. =
+xtc-grps                 =
+; Selection of energy groups =
+energygrps               = System
+
+; NEIGHBORSEARCHING PARAMETERS =
+; nblist update frequency =
+nstlist                  = 5
+; nstlist decreased from 10 (Marrink et al, 2010, Comment on timestep)
+; ns algorithm (simple or grid) =
+ns_type                  = grid
+; Periodic boundary conditions: xyz or none =
+pbc                      = xyz
+; nblist cut-off         =
+rlist                    = 1.4
+; rlist increased from 1.2
+
+; OPTIONS FOR ELECTROSTATICS AND VDW =
+; Method for doing electrostatics =
+coulombtype              = shift
+rcoulomb_switch          = 0.0
+rcoulomb                 = 1.2
+; Dielectric constant (DC) for cut-off or DC of reaction field =
+epsilon_r                = 15
+; Method for doing Van der Waals =
+vdw_type                 = Shift
+; cut-off lengths        =
+rvdw_switch              = 0.9
+rvdw                     = 1.2
+; Apply long range dispersion corrections for Energy and Pressure =
+DispCorr                 = No
+
+; OPTIONS FOR WEAK COUPLING ALGORITHMS =
+; Temperature coupling   =
+tcoupl                   = nose-hoover
+; Groups to couple separately =
+tc-grps                  = System
+; Time constant (ps) and reference temperature (K) =
+tau_t                    = 1.0
+ref_t                    = 300
+; Pressure coupling      =
+Pcoupl                   = parrinello-rahman
+Pcoupltype               = semiisotropic
+; Time constant (ps), compressibility (1/bar) and reference P (bar) =
+tau_p                    = 2.0 2.0
+compressibility          = 3e-5 3e-5
+ref_p                    = 1.0 1.0
+
+; GENERATE VELOCITIES FOR STARTUP RUN =
+gen_vel                  = Yes
+gen_temp                 = 300
+; temp was 105
+gen_seed                 = -1
+
+; OPTIONS FOR BONDS     =
+constraints              = none
+; Type of constraint algorithm =
+constraint_algorithm     = Lincs
+; Do not constrain the start configuration =
+unconstrained_start      = no
+; Highest order in the expansion of the constraint coupling matrix =
+lincs_order              = 4
+; Lincs will write a warning to the stderr if in one step a bond =
+; rotates over more degrees than =
+lincs_warnangle          = 30
+
+; Pull code
+pull		= umbrella
+pull_geometry	= distance	; can't get PMF with direction
+pull_dim	= N N Y
+pull_start	= no
+pull_ngroups	= 1
+pull_group0	= POPEG
+pull_group1	= LIPO
+pull_init1	= 1.7
+pull_rate1	= 0
+pull_k1        = 1000		; kJ mol^-1 nm^-2
+;pull_group1	= LIPO
+;pull_init1	= 0
+;pull_rate1	= 0.0
+;pull_k1	= 1000		; kJ mol^-1 nm^-2
+pull_nstxout	= 1		; every 10 fs
+pull_nstfout	= 1		; every 10 fs
