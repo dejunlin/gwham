@@ -19,6 +19,23 @@ However, the user needs to link his/her program against the ``Hamiltonian''
 and ``Ensemble'' class objects (compiled from the respective ``hamiltonian.cpp''
 and ``ensemble.cpp'' file) if he/she uses it.
 
+\subsubsection{Supported features}
+While the WHAM kernel is ignorant about the thermodynamic ensemble or the form
+of the corresponding Hamiltonian, the Ensemble class has only implemented NVE,
+NVT and NPT ensemble and the Hamiltonian class assumes the form of the
+Hamiltonian to be a linear combination of an arbitrary number of scalar
+functions. However, it's very straightforward to extend these two C++ classes 
+to include other ensembles and other forms of Hamiltonians. To that end, a 
+template functor class in ``functor.hpp'' is provided for implementing other 
+forms of Hamiltonians. 
+
+In general, any thermodynamic observables described in equation~\ref{eq:Oavg_q}
+can be calculated once we have solved equation~\ref{eq:WHAM1} but I only 
+implemented in the WHAM class the calculation of PMF along the specified RCs.
+The extension to the computation of other observables can be implemented as 
+member function of the WHAM class or as an external function of the density 
+of state.
+
 \subsection{Use the ``gwham'' program}
 The ``gwham'' executable reads a set of simulation parameter files, parse the
 time series along the reaction coordinates (RCs) and compute the potential of
