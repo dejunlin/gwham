@@ -5,7 +5,7 @@
  *
  *       Filename:  utils.hpp
  *
- *    Description:  
+ *    Description:  Utility functions from Numerical Recipes 
  *
  *        Version:  1.0
  *        Created:  22/09/14 17:56:58
