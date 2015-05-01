@@ -453,7 +453,6 @@ class LikeliHoodFunc {
         }
         graddf.assign(gradf.size(), 0.0);
         const auto& ports = tree.getports();
-        const auto& nodes = tree.getnodes();
         for(uint i = 0; i < graddf.size(); ++i) {
           auto& gdf = graddf[i];
           const auto& port = ports[i];
