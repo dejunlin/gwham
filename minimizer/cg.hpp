@@ -26,6 +26,12 @@
 #include "../exception.hpp"
 #include "utils.hpp"
 
+#ifdef MPREALCXX
+static const uint VALMAXDIGITS10 = numeric_limits<valtype>::max_digits10();
+#else
+static const uint VALMAXDIGITS10 = numeric_limits<valtype>::max_digits10;
+#endif
+
 using namespace std;
 
 typedef valtype Doub; // default floating type

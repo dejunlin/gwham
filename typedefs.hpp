@@ -39,10 +39,8 @@ static const ulong MAXNLINE = ULONG_MAX; //maximum number of lines that can be c
 using mpfr::mpreal;
 typedef mpreal valtype;
 static constexpr uint MPREAL_PRECISION = MPREALCXX;
-static const uint VALMAXDIGITS10 = numeric_limits<valtype>::max_digits10();
 #else
 typedef double valtype; //the data type we histogram
-static const uint VALMAXDIGITS10 = numeric_limits<valtype>::max_digits10;
 #endif
 
 static const enable_if<numeric_limits<valtype>::has_quiet_NaN, valtype>::type
