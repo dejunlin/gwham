@@ -455,7 +455,7 @@ GCD ( T a, T b )
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  LCM
- *  Description:  Largets common multiple
+ *  Description:  Least common multiple
  * =====================================================================================
  */
 template <class T>
