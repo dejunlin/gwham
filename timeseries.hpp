@@ -122,20 +122,20 @@ class TimeSeries
       vector<INPUT> out(colids.size(),INPUT{0});
       if(fio.lb == 0 && fio.ls == 1 && fio.le >= MAXNLINE) {
         fio.skipemptylns();
-        do {
+        while(fio.readtsnb()) {
           const vector<valtype> cols(fio.line2val());
           for(uint i = 0; i < colids.size(); ++i) { out[i] = cols[colids[i]]; }
           dproc(out);
           ++Nl;
-        } while(fio.readtsnb());
+        }
       } else {
         fio.skipemptylns();
-        do {
+        while(fio.readts()) {
           const vector<valtype> cols(fio.line2val());
           for(uint i = 0; i < colids.size(); ++i) { out[i] = cols[colids[i]]; }
           dproc(out);
           ++Nl;
-        } while(fio.readts());
+        }
       }
       return Nl;
     }

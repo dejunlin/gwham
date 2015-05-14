@@ -29,9 +29,17 @@ class fileio {
     __attribute__((always_inline))
     #endif
     void skipemptylns() {
+      auto pos = fs.tellg(); 
       while(getline(fs, line)) {
-        if(emptyline()) { continue; }
-	else { break; }
+        if(emptyline()) { pos = fs.tellg(); continue; }
+	else {
+          //when we reach first non empty line, it has been stored 
+          //in line already, so we need to clear the buffer and 
+	  //jump back one line 
+	  line.clear();
+	  fs.seekg(pos);
+	  break; 
+	}
       }
     }
 
