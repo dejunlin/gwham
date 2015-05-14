@@ -197,11 +197,13 @@ int main(int argc, char* argv[]) {
   const vector<valtype> lv = split<valtype>(argv[k++]); 
   //tolerance for WHAM iteration
   const valtype tol = atof(argv[k++]);
-  //first line to read (excluding comment-lines) in the x.xvg files
+  //first time point to read (excluding comment-lines) in the x.xvg files
+  //Here I make the assumption that the first datum
+  //corresponds to the starting point and should always be skipped
   const linecounter rcvbegin = stoul(argv[k++]);
-  //Only read every stride lines (excluding comment-lines) in the x.xvg files
+  //Only read every this number of time points (excluding comment-lines) in the x.xvg files
   const linecounter rcvstride = stoul(argv[k++]); 
-  //last line to read (excluding comment-lines) in the x.xvg files
+  //last time point to read (excluding comment-lines) in the x.xvg files
   const linecounter rcvend = stoul(argv[k++]); 
   //the PMF or any analysis will be done in the ensembles specified by these MDP files
   const vector<string> mdp0prefixes = split<string>(argv[k++]);
@@ -286,9 +288,21 @@ int main(int argc, char* argv[]) {
   
       // we overwrite the stride here
       for(auto& ts : vts) {
-        ts.fio.lb = rcvbegin;
-        ts.fio.ls *= rcvstride;
-        ts.fio.le = rcvend;
+	const auto& tperline = ts.nst;
+	if(rcvbegin < tperline) {
+          throw(General_Exception("Input arguments rcvbegin ("+tostr(rcvbegin)+") is smaller than the number of line ("+tostr(tperline)+") in file: "+ts.fnsuffix));
+	}
+	if(rcvstride < tperline) {
+          throw(General_Exception("Input arguments rcvstride ("+tostr(rcvstride)+") is smaller than the number of line ("+tostr(tperline)+") in file: "+ts.fnsuffix));
+	}
+	if(rcvend < tperline) {
+          throw(General_Exception("Input arguments rcvend ("+tostr(rcvend)+") is smaller than the number of line ("+tostr(tperline)+") in file: "+ts.fnsuffix));
+	}
+	//Here I make the assumption that the first datum
+	//corresponds to the starting point and should always be skipped
+        ts.fio.lb = rcvbegin/tperline + 1;
+        ts.fio.ls *= (rcvstride == MAXNLINE ? 1 : rcvstride/tperline);
+        ts.fio.le = (rcvend == MAXNLINE ? rcvend : rcvend/tperline);
       }
   
       const auto tsprefix = getfnfixes(pmdp->fname)[0];
