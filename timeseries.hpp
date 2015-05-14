@@ -48,7 +48,7 @@ class TimeSeries
     //! Total number of columns where are interested in
     const ulong oNcol = 0;
     //! How many units of time per line of this time-series correspond to
-    const ulong nst = 0;
+    const valtype nst = 0;
   protected:
     /* ====================  METHODS       ======================================= */
 
@@ -59,7 +59,7 @@ class TimeSeries
     typedef decltype(TimeSeries<INPUT>::Mask) MaskT;
     constexpr static int Nbit = numeric_limits<MaskT>::digits;
     /* ====================  LIFECYCLE     ======================================= */
-    TimeSeries (fileio&& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol, const ulong _nst) :
+    TimeSeries (fileio&& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol, const valtype _nst) :
       fio(std::move(_fio)),
       fnsuffix(_fnsuffix),
       Mask(_Mask),
@@ -68,7 +68,7 @@ class TimeSeries
       nst(_nst)
       { init(); };
 
-    TimeSeries (const fileio& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol, const ulong _nst) : 
+    TimeSeries (const fileio& _fio, const string& _fnsuffix, const ulong _Mask, const ulong _iNcol, const ulong _oNcol, const valtype _nst) : 
       fio(_fio), 
       fnsuffix(_fnsuffix),
       Mask(_Mask),

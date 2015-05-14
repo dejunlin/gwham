@@ -289,20 +289,20 @@ int main(int argc, char* argv[]) {
       // we overwrite the stride here
       for(auto& ts : vts) {
 	const auto& tperline = ts.nst;
-	if(rcvbegin < tperline) {
-          throw(General_Exception("Input arguments rcvbegin ("+tostr(rcvbegin)+") is smaller than the number of line ("+tostr(tperline)+") in file: "+ts.fnsuffix));
+	if(rcvbegin != 0 && rcvbegin < tperline) {
+          throw(General_Exception("Input arguments rcvbegin ("+tostr(rcvbegin)+") is smaller than the output frequency ("+tostr(tperline)+") in file: "+ts.fnsuffix));
 	}
 	if(rcvstride < tperline) {
-          throw(General_Exception("Input arguments rcvstride ("+tostr(rcvstride)+") is smaller than the number of line ("+tostr(tperline)+") in file: "+ts.fnsuffix));
+          throw(General_Exception("Input arguments rcvstride ("+tostr(rcvstride)+") is smaller than the output frequency ("+tostr(tperline)+") in file: "+ts.fnsuffix));
 	}
 	if(rcvend < tperline) {
-          throw(General_Exception("Input arguments rcvend ("+tostr(rcvend)+") is smaller than the number of line ("+tostr(tperline)+") in file: "+ts.fnsuffix));
+          throw(General_Exception("Input arguments rcvend ("+tostr(rcvend)+") is smaller than the output frequency ("+tostr(tperline)+") in file: "+ts.fnsuffix));
 	}
 	//Here I make the assumption that the first datum
 	//corresponds to the starting point and should always be skipped
-        ts.fio.lb = rcvbegin/tperline + 1;
-        ts.fio.ls *= (rcvstride == MAXNLINE ? 1 : rcvstride/tperline);
-        ts.fio.le = (rcvend == MAXNLINE ? rcvend : rcvend/tperline);
+        ts.fio.lb = linecounter(rcvbegin/tperline + 1);
+        ts.fio.ls = linecounter(ts.fio.ls * (rcvstride == MAXNLINE ? 1 : rcvstride/tperline));
+        ts.fio.le = linecounter(rcvend == MAXNLINE ? rcvend : rcvend/tperline);
       }
   
       const auto tsprefix = getfnfixes(pmdp->fname)[0];
