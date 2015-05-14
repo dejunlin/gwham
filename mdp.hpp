@@ -53,6 +53,8 @@ class MDP
     //! File name 
     const string fname;
   protected:
+    //! Time step
+    valtype dt = 0;
     //! Boltzman constant
     valtype kB = Boltzmannkcal;
     /** The following are expanded ensemble parameters.
@@ -85,22 +87,24 @@ class MDP
   public:
     /* ====================  LIFECYCLE     ======================================= */
     //! constructor (target)
-    MDP (const string& _fname, const valtype& _kB) : 
+    MDP (const string& _fname, const valtype& _dt, const valtype& _kB) : 
       fname(_fname),
+      dt(_dt),
       kB(_kB)
       {};
     //! constructor (kB in kcal/mol)
     MDP (const string& _fname) : 
-      MDP(_fname, Boltzmannkcal)
+      MDP(_fname, 0, Boltzmannkcal)
       {};
     //! copy constructor
     MDP (const MDP& src) : 
-      MDP(src.fname, src.kB)
+      MDP(src.fname, src.dt, src.kB)
       {
 	*this = src;
       };
     //! copy assignment
     MDP& operator=(const MDP& src) {
+      dt = src.getdt();
       kB = src.getkB();
       Ts = src.getTs();
       Ps = src.getPs();
@@ -126,6 +130,8 @@ class MDP
     bool hasLtemp() const { return !iszero(Ls[Ltemp]); }
     bool hasLpress() const { return !iszero(Ls[Lpress]); }
     bool isExpandedEnsemble() const { return Nstates > 1; };
+
+    const valtype& getdt() const { return dt; };
     const valtype& getkB() const { return kB; };
     const uint& getNstates() const { return Nstates; };
     const vector<valtype>& getTs() const { return Ts; }

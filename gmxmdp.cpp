@@ -83,7 +83,7 @@ const map<string, bool> GMXMDP::str2dim =
   {"N", 0},
 };
 
-GMXMDP::GMXMDP(const string& fname) : MDP(fname, BoltzmannkJ), ifinit(this->initopts()) {
+GMXMDP::GMXMDP(const string& fname) : MDP(fname, 0, BoltzmannkJ), ifinit(this->initopts()) {
   fileio fio(fname, fstream::in, 1, 0, 1, MAXNLINE, ";");
 
   /** The followings the expected regex pattern for scalar and vector options in mdp
@@ -154,7 +154,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
     const linecounter iNcol = 3 + NFEPLambdas - 2 + 3 + Nstates + hasPressure();
     // we only need as much as the number samples in the x.xvg file
     const linecounter ls = linecounter(nstdhdlcv/nstdhdl); 
-    ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "dhdl.xvg", 2, iNcol, 1, nstdhdl);
+    ans.emplace_back(fileio(fstream::in, false, 0, ls, MAXNLINE, "#@"), "dhdl.xvg", 2, iNcol, 1, nstdhdl*dt);
   }
 
   // If we need to read potential energy
@@ -163,7 +163,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
     const ulong Mask = 2; 
     const ulong iNcol = 2;
     const ulong oNcol = 1;
-    ans.emplace_back(fileio(fstream::in, false, 0, lse, MAXNLINE, "#@"), "ener.xvg", Mask, iNcol, oNcol, nstenergy);
+    ans.emplace_back(fileio(fstream::in, false, 0, lse, MAXNLINE, "#@"), "ener.xvg", Mask, iNcol, oNcol, nstenergy*dt);
   }
 
   const linecounter lsx = linecounter(nstcv/nstx);
@@ -176,7 +176,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
       ulong Mask = 0;
       for(int i = 1; i <= ncntgrps; ++i)  Mask |= (1<<i);
       const ulong iNcol = ncntgrps + 1;
-      ans.emplace_back(fileio(fstream::in, true, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, ncntgrps, nstx);
+      ans.emplace_back(fileio(fstream::in, true, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, ncntgrps, nstx*dt);
       break;
     }
     default: {
@@ -184,7 +184,7 @@ vector<TimeSeries<valtype>> GMXMDP::CreateTimeSeries(const bool& requirepot) con
       // for each pull-group, we have one column of x and one column of dx and we only need dx
       for(int i = 2; i <= 2*npgrps; i+=2)  Mask |= (1<<i);
       const ulong iNcol = 2*npgrps + 1;
-      ans.emplace_back(fileio(fstream::in, true, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, npgrps, nstx);
+      ans.emplace_back(fileio(fstream::in, true, 0, lsx, MAXNLINE, "#@"), "x.xvg", Mask, iNcol, npgrps, nstx*dt);
       break;
     }
   }

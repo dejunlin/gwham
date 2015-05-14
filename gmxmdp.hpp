@@ -184,6 +184,7 @@ class GMXMDP : public MDP
     bool initopts() {
       key2val =
       {
+	{"dt", dt},
         {"ref-t", T},
         {"ref_t", T},
         {"ref-p", P},
