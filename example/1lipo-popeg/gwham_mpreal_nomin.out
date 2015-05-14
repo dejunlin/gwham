@@ -1,5 +1,5 @@
 #Usage: gwham sysname mdpsuffixes nwin nrun rcprint nbins hv lv tol rcvbegin rcvstride rcvend mdp0prefixes fseeds ifmin ifreadhist
-# 'gwham' 'md0' 'mdp' '35' '1' '0' '300' '5.0' '1.5' '1e-16' '0' '1' '-1' 'nvt' '' '0' '0' 
+# 'gwham' 'md0' 'mdp' '35' '1' '0' '300' '5.0' '1.5' '1e-16' '0' '-1' '-1' 'nvt' '' '0' '0' 
 #Opening file: md0_0.mdp
 #Opening file: md0_0.mdp
 #Opening file: md0_1.mdp
@@ -73,6 +73,7 @@
 #created 35 ensembles
 #MDP file: md0_0.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -140,6 +141,7 @@
 #contains to the following ensembles: 0 
 #MDP file: md0_1.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -207,6 +209,7 @@
 #contains to the following ensembles: 1 
 #MDP file: md0_2.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -274,6 +277,7 @@
 #contains to the following ensembles: 2 
 #MDP file: md0_3.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -341,6 +345,7 @@
 #contains to the following ensembles: 3 
 #MDP file: md0_4.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -408,6 +413,7 @@
 #contains to the following ensembles: 4 
 #MDP file: md0_5.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -475,6 +481,7 @@
 #contains to the following ensembles: 5 
 #MDP file: md0_6.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -542,6 +549,7 @@
 #contains to the following ensembles: 6 
 #MDP file: md0_7.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -609,6 +617,7 @@
 #contains to the following ensembles: 7 
 #MDP file: md0_8.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -676,6 +685,7 @@
 #contains to the following ensembles: 8 
 #MDP file: md0_9.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -743,6 +753,7 @@
 #contains to the following ensembles: 9 
 #MDP file: md0_10.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -810,6 +821,7 @@
 #contains to the following ensembles: 10 
 #MDP file: md0_11.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -877,6 +889,7 @@
 #contains to the following ensembles: 11 
 #MDP file: md0_12.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -944,6 +957,7 @@
 #contains to the following ensembles: 12 
 #MDP file: md0_13.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1011,6 +1025,7 @@
 #contains to the following ensembles: 13 
 #MDP file: md0_14.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1078,6 +1093,7 @@
 #contains to the following ensembles: 14 
 #MDP file: md0_15.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1145,6 +1161,7 @@
 #contains to the following ensembles: 15 
 #MDP file: md0_16.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1212,6 +1229,7 @@
 #contains to the following ensembles: 16 
 #MDP file: md0_17.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1279,6 +1297,7 @@
 #contains to the following ensembles: 17 
 #MDP file: md0_18.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1346,6 +1365,7 @@
 #contains to the following ensembles: 18 
 #MDP file: md0_19.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1413,6 +1433,7 @@
 #contains to the following ensembles: 19 
 #MDP file: md0_20.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1480,6 +1501,7 @@
 #contains to the following ensembles: 20 
 #MDP file: md0_21.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1547,6 +1569,7 @@
 #contains to the following ensembles: 21 
 #MDP file: md0_22.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1614,6 +1637,7 @@
 #contains to the following ensembles: 22 
 #MDP file: md0_23.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1681,6 +1705,7 @@
 #contains to the following ensembles: 23 
 #MDP file: md0_24.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1748,6 +1773,7 @@
 #contains to the following ensembles: 24 
 #MDP file: md0_25.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1815,6 +1841,7 @@
 #contains to the following ensembles: 25 
 #MDP file: md0_26.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1882,6 +1909,7 @@
 #contains to the following ensembles: 26 
 #MDP file: md0_27.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -1949,6 +1977,7 @@
 #contains to the following ensembles: 27 
 #MDP file: md0_28.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -2016,6 +2045,7 @@
 #contains to the following ensembles: 28 
 #MDP file: md0_29.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -2083,6 +2113,7 @@
 #contains to the following ensembles: 29 
 #MDP file: md0_30.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -2150,6 +2181,7 @@
 #contains to the following ensembles: 30 
 #MDP file: md0_31.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -2217,6 +2249,7 @@
 #contains to the following ensembles: 31 
 #MDP file: md0_32.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -2284,6 +2317,7 @@
 #contains to the following ensembles: 32 
 #MDP file: md0_33.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
@@ -2351,6 +2385,7 @@
 #contains to the following ensembles: 33 
 #MDP file: md0_34.mdp
 #                         kB = 0.0083144621                  
+#                         dt = 0.01                          
 #             mc-temperature = nan                           
 #                      ref-p = 1                             
 #                      ref-t = 300                           
