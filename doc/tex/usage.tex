@@ -67,8 +67,8 @@ program what file it's about to read.  For example, if we have a set of
 $\mathbf{10}$ umbrella sampling simulations (``called foo'') in GROMACS with
 each consists of $\mathbf{5}$ runs, the simulation parameter files should be
 named as: ``foo\_0.mdp'', ``foo\_1.mdp'', $\cdots$, ``foo\_9.mdp'' and for the
-$i$'th ``mdp'' file, there should be $M$ time series files: ``foo\_i\_0x.xvg'',
-``foo\_i\_0x.xvg'', $\cdots$, ``foo\_i\_4x.xvg'' (where the ``x.xvg'' suffix is
+$i$'th ``mdp'' file, there should be $5$ time series files: ``foo\_i\_0x.xvg'',
+``foo\_i\_1x.xvg'', $\cdots$, ``foo\_i\_4x.xvg'' (where the ``x.xvg'' suffix is
 expected by the ``GMXMDP'' class). 
 
 \subsubsection{Supported GROMACS free energy or PMF calculation schemes}
@@ -144,13 +144,20 @@ It expects the list of arguments in the following order:
   each of the dimension of the RCs.
   \item Tolerance for the error in converging the solution to WHAM equation.
   \item Which data point onwards to be regarded as the first sample in all the
-  time series file.  If you want to exclude the first $N$ data points in all
-  the time series, you should put $N$ here. Note that the comments are not
-  counted as valid data since they are automatically ignored by the parser.
+  time series file. The data points are assumed to be ordered (ascendingly) by
+  time and the unit of time is the default defined by the respective program
+  that's responsible for generated the data. For example, using $N$ here for
+  GROMACS means that you want to exclude the first $N$~ns of data in all the
+  time series. Note that the comments are not counted as valid data since they
+  are automatically ignored by the parser.
   \item How frequently we skip reading data points in the time series, i.e.,
-  only read the time series only every this number of data points.
-  \item Which data point to be the last one included in the analyse. All the 
-  samples after this are excluded.
+  read the time series at this interval. The unit of time is the default
+  defined by the respective program that's responsible for generated the data.
+  A ``-1'' value for this argument means all data points will be included.
+  \item Which data point to be the last one included in the analyse. All the
+  samples after this are excluded. The unit of time is the default defined by
+  the respective program that's responsible for generated the data. A ``-1''
+  value for this argument means all data points will be included.
   \item The name of a ``mdp'' file (without the ``.mdp'' suffix) that specifies 
   the thermodynamic parameters of a ensemble where we want the PMF to be calculated.
   E.g., if you want the PMF to be in $310$~K instead of $300$~K, you should prepare
