@@ -37,7 +37,7 @@ histcounter readhist(const string fnhist, histogram& hist) {
   const auto ndim = hist.getdim();
   fio_hist.skipemptylns();
   histcounter N = 0;
-  do {
+  while(fio_hist.readtsnb()) {
     const auto cols = fio_hist.line2val<string>();
     //the format should be coord, val, counts, ... (the rest are ignored)
     if(cols.size() < ndim*2 + 1) continue;
@@ -47,7 +47,7 @@ histcounter readhist(const string fnhist, histogram& hist) {
     const histogram::gridval n = stoul(cols[ndim*2]);
     hist[coord] = n;
     N += n;
-  } while(fio_hist.readtsnb());
+  }
   return N;
 }
 
@@ -332,6 +332,7 @@ int main(int argc, char* argv[]) {
     for(uint i = 0; i < pens.size(); ++i) {
       const string fnhist = sysname + "_" + tostr(i) + ".hist";
       Nsamples[i] = readhist(fnhist, hists[i]);
+      cout << "#Read " << Nsamples[i] << " sample\n";
     }
   }
   fcout.width(10);
