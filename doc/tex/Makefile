@@ -1,6 +1,8 @@
 NAME=          doc 
 BIBTEXSRCS=    dejun.bib
 USE_PDFLATEX= 1
+PDFLATEX= `which pdflatex`
+BIBTEX= `which bibtex`
 PDFLATEX_FLAGS=-shell-escape
 VIEWPDF= evince
 #USE_DVIPDFM=   0   # not clear I want this -- goes straight to pdf
