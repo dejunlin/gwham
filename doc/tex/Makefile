@@ -1,5 +1,5 @@
 NAME=          doc 
-BIBTEXSRCS=    dejun.bib
+BIBTEXSRCS=    gwham.bib
 USE_PDFLATEX= 1
 PDFLATEX= `which pdflatex`
 BIBTEX= `which bibtex`
