@@ -1,0 +1,39 @@
+# -*- mode: python -*-
+# SCons build file
+
+import os
+
+
+# If using dot2tex, uncomment the following.
+#
+# LaTeX will not error out if dot2tex is not found, but without it, we can't
+# generate our Graphviz graphs. Don't let execution continue if it isn't found.
+# from distutils.spawn import find_executable
+# if find_executable('dot2tex') is None:
+#     raise SystemExit("SConstruct: program not found: dot2tex")
+
+
+# Use this to inherit the PATH environmental variable if necessary.
+#
+# This will be necessary, e.g., for finding pygmentize for minted installed in
+# the Python user directory (e.g., ~/.local).
+# env = Environment(ENV={'PATH': os.environ['PATH']})
+# env = Environment()
+env = Environment(ENV=os.environ)
+
+# Use LuaTeX instead of pdfTeX.
+env.Replace(PDFLATEX='pdflatex')
+
+# Use Biber instead of BiBTeX.
+env.Replace(BIBTEX='bibtex')
+
+# Shell escape. Needed by minted and dot2tex to name a few.
+env.AppendUnique(PDFLATEXFLAGS='--shell-escape')
+
+# Look in standard directory ~/texlive/2015 for .sty files.
+env.SetDefault(TEXMFHOME=os.path.join(os.environ['HOME'], 'texlive/2015'))
+
+basename = 'doc'
+pdf = env.PDF(target=basename + '.pdf', source=basename + '.tex')
+env.Precious(pdf)
+Default(pdf)

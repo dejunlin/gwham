@@ -1,4 +1,4 @@
 #!/bin/bash
 
 cd tex
-make
+scons
