@@ -1,1 +1,9 @@
 .sconsign.dblite
+doc/tex/doc.aux
+doc/tex/doc.bbl
+doc/tex/doc.blg
+doc/tex/doc.fls
+doc/tex/doc.log
+doc/tex/doc.out
+doc/tex/doc.pdf
+doc/tex/doc.toc
