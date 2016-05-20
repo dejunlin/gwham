@@ -1,4 +1,5 @@
 .sconsign.dblite
+.*.swp
 doc/tex/doc.aux
 doc/tex/doc.bbl
 doc/tex/doc.blg
