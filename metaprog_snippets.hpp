@@ -21,6 +21,9 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
+
+using uint = unsigned int;
+
 /*
  * =====================================================================================
  *        Class:  get the last element from parameter pack
@@ -425,7 +428,7 @@ typename std::enable_if<std::is_integral<T>::value && std::is_unsigned<T>::value
 ctz(T a) 
 {
   T shift = 0;
-  for(; a & 1 == 0; ++shift) a >> 1;
+  for(; (a & 1) == 0; ++shift) a >> 1;
 }
 
 #ifdef __GNUC__
