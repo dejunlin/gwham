@@ -13,6 +13,7 @@
 #include "exception.hpp"
 
 using namespace std;
+using uint = unsigned int;
 
 template <class T>
 string tostr(const T& input) {
