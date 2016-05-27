@@ -129,8 +129,7 @@ class WHAM {
      DOStype DOS;
 
      //! initialize the cached array for WHAM iteration and set all the DOS to 0.0
-     void init(const map<coordtype, vector<uint> >& _record, 
-               const vector<NARRAY>& sw, 
+     void init(const vector<NARRAY>& sw, 
 	       NARRAY& C, 
 	       vector<NARRAY>& NgexpmH, 
 	       vector<NARRAY>& expmH);
@@ -139,7 +138,6 @@ class WHAM {
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
 void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::init
 (
-  const map<coordtype, vector<uint> >& _record,
   const vector<NARRAY>& sw, 
   NARRAY& C, 
   vector<NARRAY>& NgexpmH, 
@@ -224,7 +222,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
   NARRAY C;
   vector<NARRAY> NgexpmH;
   vector<NARRAY> expmH;
-  this->init(*record, sw, C, NgexpmH, expmH);
+  this->init(sw, C, NgexpmH, expmH);
 
   if(ifmin) {
     //To maximize the efficiency of minimization, we exploit the 
