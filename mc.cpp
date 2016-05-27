@@ -106,9 +106,8 @@ int main(int argc, char* argv[]) {
     }
   }
   const vector<linecounter> Nsamples(nwins_tot,nsteps);
-  const auto overlap = narrayoverlap<valtype, histcounter, histogram>(hists, Nsamples);
 
-  WHAM<pEnsemble,histogram,narray> wham(record,hists,V,Nsamples,tol,vector<valtype>(0), vector<narray>(0), true, overlap);
+  WHAM<pEnsemble,histogram,narray> wham(record,hists,V,Nsamples,tol,vector<valtype>(0), vector<narray>(0), true);
   pEnsemble V0 = make_shared<NVT>(kB, Hamiltonian{}, T);
   /*vector<uint> rhodim(dim,0);
   for(uint i = 0; i < dim; ++i) { rhodim[i] = i; }*/

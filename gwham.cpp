@@ -368,15 +368,7 @@ int main(int argc, char* argv[]) {
     fcout << histid << endl;
   }
 
-  //we calculate the overlap between histogram
-  const auto overlap = narrayoverlap<valtype, histcounter, histogram>(hists, Nsamples);
-  cout << "#Percentage overlap between histograms: \n";
-  fcout.flags(ios::fixed);
-  fcout.width(15);
-  fcout.precision(8);
-  for(auto oi : overlap) { cout << "# "; fcout << oi << endl; }
-
-  WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin, overlap);
+  WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin);
   
   //calculate the probability density
   //we can have the user specify which ensemble we want to probability to be calculated in

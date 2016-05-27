@@ -8,6 +8,7 @@
 #include "metaprog_snippets.hpp"
 #include "likelihoodfunc.hpp"
 #include "minimizer/cg.hpp"
+#include "gnarray.hpp"
 #include <stdlib.h>
 #include <iterator>
 #include <vector>
@@ -70,7 +71,6 @@ class WHAM {
      * @param[in] fseeds seeds for the free energy for each state
      * @param[in] _g[k][coord] Statistical inefficiency of the k'th trajectory in bin coord
      * @param[in] ifmin if we minimize the likelihood function before WHAM iteration
-     * @param[in] _overlap the pairwise overlap among the histograms
      */
     WHAM(const map<coordtype, vector<uint> >& _record, 
          const vector<HISTOGRAM>& _hists, 
@@ -79,8 +79,7 @@ class WHAM {
 	 const valtype _tol,
 	 const vector<valtype>& fseeds = vector<valtype>(0),
 	 const vector<NARRAY>& _g = vector<NARRAY>{0},
-	 const bool ifmin = true,
-	 const vector<vector<valtype> >& _overlap = vector<vector<valtype>>(0)
+	 const bool ifmin = true
 	);
 
     //!calculate PMF in Hamiltonian _V along the dimension in DOS as specified by dim
@@ -97,6 +96,8 @@ class WHAM {
     void shiftf(vector<valtype>& newexpf) const;
     //!print out all free energies
     void printfree() const;
+    //!Access the free energies
+    const vector<valtype>& getf() const;
   private:
      //!max number of iterations
      static const ulong MAXIT = 1000000;
@@ -106,8 +107,6 @@ class WHAM {
      const map<coordtype, vector<uint> >* const record;
      //!Generic HISTOGRAM for each trajectory
      const vector<HISTOGRAM>* const hists;
-     //!Overlap between each pair of histograms
-     const vector<vector<valtype> >* const overlap;
      //!Statistical inefficiency for each trajectory
      const vector<NARRAY>* const g;
      //!V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
@@ -186,12 +185,10 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
 	                              const valtype _tol, 
                                       const vector<valtype>& fseeds,
                                       const vector<NARRAY>& _g, 
-	                              const bool ifmin,
-                                      const vector<vector<valtype> >& _overlap
+	                              const bool ifmin
 	                             ):
 				     record(&_record),
 				     hists(&_hists),
-				     overlap(&_overlap),
 				     g(_g.size() ? &_g : nullptr),
 				     V(&_V),
 				     N(&_N),
@@ -250,7 +247,14 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     //based on their histograms' overlap. When a histogram has no 
     //overlap with any other histogram, the neighbor id the histogram
     //id itself
-    const auto histnbs = buildnblist(*overlap);
+    const vector<vector<valtype> > overlap = narrayoverlap<valtype, histcounter, HISTOGRAM>(*hists, *N);
+    cout << "#Percentage overlap between histograms: \n";
+    fcout.flags(ios::fixed);
+    fcout.width(15);
+    fcout.precision(8);
+    for(auto oi : overlap) { cout << "# "; fcout << oi << endl; }
+
+    const auto histnbs = buildnblist(overlap);
 
     //Second, we build trees with each edge being the one deltaf and 
     //each node being one f. If we got multiple trees back, we have
@@ -364,6 +368,11 @@ void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::printfree() const {
     fcout.precision(15);
     fcout << log(expf[i]) << endl;
   }
+}
+
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+const vector<valtype>& WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::getf() const {
+  return f;
 }
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
