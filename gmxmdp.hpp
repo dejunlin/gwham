@@ -302,9 +302,9 @@ class GMXMDP::GMXPGRP {
   //! Velocity of the reference position
   vector<valtype> vec;
   //! Coefficient of the harmonic potential in state A and B
-  valtype k = NaN, kB = k;
+  valtype k = NaN, kB = NaN;
   //! Parameters for the flat-bottom harmonic potential
-  valtype r0 = NaN, r0B = r0, r1 = NaN, r1B = r1, k0 = NaN, k0B = k0, k1 = k0, k1B = k1;
+  valtype r0 = NaN, r0B = NaN, r1 = NaN, r1B = NaN, k0 = NaN, k0B = NaN, k1 = NaN, k1B = NaN;
   //! Reference contact number
   valtype nc0 = NaN, nc0B = NaN;
   //! Restraint lambdas
