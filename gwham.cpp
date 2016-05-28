@@ -300,9 +300,10 @@ int main(int argc, char* argv[]) {
 	}
 	//Here I make the assumption that the first datum
 	//corresponds to the starting point and should always be skipped
-        ts.fio.lb = linecounter(rcvbegin/tperline + 1);
-        ts.fio.ls = linecounter(ts.fio.ls * (rcvstride == MAXNLINE ? 1 : rcvstride/tperline));
-        ts.fio.le = linecounter(rcvend == MAXNLINE ? rcvend : rcvend/tperline);
+	const linecounter linepert = 1.0/tperline;
+        ts.fio.lb = linecounter(rcvbegin*linepert + 1);
+        ts.fio.ls = linecounter(ts.fio.ls * (rcvstride == MAXNLINE ? 1 : rcvstride*linepert));
+        ts.fio.le = linecounter(rcvend == MAXNLINE ? rcvend : rcvend*linepert);
       }
   
       const auto tsprefix = getfnfixes(pmdp->fname)[0];
