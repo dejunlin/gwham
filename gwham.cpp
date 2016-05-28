@@ -344,31 +344,7 @@ int main(int argc, char* argv[]) {
   vector<valtype> fseeds(0);
   if(fio_fseeds.readaline()) { fseeds = fio_fseeds.line2val(); }
 
-  //build records of what bins in the histograms are non-zero
-  map<coordtype, vector<uint> > record;
-  for(uint i = 0; i < hists.size(); ++i) {
-    typename histogram::iterator it;
-    for(it = hists[i].begin(); it != hists[i].end(); ++it) {
-      const coordtype coord = it->first;
-      record[coord].push_back(i);
-    }
-  }
-  for(map<coordtype,vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
-    const auto& coord = it->first;
-    const auto& histid = it->second;
-    const auto& vals = hists[histid[0]].coord2val(coord);
-    cout << "#Bin: ";
-    fcout.width(5);
-    fcout << coord;
-    fcout.width(10);
-    fcout.precision(5);
-    fcout << vals; 
-    cout << " is contributed from " << histid.size() << " histograms: ";
-    fcout.width(5);
-    fcout << histid << endl;
-  }
-
-  WHAM<pEnsemble, histogram, narray> wham(record, hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin);
+  WHAM<pEnsemble, histogram, narray> wham(hists, pens, Nsamples, tol, fseeds, vector<narray>(0), ifmin);
   
   //calculate the probability density
   //we can have the user specify which ensemble we want to probability to be calculated in

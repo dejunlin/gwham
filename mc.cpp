@@ -92,7 +92,6 @@ int main(int argc, char* argv[]) {
   
   histogram hist_sum(dim,nbins,hv,lv);
 
-  map<coordtype, vector<uint> > record;
   for(uint i = 0; i < nwins_tot; ++i) {
     typename histogram::const_iterator it;
     for(it = hists[i].begin(); it != hists[i].end(); ++it) {
@@ -102,12 +101,11 @@ int main(int argc, char* argv[]) {
       } else { 
         hist_sum[coord] = it->second;
       }
-      record[coord].push_back(i);
     }
   }
   const vector<linecounter> Nsamples(nwins_tot,nsteps);
 
-  WHAM<pEnsemble,histogram,narray> wham(record,hists,V,Nsamples,tol,vector<valtype>(0), vector<narray>(0), true);
+  WHAM<pEnsemble,histogram,narray> wham(hists,V,Nsamples,tol,vector<valtype>(0), vector<narray>(0), true);
   pEnsemble V0 = make_shared<NVT>(kB, Hamiltonian{}, T);
   /*vector<uint> rhodim(dim,0);
   for(uint i = 0; i < dim; ++i) { rhodim[i] = i; }*/

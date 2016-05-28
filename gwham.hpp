@@ -63,7 +63,6 @@ class WHAM {
   public:
     //!perform WHAM iteration and update the density of state
     /**
-     * @param[in] _record record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
      * @param[in] _hists Generic HISTOGRAM for each trajectory
      * @param[in] _V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
      * @param[in] _N _N[k] is the number of samples the k'th trajectory has
@@ -72,7 +71,7 @@ class WHAM {
      * @param[in] _g[k][coord] Statistical inefficiency of the k'th trajectory in bin coord
      * @param[in] ifmin if we minimize the likelihood function before WHAM iteration
      */
-    WHAM(const map<coordtype, vector<uint> >& _record, 
+    WHAM(
          const vector<HISTOGRAM>& _hists, 
 	 const vector<PENSEMBLE>& _V, 
          const vector<linecounter>& _N, 
@@ -103,10 +102,10 @@ class WHAM {
      static const ulong MAXIT = 1000000;
      //!check if WHAM iteration should end; also update WHAM::expf if not end
      bool endit(const vector<valtype>& newexpf, const ulong& count); 
-     //!record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
-     const map<coordtype, vector<uint> >* const record;
      //!Generic HISTOGRAM for each trajectory
      const vector<HISTOGRAM>* const hists;
+     //!record[i][k] is the index of the k'th histograms that has non-zero value at point whose coordinate is i 
+     const map<coordtype, vector<uint> > record;
      //!Statistical inefficiency for each trajectory
      const vector<NARRAY>* const g;
      //!V[i] is the hamiltonian the i'th state that combine the conserved quantities and the associated parameters
@@ -128,12 +127,41 @@ class WHAM {
      //! Density of state as well as a functor that caclulates it
      DOStype DOS;
 
+     //! initialize WHAM::record
+     map<coordtype, vector<uint> > initrecord();
      //! initialize the cached array for WHAM iteration and set all the DOS to 0.0
      void init(const vector<NARRAY>& sw, 
 	       NARRAY& C, 
 	       vector<NARRAY>& NgexpmH, 
 	       vector<NARRAY>& expmH);
 };
+
+template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
+map<coordtype, vector<uint> > WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::initrecord() {
+  map<coordtype, vector<uint> > _record;
+  for(uint i = 0; i < hists->size(); ++i) {
+    typename HISTOGRAM::const_iterator it;
+    for(it = (*hists)[i].begin(); it != (*hists)[i].end(); ++it) {
+      const coordtype coord = it->first;
+      _record[coord].push_back(i);
+    }
+  }
+  for(map<coordtype,vector<uint> >::const_iterator it = _record.begin(); it != _record.end(); ++it) {
+    const auto& coord = it->first;
+    const auto& histid = it->second;
+    const auto& vals = (*hists)[histid[0]].coord2val(coord);
+    cout << "#Bin: ";
+    fcout.width(5);
+    fcout << coord;
+    fcout.width(10);
+    fcout.precision(5);
+    fcout << vals; 
+    cout << " is contributed from " << histid.size() << " histograms: ";
+    fcout.width(5);
+    fcout << histid << endl;
+  }
+  return _record;
+}
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
 void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::init
@@ -147,7 +175,7 @@ void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::init
   C = DOS.getdosarr();
   NgexpmH = vector<NARRAY>{hists->size(), DOS.getdosarr()};
   expmH = vector<NARRAY>{hists->size(), DOS.getdosarr()};
-  for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
+  for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
     //Again we only loop through non-zero elements of DOS
     const coordtype coord = it->first;
     DOS[coord] = 0.0;
@@ -176,7 +204,7 @@ void WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::init
 }
 
 template <class PENSEMBLE, class HISTOGRAM, class NARRAY>
-WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _record, 
+WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM( 
                                       const vector<HISTOGRAM>& _hists,  
 	                              const vector<PENSEMBLE>& _V, 
                                       const vector<linecounter>& _N, 
@@ -185,8 +213,8 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
                                       const vector<NARRAY>& _g, 
 	                              const bool ifmin
 	                             ):
-				     record(&_record),
 				     hists(&_hists),
+				     record(this->initrecord()),
 				     g(_g.size() ? &_g : nullptr),
 				     V(&_V),
 				     N(&_N),
@@ -212,7 +240,7 @@ WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::WHAM(const map<coordtype, vector<uint> >& _rec
     sw = *g;
   } else {
     for(uint i = 0; i < hists->size(); ++i) {
-      for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
+      for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
 	const auto& coord = it->first;
 	sw[i][coord] = 1.0;
       }
@@ -403,7 +431,7 @@ NARRAY WHAM<PENSEMBLE,HISTOGRAM,NARRAY>::calrho(const vector<uint>& _dim, const 
 
   NARRAY rho(DOS.getdosarr(),_dim);
   //Again we only loop through non-zero elements of DOS
-  for(map<coordtype, vector<uint> >::const_iterator it = record->begin(); it != record->end(); ++it) {
+  for(map<coordtype, vector<uint> >::const_iterator it = record.begin(); it != record.end(); ++it) {
     const coordtype coord = it->first;
     const vector<uint> histids = it->second;
     const vector<valtype> vals = coord2val(coord);
