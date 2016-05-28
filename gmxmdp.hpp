@@ -356,7 +356,7 @@ class GMXMDP::GMXPGRP {
 
 //! check if a variable is set to default valeu (NaN)
 template < class T >
-typename enable_if<numeric_limits<T>::has_quiet_NaN, bool>::type
+typename enable_if<numeric_limits<T>::has_signaling_NaN, bool>::type
 isdefault(const T& obj) {
   return std::isnan(obj);
 }
@@ -369,10 +369,10 @@ isdefault(const T& obj) {
 
 //! This function loop through the key in a map<string, rw<T>> object
 //and set the B-state parameters to A-state if the former is not set. 
-//class T must either have a quiet NaN or can be sized so that we 
+//class T must either have a signaling NaN or can be sized so that we 
 //have a way to tell whether the objects of T has been set or not
 template < class T >
-typename enable_if<numeric_limits<T>::has_quiet_NaN || 
+typename enable_if<numeric_limits<T>::has_signaling_NaN || 
                    check_if<T, has_memfn_size>::value 
 		   ,void
 		  >::type

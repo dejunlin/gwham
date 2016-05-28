@@ -43,8 +43,8 @@ static constexpr uint MPREAL_PRECISION = MPREALCXX;
 typedef double valtype; //the data type we histogram
 #endif
 
-static const enable_if<numeric_limits<valtype>::has_quiet_NaN, valtype>::type
-NaN = numeric_limits<valtype>::quiet_NaN();
+static const enable_if<numeric_limits<valtype>::has_signaling_NaN, valtype>::type
+NaN = numeric_limits<valtype>::signaling_NaN();
 
 static const valtype MAXEXPARG = log(numeric_limits<valtype>::max()); //max of the arguments to std::exp() call
 static const valtype MINEXPARG = log(numeric_limits<valtype>::min()); //min of the arguments to std::exp() call
