@@ -29,6 +29,8 @@
 
 using namespace std;
 
+template <class T> const T DFVAL<T>::value = -3828283892179;
+
 const map<string, GMXMDP::TType> GMXMDP::str2TT =
 {
   {"TTstr", GMXMDP::NTTypes}, 

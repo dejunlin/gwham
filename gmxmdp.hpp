@@ -41,6 +41,11 @@ using namespace std;
  *  Description:  
  * =====================================================================================
  */
+
+template <class T> struct DFVAL {
+  static const T value;
+};
+
 class GMXMDP : public MDP
 {
   public:
@@ -70,7 +75,7 @@ class GMXMDP : public MDP
     static const map<string, TType> str2TT; 
     string TTstr = "TTstr";
     //! Reference temperature
-    valtype T = NaN;
+    valtype T = DFVAL<valtype>::value;
     //! Max and Min temperatures expanded ensemble 
     valtype Tmax = T, Tmin = T;
     //! Temperature coupling type
@@ -78,7 +83,7 @@ class GMXMDP : public MDP
     static const map<string, PType> str2PT; 
     string PTstr = "PTstr";
     //! Reference pressure 
-    valtype P = NaN;
+    valtype P = DFVAL<valtype>::value;
     //! Max and Min pressures expanded ensemble 
     valtype Pmax = P, Pmin = P;
     //! Initial lambda state id
@@ -302,11 +307,11 @@ class GMXMDP::GMXPGRP {
   //! Velocity of the reference position
   vector<valtype> vec;
   //! Coefficient of the harmonic potential in state A and B
-  valtype k = NaN, kB = NaN;
+  valtype k = DFVAL<valtype>::value, kB = DFVAL<valtype>::value;
   //! Parameters for the flat-bottom harmonic potential
-  valtype r0 = NaN, r0B = NaN, r1 = NaN, r1B = NaN, k0 = NaN, k0B = NaN, k1 = NaN, k1B = NaN;
+  valtype r0 = DFVAL<valtype>::value, r0B = DFVAL<valtype>::value, r1 = DFVAL<valtype>::value, r1B = DFVAL<valtype>::value, k0 = DFVAL<valtype>::value, k0B = DFVAL<valtype>::value, k1 = DFVAL<valtype>::value, k1B = DFVAL<valtype>::value;
   //! Reference contact number
-  valtype nc0 = NaN, nc0B = NaN;
+  valtype nc0 = DFVAL<valtype>::value, nc0B = DFVAL<valtype>::value;
   //! Restraint lambdas
   vector<valtype> Lrst;
   //! Restraint type
@@ -354,11 +359,11 @@ class GMXMDP::GMXPGRP {
   }
 };
 
-//! check if a variable is set to default valeu (NaN)
+//! check if a variable is set to default valeu (DFVAL<valtype>::value)
 template < class T >
-typename enable_if<numeric_limits<T>::has_signaling_NaN, bool>::type
+typename enable_if<std::is_scalar<T>::value, bool>::type
 isdefault(const T& obj) {
-  return std::isnan(obj);
+  return obj == DFVAL<T>::value;
 }
 
 template < class T >
@@ -369,10 +374,10 @@ isdefault(const T& obj) {
 
 //! This function loop through the key in a map<string, rw<T>> object
 //and set the B-state parameters to A-state if the former is not set. 
-//class T must either have a signaling NaN or can be sized so that we 
+//class T must either have a signaling DFVAL<valtype>::value or can be sized so that we 
 //have a way to tell whether the objects of T has been set or not
 template < class T >
-typename enable_if<numeric_limits<T>::has_signaling_NaN || 
+typename enable_if<std::is_scalar<T>::value || 
                    check_if<T, has_memfn_size>::value 
 		   ,void
 		  >::type
