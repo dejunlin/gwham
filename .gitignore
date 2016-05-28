@@ -8,3 +8,8 @@ doc/tex/doc.log
 doc/tex/doc.out
 doc/tex/doc.pdf
 doc/tex/doc.toc
+doc/tex/doc.bib-stamp
+doc/tex/doc.toc.old
+build
+mc_data
+testpmf
