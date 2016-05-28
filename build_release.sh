@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/usr/bin/env tcsh
 setenv PREFIX "/usr/local"
 setenv LIBDIR "$PREFIX/lib"
 setenv LIB64DIR "$PREFIX/lib64"
